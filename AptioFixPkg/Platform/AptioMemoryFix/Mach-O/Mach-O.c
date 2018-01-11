@@ -15,22 +15,6 @@
 #include "UefiLoader.h"
 #include "Mach-O.h"
 
-// DBG_TO: 0=no debug, 1=serial, 2=console
-// serial requires
-// [PcdsFixedAtBuild]
-//  gEfiMdePkgTokenSpaceGuid.PcdDebugPropertyMask|0x07
-//  gEfiMdePkgTokenSpaceGuid.PcdDebugPrintErrorLevel|0xFFFFFFFF
-// in package DSC file
-#define DBG_TO 0
-
-#if DBG_TO == 2
-	#define DBG(...) AsciiPrint(__VA_ARGS__);
-#elif DBG_TO == 1
-	#define DBG(...) DebugPrint(1, __VA_ARGS__);
-#else
-	#define DBG(...)
-#endif
-
 /** Adds Offset bytes to SourcePtr and returns new pointer as ReturnType. */
 #define PTR_OFFSET(SourcePtr, Offset, ReturnType) ((ReturnType)(((UINT8*)SourcePtr) + Offset))
 
@@ -52,17 +36,17 @@ MachOGetEntryAddress(IN VOID *MachOImage)
 	Address = 0;
 	MHdr = (struct mach_header *)MachOImage;
 	MHdr64 = (struct mach_header_64 *)MachOImage;
-	DBG("MachOImage: %p, magic: %x", MachOImage, MHdr->magic);
+	DEBUG ((DEBUG_VERBOSE, "MachOImage: %p, magic: %x", MachOImage, MHdr->magic));
 
 	if (MHdr->magic == MH_MAGIC || MHdr->magic == MH_CIGAM) {
 		// 32 bit header
-		DBG(" -> 32 bit\n");
+		DEBUG ((DEBUG_VERBOSE, " -> 32 bit\n"));
 		Is64Bit = FALSE;
 		NCmds = MHdr->ncmds;
 		LCmd = PTR_OFFSET(MachOImage, sizeof(struct mach_header), struct load_command *);
 	} else if (MHdr64->magic == MH_MAGIC_64 || MHdr64->magic == MH_CIGAM_64) {
 		// 64 bit header
-		DBG(" -> 64 bit\n");
+		DEBUG ((DEBUG_VERBOSE, " -> 64 bit\n"));
 		Is64Bit = TRUE;
 		NCmds = MHdr64->ncmds;
 		LCmd = PTR_OFFSET(MachOImage, sizeof(struct mach_header_64), struct load_command *);
@@ -70,17 +54,17 @@ MachOGetEntryAddress(IN VOID *MachOImage)
 		// invalid MachOImage
 		return Address;
 	}
-	DBG("ncmds: %d\n", NCmds, LCmd);
+	DEBUG ((DEBUG_VERBOSE, "ncmds: %d\n", NCmds, LCmd));
 	//gBS->Stall(10 * 1000000);
 
 	// iterate over load commands
 	for (Index = 0; Index < NCmds; Index++) {
 
-		DBG("%d. LCmd: %p, cmd: %x, size: %d\n", Index, LCmd, LCmd->cmd, LCmd->cmdsize);
+		DEBUG ((DEBUG_VERBOSE, "%d. LCmd: %p, cmd: %x, size: %d\n", Index, LCmd, LCmd->cmd, LCmd->cmdsize));
 
 		if (LCmd->cmd == LC_UNIXTHREAD) {
 
-			DBG("LC_UNIXTHREAD\n");
+			DEBUG ((DEBUG_VERBOSE, "LC_UNIXTHREAD\n"));
 			//
 			// extract thread state
 			// LCmd =
@@ -108,7 +92,7 @@ MachOGetEntryAddress(IN VOID *MachOImage)
 
 	}
 
-	DBG("Address: %lx\n", Address);
+	DEBUG ((DEBUG_VERBOSE, "Address: %lx\n", Address));
 	//gBS->Stall(20 * 1000000);
 	return Address;
 }

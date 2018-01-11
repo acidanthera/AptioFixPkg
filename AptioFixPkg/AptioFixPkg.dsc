@@ -29,12 +29,11 @@
   CpuLib|MdePkg/Library/BaseCpuLib/BaseCpuLib.inf
 !if $(TARGET) == DEBUG
   DebugLib|MdePkg/Library/UefiDebugLibConOut/UefiDebugLibConOut.inf
-  DebugPrintErrorLevelLib|MdePkg/Library/BaseDebugPrintErrorLevelLib/BaseDebugPrintErrorLevelLib.inf
-  PrintLib|MdePkg/Library/BasePrintLib/BasePrintLib.inf
 !else
   DebugLib|MdePkg/Library/BaseDebugLibNull/BaseDebugLibNull.inf
-  PrintLib|MdePkg/Library/BasePrintLib/BasePrintLib.inf
 !endif
+  DebugPrintErrorLevelLib|MdePkg/Library/BaseDebugPrintErrorLevelLib/BaseDebugPrintErrorLevelLib.inf
+  PrintLib|MdePkg/Library/BasePrintLib/BasePrintLib.inf
   DevicePathLib|MdePkg/Library/UefiDevicePathLib/UefiDevicePathLib.inf
   UefiHiiServicesLib|MdeModulePkg/Library/UefiHiiServicesLib/UefiHiiServicesLib.inf
   HiiLib|MdeModulePkg/Library/UefiHiiLib/UefiHiiLib.inf
@@ -52,13 +51,14 @@
 
 [PcdsFixedAtBuild]
 !if $(TARGET) == DEBUG
+  gEfiMdePkgTokenSpaceGuid.PcdMaximumAsciiStringLength|0
   gEfiMdePkgTokenSpaceGuid.PcdDebugPropertyMask|0x0f
   gEfiMdePkgTokenSpaceGuid.PcdDebugPrintErrorLevel|0xC04A054F
 !endif
 
 [BuildOptions]
-!if $(TARGET) == RELEASE
-  XCODE:*_*_*_CC_FLAGS = -DMDEPKG_NDEBUG -Wno-varargs
+!if $(TARGET) != DEBUG
+  XCODE:*_*_*_CC_FLAGS = -Wno-varargs -flto -DMDEPKG_NDEBUG
 !else
   XCODE:*_*_*_CC_FLAGS = -Wno-varargs
 !endif

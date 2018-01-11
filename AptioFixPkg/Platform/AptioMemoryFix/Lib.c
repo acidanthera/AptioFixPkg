@@ -29,23 +29,7 @@
 #include "Config.h"
 #include "Lib.h"
 
-// DBG_TO: 0=no debug, 1=serial, 2=console
-// serial requires
-// [PcdsFixedAtBuild]
-//  gEfiMdePkgTokenSpaceGuid.PcdDebugPropertyMask|0x07
-//  gEfiMdePkgTokenSpaceGuid.PcdDebugPrintErrorLevel|0xFFFFFFFF
-// in package DSC file
-#define DBG_TO 0
-
-#if DBG_TO == 2
-	#define DBG(...) AsciiPrint(__VA_ARGS__);
-#elif DBG_TO == 1
-	#define DBG(...) DebugPrint(1, __VA_ARGS__);
-#else
-	#define DBG(...)
-#endif
-
-CHAR16 *EfiMemoryTypeDesc[EfiMaxMemoryType] = {
+CHAR16 *mEfiMemoryTypeDesc[EfiMaxMemoryType] = {
 	L"Reserved",
 	L"LDR_code",
 	L"LDR_data",
@@ -62,13 +46,13 @@ CHAR16 *EfiMemoryTypeDesc[EfiMaxMemoryType] = {
 	L"PAL_code"
 };
 
-CHAR16 *EfiAllocateTypeDesc[MaxAllocateType] = {
+CHAR16 *mEfiAllocateTypeDesc[MaxAllocateType] = {
 	L"AllocateAnyPages",
 	L"AllocateMaxAddress",
 	L"AllocateAddress"
 };
 
-CHAR16 *EfiLocateSearchType[] = {
+CHAR16 *mEfiLocateSearchType[] = {
 	L"AllHandles",
 	L"ByRegisterNotify",
 	L"ByProtocol"
@@ -76,7 +60,6 @@ CHAR16 *EfiLocateSearchType[] = {
 
 EFI_GUID gEfiConsoleControlProtocolGuid              = {0xF42F7782, 0x012E, 0x4C12, {0x99, 0x56, 0x49, 0xF9, 0x43, 0x04, 0xF7, 0x21}};
 EFI_GUID gAppleFirmwarePasswordProtocolGuid          = {0x8FFEEB3A, 0x4C98, 0x4630, {0x80, 0x3F, 0x74, 0x0F, 0x95, 0x67, 0x09, 0x1D}};
-EFI_GUID gEfiGlobalVariableGuid                      = {0x8BE4DF61, 0x93CA, 0x11D2, {0xAA, 0x0D, 0x00, 0xE0, 0x98, 0x03, 0x2B, 0x8C}};
 EFI_GUID gEfiDevicePathPropertyDatabaseProtocolGuid  = {0x91BD12FE, 0xF6C3, 0x44FB, {0xA5, 0xB7, 0x51, 0x22, 0xAB, 0x30, 0x3A, 0xE0}};
 EFI_GUID gAppleBootVariableGuid                      = {0x7C436110, 0xAB2A, 0x4BBB, {0xA8, 0x80, 0xFE, 0x41, 0x99, 0x5C, 0x9F, 0x82}};
 EFI_GUID gAppleVendorVariableGuid                    = {0x4D1EDE05, 0x38C7, 0x4A6A, {0x9C, 0xC6, 0x4B, 0xCC, 0xA8, 0xB3, 0x8C, 0x14}};
@@ -96,7 +79,7 @@ EFI_GUID gMsgLogProtocolGuid                         = {0x511CE018, 0x0018, 0x40
 EFI_GUID gEfiLegacy8259ProtocolGuid                  = {0x38321dba, 0x4fe0, 0x4e17, {0x8a, 0xec, 0x41, 0x30, 0x55, 0xea, 0xed, 0xc1}};
 
 MAP_EFI_GUID_STR EfiGuidStrMap[] = {
-#ifdef DEBUG
+#if !defined (MDEPKG_NDEBUG)
 	{&gEfiFileInfoGuid, L"gEfiFileInfoGuid"},
 	{&gEfiFileSystemInfoGuid, L"gEfiFileSystemInfoGuid"},
 	{&gEfiFileSystemVolumeLabelInfoIdGuid, L"gEfiFileSystemVolumeLabelInfoIdGuid"},
@@ -268,7 +251,7 @@ FixMemMap (
 	UINTN                   BlockSize;
 	UINTN                   PhysicalEnd;
 
-	DBG("FixMemMap: Size=%d, Addr=%p, DescSize=%d\n", MemoryMapSize, MemoryMap, DescriptorSize);
+	DEBUG ((DEBUG_VERBOSE, "FixMemMap: Size=%d, Addr=%p, DescSize=%d\n", MemoryMapSize, MemoryMap, DescriptorSize));
 
 	Desc = MemoryMap;
 	NumEntries = MemoryMapSize / DescriptorSize;
@@ -283,10 +266,10 @@ FixMemMap (
 		// boot.efi does not assign a virtual address in this case, which may result in improper mappings.
 		//
 		if ((Desc->Attribute & EFI_MEMORY_RUNTIME) != 0 && Desc->Type == EfiReservedMemoryType) {
-			DBG(" %s as RT: %lx (0x%x) - Att: %lx",
-				EfiMemoryTypeDesc[Desc->Type], Desc->PhysicalStart, Desc->NumberOfPages, Desc->Attribute);
+			DEBUG ((DEBUG_VERBOSE, " %s as RT: %lx (0x%x) - Att: %lx",
+				mEfiMemoryTypeDesc[Desc->Type], Desc->PhysicalStart, Desc->NumberOfPages, Desc->Attribute));
 			Desc->Type = EfiMemoryMappedIO;
-			DBG(" -> %lx\n", Desc->Attribute);
+			DEBUG ((DEBUG_VERBOSE, " -> %lx\n", Desc->Attribute));
 		}
 #endif
 
@@ -314,7 +297,7 @@ FixMemMap (
 				&& Desc->Type != EfiMemoryMappedIOPortSpace
 				)
 			{
-				DBG(" %s with RT flag: %lx (0x%x) - ???\n", EfiMemoryTypeDesc[Desc->Type], Desc->PhysicalStart, Desc->NumberOfPages);
+				DEBUG ((DEBUG_VERBOSE, " %s with RT flag: %lx (0x%x) - ???\n", mEfiMemoryTypeDesc[Desc->Type], Desc->PhysicalStart, Desc->NumberOfPages));
 			}
 		} else {
 			//
@@ -327,7 +310,7 @@ FixMemMap (
 				|| Desc->Type == EfiMemoryMappedIOPortSpace
 				)
 			{
-				DBG(" %s without RT flag: %lx (0x%x) - ???\n", EfiMemoryTypeDesc[Desc->Type], Desc->PhysicalStart, Desc->NumberOfPages);
+				DEBUG ((DEBUG_VERBOSE, " %s without RT flag: %lx (0x%x) - ???\n", mEfiMemoryTypeDesc[Desc->Type], Desc->PhysicalStart, Desc->NumberOfPages));
 			}
 		}
 
@@ -412,7 +395,7 @@ PrintMemMap (
 		Bytes = EFI_PAGES_TO_SIZE(Desc->NumberOfPages);
 
 		Print(L"%-9s %010lX %010lX %016lX %010lX %016lX\n",
-			EfiMemoryTypeDesc[Desc->Type],
+			mEfiMemoryTypeDesc[Desc->Type],
 			Desc->PhysicalStart,
 			Desc->PhysicalStart + Bytes - 1,
 			Desc->VirtualStart,
@@ -432,18 +415,20 @@ PrintSystemTable (
 	IN EFI_SYSTEM_TABLE  *ST
 	)
 {
+#if !defined (MDEPKG_NDEBUG)
 	UINTN  Index;
 
-	DBG("SysTable: %p\n", ST);
-	DBG("- FirmwareVendor: %p, %s\n", ST->FirmwareVendor, ST->FirmwareVendor);
-	DBG("- ConsoleInHandle: %p, ConIn: %p\n", ST->ConsoleInHandle, ST->ConIn);
-	DBG("- RuntimeServices: %p, BootServices: %p, ConfigurationTable: %p\n", ST->RuntimeServices, ST->BootServices, ST->ConfigurationTable);
-	DBG("RT:\n");
-	DBG("- GetVariable: %p, SetVariable: %p\n", ST->RuntimeServices->GetVariable, ST->RuntimeServices->SetVariable);
+	DEBUG ((DEBUG_VERBOSE, "SysTable: %p\n", ST));
+	DEBUG ((DEBUG_VERBOSE, "- FirmwareVendor: %p, %s\n", ST->FirmwareVendor, ST->FirmwareVendor));
+	DEBUG ((DEBUG_VERBOSE, "- ConsoleInHandle: %p, ConIn: %p\n", ST->ConsoleInHandle, ST->ConIn));
+	DEBUG ((DEBUG_VERBOSE, "- RuntimeServices: %p, BootServices: %p, ConfigurationTable: %p\n", ST->RuntimeServices, ST->BootServices, ST->ConfigurationTable));
+	DEBUG ((DEBUG_VERBOSE, "RT:\n"));
+	DEBUG ((DEBUG_VERBOSE, "- GetVariable: %p, SetVariable: %p\n", ST->RuntimeServices->GetVariable, ST->RuntimeServices->SetVariable));
 
 	for(Index = 0; Index < ST->NumberOfTableEntries; Index++) {
-		DBG("ConfTab: %p\n", ST->ConfigurationTable[Index].VendorTable);
+		DEBUG ((DEBUG_VERBOSE, "ConfTab: %p\n", ST->ConfigurationTable[Index].VendorTable));
 	}
+#endif
 }
 
 VOID
@@ -455,7 +440,7 @@ WaitForKeyPress (
 	UINTN           Index;
 	EFI_INPUT_KEY   Key;
 
-	Print(Message);
+	Print(L"%a", Message);
 	do {
 		Status = gST->ConIn->ReadKeyStroke (gST->ConIn, &Key);
 	} while(Status == EFI_SUCCESS);
@@ -482,7 +467,7 @@ FileDevicePathToText (
 	FilePathText[0] = L'\0';
 	i = 4;
 	SizeAll = 0;
-	//DBG("FilePathProto->Type: %d, SubType: %d, Length: %d\n", FilePathProto->Type, FilePathProto->SubType, DevicePathNodeLength(FilePathProto));
+	//DEBUG ((DEBUG_VERBOSE, "FilePathProto->Type: %d, SubType: %d, Length: %d\n", FilePathProto->Type, FilePathProto->SubType, DevicePathNodeLength(FilePathProto)));
 	while (FilePathProto != NULL && FilePathProto->Type != END_DEVICE_PATH_TYPE && i > 0) {
 		if (FilePathProto->Type == MEDIA_DEVICE_PATH && FilePathProto->SubType == MEDIA_FILEPATH_DP) {
 			FilePath = (FILEPATH_DEVICE_PATH *) FilePathProto;
@@ -496,9 +481,9 @@ FileDevicePathToText (
 			}
 		}
 		FilePathProto = NextDevicePathNode(FilePathProto);
-		//DBG("FilePathProto->Type: %d, SubType: %d, Length: %d\n", FilePathProto->Type, FilePathProto->SubType, DevicePathNodeLength(FilePathProto));
+		//DEBUG ((DEBUG_VERBOSE, "FilePathProto->Type: %d, SubType: %d, Length: %d\n", FilePathProto->Type, FilePathProto->SubType, DevicePathNodeLength(FilePathProto)));
 		i--;
-		//DBG("FilePathText: %s\n", FilePathText);
+		//DEBUG ((DEBUG_VERBOSE, "FilePathText: %s\n", FilePathText));
 	}
 
 	OutFilePathText = NULL;
@@ -580,17 +565,17 @@ AllocatePagesFromTop (
 			if (Desc->PhysicalStart + EFI_PAGES_TO_SIZE((UINTN)Desc->NumberOfPages) <= *Memory) {
 				// the whole block is under Memory - allocate from the top of the block
 				*Memory = Desc->PhysicalStart + EFI_PAGES_TO_SIZE((UINTN)Desc->NumberOfPages - Pages);
-				//DBG("found the whole block under top mem, allocating at %lx\n", *Memory);
+				//DEBUG ((DEBUG_VERBOSE, "found the whole block under top mem, allocating at %lx\n", *Memory));
 			} else {
 				// the block contains enough pages under Memory, but spans above it - allocate below Memory.
 				*Memory = *Memory - EFI_PAGES_TO_SIZE(Pages);
-				//DBG("found the whole block under top mem, allocating at %lx\n", *Memory);
+				//DEBUG ((DEBUG_VERBOSE, "found the whole block under top mem, allocating at %lx\n", *Memory));
 			}
 			Status = gBS->AllocatePages(AllocateAddress,
 										MemoryType,
 										Pages,
 										Memory);
-			//DBG("Alloc Pages=%x, Addr=%lx, Status=%r\n", Pages, *Memory, Status);
+			//DEBUG ((DEBUG_VERBOSE, "Alloc Pages=%x, Addr=%lx, Status=%r\n", Pages, *Memory, Status));
 			break;
 		}
 	}

@@ -10,9 +10,9 @@
 #define APTIOFIX_LIB_H
 
 /** For type to string conversion */
-extern CHAR16 *EfiMemoryTypeDesc[EfiMaxMemoryType];
-extern CHAR16 *EfiAllocateTypeDesc[MaxAllocateType];
-extern CHAR16 *EfiLocateSearchType[];
+extern CHAR16 *mEfiMemoryTypeDesc[EfiMaxMemoryType];
+extern CHAR16 *mEfiAllocateTypeDesc[MaxAllocateType];
+extern CHAR16 *mEfiLocateSearchType[];
 
 extern EFI_ALLOCATE_POOL  gStoredAllocatePool;
 extern EFI_FREE_POOL      gStoredFreePool;

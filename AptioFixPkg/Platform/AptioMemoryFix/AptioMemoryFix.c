@@ -27,22 +27,6 @@
 #include "Hibernate.h"
 #include "RtShims.h"
 
-// DBG_TO: 0=no debug, 1=serial, 2=console
-// serial requires
-// [PcdsFixedAtBuild]
-//  gEfiMdePkgTokenSpaceGuid.PcdDebugPropertyMask|0x07
-//  gEfiMdePkgTokenSpaceGuid.PcdDebugPrintErrorLevel|0xFFFFFFFF
-// in package DSC file
-#define DBG_TO 0
-
-#if DBG_TO == 2
-#define DBG(...) AsciiPrint(__VA_ARGS__);
-#elif DBG_TO == 1
-#define DBG(...) DebugPrint(1, __VA_ARGS__);
-#else
-#define DBG(...)
-#endif
-
 STATIC UINTN                mCounter = 0;
 
 // TRUE if we are doing hibernate wake
@@ -124,16 +108,16 @@ MOHandleProtocol (
 			if (res == EFI_SUCCESS) {
 				// return it
 				*Interface = GraphicsOutput;
-				//      DBG("->HandleProtocol(%p, %s, %p) = %r (returning from other handle)\n", Handle, GuidStr(Protocol), *Interface, res);
-				DBG("->HandleProtocol(%p, %s, %p) = %r (from other handle)\n", Handle, GuidStr(Protocol), *Interface, res);
+				//      DEBUG ((DEBUG_VERBOSE, "->HandleProtocol(%p, %s, %p) = %r (returning from other handle)\n", Handle, GuidStr(Protocol), *Interface, res));
+				DEBUG ((DEBUG_VERBOSE, "->HandleProtocol(%p, %s, %p) = %r (from other handle)\n", Handle, GuidStr(Protocol), *Interface, res));
 				return res;
 			}
 		}
-		DBG("->HandleProtocol(%p, %s, %p) = %r\n", Handle, GuidStr(Protocol), *Interface, res);
+		DEBUG ((DEBUG_VERBOSE, "->HandleProtocol(%p, %s, %p) = %r\n", Handle, GuidStr(Protocol), *Interface, res));
 	} else {
 		res = gHandleProtocol(Handle, Protocol, Interface);
 	}
-	//  DBG("->HandleProtocol(%p, %s, %p) = %r\n", Handle, GuidStr(Protocol), *Interface, res);
+	//  DEBUG ((DEBUG_VERBOSE, "->HandleProtocol(%p, %s, %p) = %r\n", Handle, GuidStr(Protocol), *Interface, res));
 	return res;
 }
 
@@ -225,7 +209,7 @@ MOGetMemoryMap (
 	EFI_STATUS            Status;
 
 	Status = gStoredGetMemoryMap(MemoryMapSize, MemoryMap, MapKey, DescriptorSize, DescriptorVersion);
-	DBG("GetMemoryMap: %p = %r\n", MemoryMap, Status);
+	DEBUG ((DEBUG_VERBOSE, "GetMemoryMap: %p = %r\n", MemoryMap, Status));
 	if (Status == EFI_SUCCESS) {
 		FixMemMap(*MemoryMapSize, MemoryMap, *DescriptorSize, *DescriptorVersion);
 		ShrinkMemMap(MemoryMapSize, MemoryMap, *DescriptorSize, *DescriptorVersion);
@@ -286,7 +270,7 @@ MOExitBootServices (
 		Status = gStoredExitBootServices(ImageHandle, MapKey);
 	}
 
-	DBG("ExitBootServices:  = %r\n", Status);
+	DEBUG ((DEBUG_VERBOSE, "ExitBootServices:  = %r\n", Status));
 	if (EFI_ERROR (Status)) {
 		// just report error as var in nvram to be visible from macOS with "nvram -p"
 		gRT->SetVariable(L"aptio-memfix-error-exitbs",
@@ -297,12 +281,12 @@ MOExitBootServices (
 			);
 
 		Status = GetMemoryMapKey(&NewMapKey);
-		DBG("ExitBootServices: GetMemoryMapKey = %r\n", Status);
+		DEBUG ((DEBUG_VERBOSE, "ExitBootServices: GetMemoryMapKey = %r\n", Status));
 		if (Status == EFI_SUCCESS) {
 			// we have latest mem map and NewMapKey
 			// we'll try again ExitBootServices with NewMapKey
 			Status = gStoredExitBootServices(ImageHandle, NewMapKey);
-			DBG("ExitBootServices: 2nd try = %r\n", Status);
+			DEBUG ((DEBUG_VERBOSE, "ExitBootServices: 2nd try = %r\n", Status));
 			if (EFI_ERROR (Status)) {
 				// Error!
 				Print(L"AptioMemoryFix: Error ExitBootServices() 2nd try = Status: %r\n", Status);
@@ -321,7 +305,7 @@ MOExitBootServices (
 
 	if (!gHibernateWake) {
 		// normal boot
-		DBG("ExitBootServices: gMinAllocatedAddr: %lx, gMaxAllocatedAddr: %lx\n", gMinAllocatedAddr, gMaxAllocatedAddr);
+		DEBUG ((DEBUG_VERBOSE, "ExitBootServices: gMinAllocatedAddr: %lx, gMaxAllocatedAddr: %lx\n", gMinAllocatedAddr, gMaxAllocatedAddr));
 
 		SlideAddr = gMinAllocatedAddr - 0x100000;
 		MachOImage = (VOID*)(UINTN)(SlideAddr + 0x200000);
@@ -354,7 +338,7 @@ OvrSetVirtualAddressMap (
 	EFI_STATUS   Status;
 	UINT32       EfiSystemTable;
 
-	DBG("->SetVirtualAddressMap(%d, %d, 0x%x, %p) START ...\n", MemoryMapSize, DescriptorSize, DescriptorVersion, VirtualMap);
+	DEBUG ((DEBUG_VERBOSE, "->SetVirtualAddressMap(%d, %d, 0x%x, %p) START ...\n", MemoryMapSize, DescriptorSize, DescriptorVersion, VirtualMap));
 
 	// restore origs
 	gRT->Hdr.CRC32 = mOrgRTCRC32;
@@ -473,7 +457,7 @@ RunImageWithOverrides(
 		gRT->GetNextVariableName = (EFI_GET_NEXT_VARIABLE_NAME)((UINTN)gRtShims + ((UINTN)&RtShimGetNextVariableName - (UINTN)&gRtShimsDataStart));
 		gRT->SetVariable         = (EFI_SET_VARIABLE)((UINTN)gRtShims           + ((UINTN)&RtShimSetVariable         - (UINTN)&gRtShimsDataStart));
 	} else {
-		DBG("Nulling RtShims\n");
+		DEBUG ((DEBUG_VERBOSE, "Nulling RtShims\n"));
 		gRtShims = NULL;
 	}
 
@@ -507,9 +491,9 @@ RunImageWithOverrides(
 	gBS->CalculateCrc32(gRT, gRT->Hdr.HeaderSize, &gRT->Hdr.CRC32);
 
 	// force boot.efi to use our copy of system table
-	DBG("StartImage: orig sys table: %p\n", Image->SystemTable);
+	DEBUG ((DEBUG_VERBOSE, "StartImage: orig sys table: %p\n", Image->SystemTable));
 	Image->SystemTable = (EFI_SYSTEM_TABLE *)(UINTN)gSysTableRtArea;
-	DBG("StartImage: new sys table: %p\n", Image->SystemTable);
+	DEBUG ((DEBUG_VERBOSE, "StartImage: new sys table: %p\n", Image->SystemTable));
 
 	ProcessBooterImage(ImageHandle);
 
@@ -544,10 +528,10 @@ RunImageWithOverrides(
 EFI_STATUS
 EFIAPI
 MOStartImage (
-			        IN EFI_HANDLE      ImageHandle,
-			        OUT UINTN          *ExitDataSize,
-			        OUT CHAR16        **ExitData  OPTIONAL
-			        )
+	IN EFI_HANDLE      ImageHandle,
+	OUT UINTN          *ExitDataSize,
+	OUT CHAR16         **ExitData  OPTIONAL
+	)
 {
 	EFI_STATUS                  Status;
 	EFI_LOADED_IMAGE_PROTOCOL   *Image;
@@ -557,32 +541,32 @@ MOStartImage (
 	UINTN                       Size2         = 0;
 	CHAR16                      *StartFlag    = NULL;
 
-	DBG("StartImage(%lx)\n", ImageHandle);
+	DEBUG ((DEBUG_VERBOSE, "StartImage(%lx)\n", ImageHandle));
 
 	// find out image name from EfiLoadedImageProtocol
 	Status = gBS->OpenProtocol(ImageHandle, &gEfiLoadedImageProtocolGuid, (VOID **) &Image, gImageHandle, NULL, EFI_OPEN_PROTOCOL_GET_PROTOCOL);
 	if (Status != EFI_SUCCESS) {
-		DBG("ERROR: MOStartImage: OpenProtocol(gEfiLoadedImageProtocolGuid) = %r\n", Status);
+		DEBUG ((DEBUG_WARN, "ERROR: MOStartImage: OpenProtocol(gEfiLoadedImageProtocolGuid) = %r\n", Status));
 		return EFI_INVALID_PARAMETER;
 	}
 	FilePathText = FileDevicePathToText(Image->FilePath);
 	if (FilePathText != NULL) {
-		DBG("FilePath: %s\n", FilePathText);
+		DEBUG ((DEBUG_VERBOSE, "FilePath: %s\n", FilePathText));
 	}
-	DBG("ImageBase: %p - %lx (%lx)\n", Image->ImageBase, (UINT64)Image->ImageBase + Image->ImageSize, Image->ImageSize);
+	DEBUG ((DEBUG_VERBOSE, "ImageBase: %p - %lx (%lx)\n", Image->ImageBase, (UINT64)Image->ImageBase + Image->ImageSize, Image->ImageSize));
 	Status = gBS->CloseProtocol(ImageHandle, &gEfiLoadedImageProtocolGuid, gImageHandle, NULL);
 	if (EFI_ERROR(Status)) {
-		DBG("CloseProtocol error: %r\n", Status);
+		DEBUG ((DEBUG_WARN, "CloseProtocol error: %r\n", Status));
 	}
 
 	if (StrStriBasic(FilePathText,L"boot.efi")){
 		Status = GetVariable2 (L"aptiofixflag", &gAppleBootVariableGuid, &Value, &Size2);
 		if (!EFI_ERROR(Status)) {
 			Status = gRT->SetVariable(L"recovery-boot-mode", &gAppleBootVariableGuid,
-			                          EFI_VARIABLE_NON_VOLATILE | EFI_VARIABLE_BOOTSERVICE_ACCESS | EFI_VARIABLE_RUNTIME_ACCESS,
-			                          Size2, Value);
+				EFI_VARIABLE_NON_VOLATILE | EFI_VARIABLE_BOOTSERVICE_ACCESS | EFI_VARIABLE_RUNTIME_ACCESS,
+				Size2, Value);
 			if (EFI_ERROR(Status)) {
-			  DBG(" Something goes wrong while setting recovery-boot-mode\n");
+			  DEBUG ((DEBUG_WARN, "Something goes wrong while setting recovery-boot-mode\n"));
 			}
 			Status = gRT->SetVariable (L"aptiofixflag", &gAppleBootVariableGuid, 0, 0, NULL);
 			gBS->FreePool(Value);
@@ -593,16 +577,16 @@ MOStartImage (
 		Status = GetVariable2 (L"recovery-boot-mode", &gAppleBootVariableGuid, &Value, &Size2);
 		if (!EFI_ERROR(Status)) {
 			//If it presents, then wait for \com.apple.recovery.boot\boot.efi boot
-			DBG(" recovery-boot-mode present\n");
+			DEBUG ((DEBUG_VERBOSE, " recovery-boot-mode present\n"));
 			StartFlag = StrStriBasic(FilePathText, L"\\com.apple.recovery.boot\\boot.efi");
 			if (mCounter > 0x00){
-			  Status = gRT->SetVariable(L"aptiofixflag", &gAppleBootVariableGuid,
-			                            EFI_VARIABLE_NON_VOLATILE | EFI_VARIABLE_BOOTSERVICE_ACCESS | EFI_VARIABLE_RUNTIME_ACCESS,
-			                            Size2, Value);
-			  if (EFI_ERROR(Status)) {
-			    DBG("Something goes wrong!\n");
-			  }
-			    gRT->ResetSystem(EfiResetWarm, EFI_SUCCESS, 0, NULL);
+				Status = gRT->SetVariable(L"aptiofixflag", &gAppleBootVariableGuid,
+					EFI_VARIABLE_NON_VOLATILE | EFI_VARIABLE_BOOTSERVICE_ACCESS | EFI_VARIABLE_RUNTIME_ACCESS,
+					Size2, Value);
+				if (EFI_ERROR(Status)) {
+					DEBUG ((DEBUG_WARN, "Something goes wrong: %r\n", Status));
+				}
+				gRT->ResetSystem(EfiResetWarm, EFI_SUCCESS, 0, NULL);
 			}
 		} else {
 			StartFlag = StrStriBasic(FilePathText,L"boot.efi");
@@ -620,7 +604,7 @@ MOStartImage (
 		gHibernateWake = (Status == EFI_BUFFER_TOO_SMALL);
 
 		Print(L"\nAptioMemoryFix(RC4): Starting %s\nHibernate wake: %s\n",
-			    FilePathText, gHibernateWake ? L"yes" : L"no");
+			FilePathText, gHibernateWake ? L"yes" : L"no");
 		//gBS->Stall(2000000);
 
 		// run with our overrides
