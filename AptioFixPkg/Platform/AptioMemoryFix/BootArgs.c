@@ -38,8 +38,8 @@ GetBootArgs (
 	VOID *bootArgs
 	)
 {
-	BootArgs1		*BA1 = bootArgs;
-	BootArgs2		*BA2 = bootArgs;
+	BootArgs1  *BA1 = bootArgs;
+	BootArgs2  *BA2 = bootArgs;
 
 	ZeroMem(&gBootArgs, sizeof(gBootArgs));
 

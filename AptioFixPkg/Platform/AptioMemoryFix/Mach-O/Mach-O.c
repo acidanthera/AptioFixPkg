@@ -32,22 +32,22 @@
 #endif
 
 /** Adds Offset bytes to SourcePtr and returns new pointer as ReturnType. */
-#define PTR_OFFSET(SourcePtr, Offset, ReturnType)	((ReturnType)(((UINT8*)SourcePtr) + Offset))
+#define PTR_OFFSET(SourcePtr, Offset, ReturnType) ((ReturnType)(((UINT8*)SourcePtr) + Offset))
 
 /** Returns Mach-O entry point from LC_UNIXTHREAD loader command. */
 UINTN
 EFIAPI
 MachOGetEntryAddress(IN VOID *MachOImage)
 {
-	struct mach_header		*MHdr;
-	struct mach_header_64	*MHdr64;
-	BOOLEAN					Is64Bit;
-	UINT32					NCmds;
-	struct load_command		*LCmd;
-	UINTN					Index;
-	i386_thread_state_t		*ThreadState;
-	x86_thread_state64_t	*ThreadState64;
-	UINTN					Address;
+	struct mach_header      *MHdr;
+	struct mach_header_64   *MHdr64;
+	BOOLEAN                 Is64Bit;
+	UINT32                  NCmds;
+	struct load_command     *LCmd;
+	UINTN                   Index;
+	i386_thread_state_t     *ThreadState;
+	x86_thread_state64_t    *ThreadState64;
+	UINTN                   Address;
 
 	Address = 0;
 	MHdr = (struct mach_header *)MachOImage;
@@ -88,8 +88,8 @@ MachOGetEntryAddress(IN VOID *MachOImage)
 			//   uint32_t cmd
 			//   uint32_t cmdsize
 			//  }
-			// 	uint32_t flavor		   flavor of thread state */
-			//  uint32_t count		   count of longs in thread state */
+			//  uint32_t flavor        flavor of thread state */
+			//  uint32_t count         count of longs in thread state */
 			//  struct XXX_thread_state state   thread state for this flavor */
 			//
 			ThreadState = PTR_OFFSET(LCmd, sizeof(struct load_command) + 2 * sizeof(UINT32), i386_thread_state_t *);

@@ -71,14 +71,14 @@ UINT32  gCsrActiveConfig = 0;
 BOOLEAN gStoredBootArgsVarSet = FALSE;
 BOOLEAN gAnalyzeMemoryMapDone = FALSE;
 UINTN   gStoredBootArgsVarSize = 0;
-CHAR8   gStoredBootArgsVar[BOOT_LINE_LENGTH] = {};
+CHAR8   gStoredBootArgsVar[BOOT_LINE_LENGTH] = {0};
 
 // base kernel address and kaslr slide range
 #define BASE_KERNEL_ADDR       ((UINTN)0x100000)
 #define TOTAL_SLIDE_NUM        256
 
 // user for custom aslr implimentation, when some values are not valid
-UINT8   gValidSlides[TOTAL_SLIDE_NUM] = {};
+UINT8   gValidSlides[TOTAL_SLIDE_NUM] = {0};
 UINT32  gValidSlidesNum   = TOTAL_SLIDE_NUM;
 
 // slide calculation on Sandy and Ivy Bridge CPUs needs special treatment
@@ -105,9 +105,9 @@ PrepareJumpFromKernel (
 	VOID
 	)
 {
-	EFI_STATUS				Status;
-	EFI_PHYSICAL_ADDRESS	HigherMem;
-	UINTN					Size;
+	EFI_STATUS              Status;
+	EFI_PHYSICAL_ADDRESS    HigherMem;
+	UINTN                   Size;
 
 	//
 	// chek if already prepared
@@ -183,7 +183,7 @@ KernelEntryPatchJump (
 	UINT32 KernelEntry
 	)
 {
-	EFI_STATUS				Status;
+	EFI_STATUS  Status;
 
 	Status = EFI_SUCCESS;
 
@@ -265,20 +265,20 @@ KernelEntryFromMachOPatchJump(VOID *MachOImage, UINTN SlideAddr)
  */
 EFI_STATUS
 ExecSetVirtualAddressesToMemMap (
-	IN UINTN			MemoryMapSize,
-	IN UINTN			DescriptorSize,
-	IN UINT32			DescriptorVersion,
-	IN EFI_MEMORY_DESCRIPTOR	*MemoryMap
+	IN UINTN                    MemoryMapSize,
+	IN UINTN                    DescriptorSize,
+	IN UINT32                   DescriptorVersion,
+	IN EFI_MEMORY_DESCRIPTOR    *MemoryMap
 	)
 {
-	UINTN					NumEntries;
-	UINTN					Index;
-	EFI_MEMORY_DESCRIPTOR	*Desc;
-	EFI_MEMORY_DESCRIPTOR	*VirtualDesc;
-	EFI_STATUS				Status;
-	PAGE_MAP_AND_DIRECTORY_POINTER	*PageTable;
-	UINTN					Flags;
-	UINTN					BlockSize;
+	UINTN                           NumEntries;
+	UINTN                           Index;
+	EFI_MEMORY_DESCRIPTOR           *Desc;
+	EFI_MEMORY_DESCRIPTOR           *VirtualDesc;
+	EFI_STATUS                      Status;
+	PAGE_MAP_AND_DIRECTORY_POINTER  *PageTable;
+	UINTN                           Flags;
+	UINTN                           BlockSize;
 
 	Desc = MemoryMap;
 	NumEntries = MemoryMapSize / DescriptorSize;
@@ -336,7 +336,7 @@ ExecSetVirtualAddressesToMemMap (
 
 VOID
 CopyEfiSysTableToSeparateRtDataArea (
-	IN OUT UINT32	*EfiSystemTable
+	IN OUT UINT32   *EfiSystemTable
 	)
 {
 	EFI_SYSTEM_TABLE  *Src;
@@ -358,8 +358,8 @@ VirtualizeRtShimPointers (
 	EFI_MEMORY_DESCRIPTOR  *MemoryMap
 	)
 {
-	EFI_MEMORY_DESCRIPTOR	*Desc;
-	UINTN Index;
+	EFI_MEMORY_DESCRIPTOR  *Desc;
+	UINTN                  Index;
 
 	// For some reason creating an event does not work at least on APTIO IV Z77
 
@@ -555,16 +555,20 @@ GetSlideRangeForValue (
 	UINTN   *EndAddr
 	)
 {
+	UINT32  Eax;
+	UINT32  CpuFamily;
+	UINT32  CpuModel;
+
 	if (!gSandyOrIvySet) {
-		UINT32 Eax = 0;
+		Eax = 0;
 
 		AsmCpuid (1, &Eax, NULL, NULL, NULL);
 
-		UINT32 CpuFamily = (Eax >> 8) & 0xF;
+		CpuFamily = (Eax >> 8) & 0xF;
 		if (CpuFamily == 15) // Use ExtendedFamily
 			CpuFamily = (Eax >> 20) + 15;
 
-		UINT32 CpuModel = (Eax & 0xFF) >> 4;
+		CpuModel = (Eax & 0xFF) >> 4;
 		if (CpuFamily == 15 || CpuFamily == 6) // Use ExtendedModel
 			CpuModel |= (Eax >> 12) & 0xF0;
 
@@ -590,9 +594,10 @@ GenerateRandomSlideValue (
 	UINT32 Ecx = 0;
 	UINT8  Slide = 0;
 	UINT16 Value = 0;
+	BOOLEAN RdRandSupport;
 
 	AsmCpuid (0x1, NULL, NULL, &Ecx, NULL);
-	BOOLEAN RdRandSupport = (Ecx & 0x40000000);
+	RdRandSupport = (Ecx & 0x40000000);
 
 	do {
 		if (RdRandSupport &&
@@ -623,6 +628,7 @@ DecideOnCustomSlideImplementation (
 	UINT32                 DescriptorVersion;
 	UINTN                  Index;
 	UINTN                  Slide;
+	UINTN                  NumEntries;
 
 	Status = gStoredGetMemoryMap (
 		&MemoryMapSize,
@@ -669,18 +675,18 @@ DecideOnCustomSlideImplementation (
 
 	// At this point we have a memory map that we could use to determine what slide values are allowed.
 
-	UINTN NumEntries = MemoryMapSize / DescriptorSize;
+	NumEntries = MemoryMapSize / DescriptorSize;
 
 	// Reset valid slides to zero and find actually working ones.
 	gValidSlidesNum = 0;
 
 	for (Slide = 0; Slide < TOTAL_SLIDE_NUM; Slide++) {
-		EFI_MEMORY_DESCRIPTOR	*Desc = MemoryMap;
-		BOOLEAN Supported = TRUE;
-		UINTN StartAddr;
-		UINTN EndAddr;
-		UINTN DescEndAddr;
-		UINTN AvailableSize;
+		EFI_MEMORY_DESCRIPTOR  *Desc = MemoryMap;
+		BOOLEAN                Supported = TRUE;
+		UINTN                  StartAddr;
+		UINTN                  EndAddr;
+		UINTN                  DescEndAddr;
+		UINTN                  AvailableSize;
 		
 		GetSlideRangeForValue((UINT8)Slide, &StartAddr, &EndAddr);
 		
@@ -940,10 +946,10 @@ VOID
 RestoreRelocInfoProtectMemTypes (
 	UINTN                   MemoryMapSize,
 	UINTN                   DescriptorSize,
-	EFI_MEMORY_DESCRIPTOR	*MemoryMap
+	EFI_MEMORY_DESCRIPTOR   *MemoryMap
 	)
 {
-	EFI_MEMORY_DESCRIPTOR	*Desc;
+	EFI_MEMORY_DESCRIPTOR   *Desc;
 	UINTN Index;
 	UINTN Index2;
 	UINTN NumEntriesLeft;
@@ -987,9 +993,9 @@ ProtectRtMemoryFromRelocation (
 	IN EFI_MEMORY_DESCRIPTOR  *MemoryMap
 	)
 {
-	UINTN					NumEntries;
-	UINTN					Index;
-	EFI_MEMORY_DESCRIPTOR	*Desc;
+	UINTN                   NumEntries;
+	UINTN                   Index;
+	EFI_MEMORY_DESCRIPTOR   *Desc;
 
 	RT_RELOC_PROTECT_INFO *RelocInfo;
 

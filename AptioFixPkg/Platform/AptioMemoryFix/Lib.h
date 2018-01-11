@@ -27,8 +27,8 @@ extern EFI_FREE_POOL      gStoredFreePool;
 
 /** Map of known guids and friendly names. Searchable with GuidStr() */
 typedef struct {
-	EFI_GUID 	*Guid;
-	CHAR16		*Str;
+	EFI_GUID    *Guid;
+	CHAR16      *Str;
 } MAP_EFI_GUID_STR;
 
 extern EFI_GUID gAppleBootVariableGuid;
