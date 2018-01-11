@@ -142,8 +142,8 @@ GuidStr (
 	IN EFI_GUID *Guid
 	)
 {
-	UINTN		i;
-	CHAR16		*Str = NULL;
+	UINTN       i;
+	CHAR16      *Str = NULL;
 
 	for(i = 0; EfiGuidStrMap[i].Guid != NULL; i++) {
 		if (CompareGuid(EfiGuidStrMap[i].Guid, Guid)) {
@@ -166,7 +166,7 @@ ToUpperChar (
 	IN CHAR16 Chr
 	)
 {
-	CHAR8	C;
+	CHAR8   C;
 
 	if (Chr > 0xFF) return Chr;
 	C = (CHAR8)Chr;
@@ -224,9 +224,9 @@ StriStartsWithBasic(
 	IN CHAR16 *String2
 	)
 {
-	CHAR16	Chr1;
-	CHAR16	Chr2;
-	BOOLEAN Result;
+	CHAR16   Chr1;
+	CHAR16   Chr2;
+	BOOLEAN  Result;
 
 	if (String1 == NULL || String2 == NULL) {
 		return FALSE;
@@ -262,11 +262,11 @@ FixMemMap (
 	IN UINT32                  DescriptorVersion
 	)
 {
-	UINTN					NumEntries;
-	UINTN					Index;
-	EFI_MEMORY_DESCRIPTOR	*Desc;
-	UINTN					BlockSize;
-	UINTN					PhysicalEnd;
+	UINTN                   NumEntries;
+	UINTN                   Index;
+	EFI_MEMORY_DESCRIPTOR   *Desc;
+	UINTN                   BlockSize;
+	UINTN                   PhysicalEnd;
 
 	DBG("FixMemMap: Size=%d, Addr=%p, DescSize=%d\n", MemoryMapSize, MemoryMap, DescriptorSize);
 
@@ -344,12 +344,12 @@ ShrinkMemMap (
 	IN UINT32                   DescriptorVersion
 	)
 {
-	UINTN					SizeFromDescToEnd;
-	UINT64					Bytes;
-	EFI_MEMORY_DESCRIPTOR	*PrevDesc;
-	EFI_MEMORY_DESCRIPTOR	*Desc;
-	BOOLEAN					CanBeJoined;
-	BOOLEAN					HasEntriesToRemove;
+	UINTN                   SizeFromDescToEnd;
+	UINT64                  Bytes;
+	EFI_MEMORY_DESCRIPTOR   *PrevDesc;
+	EFI_MEMORY_DESCRIPTOR   *Desc;
+	BOOLEAN                 CanBeJoined;
+	BOOLEAN                 HasEntriesToRemove;
 
 	PrevDesc = MemoryMap;
 	Desc = NEXT_MEMORY_DESCRIPTOR(PrevDesc, DescriptorSize);
@@ -398,10 +398,10 @@ PrintMemMap (
 	IN EFI_MEMORY_DESCRIPTOR    *MemoryMap
 	)
 {
-	UINTN					NumEntries;
-	UINTN					Index;
-	UINT64					Bytes;
-	EFI_MEMORY_DESCRIPTOR	*Desc;
+	UINTN                   NumEntries;
+	UINTN                   Index;
+	UINT64                  Bytes;
+	EFI_MEMORY_DESCRIPTOR   *Desc;
 
 	Desc = MemoryMap;
 	NumEntries = MemoryMapSize / DescriptorSize;
@@ -432,7 +432,7 @@ PrintSystemTable (
 	IN EFI_SYSTEM_TABLE  *ST
 	)
 {
-	UINTN			Index;
+	UINTN  Index;
 
 	DBG("SysTable: %p\n", ST);
 	DBG("- FirmwareVendor: %p, %s\n", ST->FirmwareVendor, ST->FirmwareVendor);
@@ -451,17 +451,17 @@ WaitForKeyPress (
 	CHAR16 *Message
 	)
 {
-	EFI_STATUS		Status;
-	UINTN			index;
-	EFI_INPUT_KEY	key;
+	EFI_STATUS      Status;
+	UINTN           Index;
+	EFI_INPUT_KEY   Key;
 
 	Print(Message);
 	do {
-		Status = gST->ConIn->ReadKeyStroke (gST->ConIn, &key);
+		Status = gST->ConIn->ReadKeyStroke (gST->ConIn, &Key);
 	} while(Status == EFI_SUCCESS);
-	gBS->WaitForEvent(1, &gST->ConIn->WaitForKey, &index);
+	gBS->WaitForEvent(1, &gST->ConIn->WaitForKey, &Index);
 	do {
-		Status = gST->ConIn->ReadKeyStroke (gST->ConIn, &key);
+		Status = gST->ConIn->ReadKeyStroke (gST->ConIn, &Key);
 	} while(Status == EFI_SUCCESS);
 }
 
@@ -517,15 +517,15 @@ FileDevicePathToText (
 EFI_STATUS
 EFIAPI
 GetMemoryMapAlloc (
-	IN EFI_GET_MEMORY_MAP			GetMemoryMapFunction,
-	OUT UINTN						*MemoryMapSize,
-	OUT EFI_MEMORY_DESCRIPTOR		**MemoryMap,
-	OUT UINTN						*MapKey,
-	OUT UINTN						*DescriptorSize,
-	OUT UINT32						*DescriptorVersion
+	IN EFI_GET_MEMORY_MAP           GetMemoryMapFunction,
+	OUT UINTN                       *MemoryMapSize,
+	OUT EFI_MEMORY_DESCRIPTOR       **MemoryMap,
+	OUT UINTN                       *MapKey,
+	OUT UINTN                       *DescriptorSize,
+	OUT UINT32                      *DescriptorVersion
 	)
 {
-	EFI_STATUS					Status;
+	EFI_STATUS      Status;
 
 	*MemoryMapSize = 0;
 	*MemoryMap = NULL;
@@ -573,7 +573,7 @@ AllocatePagesFromTop (
 	Desc = PREV_MEMORY_DESCRIPTOR(MemoryMapEnd, DescriptorSize);
 	for ( ; Desc >= MemoryMap; Desc = PREV_MEMORY_DESCRIPTOR(Desc, DescriptorSize)) {
 
-		if (Desc->Type == EfiConventionalMemory	&&                          // free mem
+		if (Desc->Type == EfiConventionalMemory &&                          // free mem
 			Pages <= Desc->NumberOfPages &&                                 // contains enough space
 			Desc->PhysicalStart + EFI_PAGES_TO_SIZE(Pages) <= *Memory) {    // contains space below specified Memory
 			// free block found
