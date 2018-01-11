@@ -221,7 +221,7 @@ BITS  32
   dec    eax                 ; -> 48
   xor    ecx, ecx            ; -> 31 C9
   db     0b9h                ; movl  $0x11223344, %ecx -> B9 44 33 22 11
-EntryPatchCodeJumpFromKernelPlaceholder
+EntryPatchCodeJumpFromKernelPlaceholder:
   dd     011223344h
   call   ecx                 ; -> FF D1
 
@@ -291,7 +291,7 @@ BITS  32
 
   ; load ebx with DataBase - we'll access our saved data with it
   db   0BBh        ; mov ebx, OFFSET DataBase
-DataBaseAdr
+DataBaseAdr:
   dd   0
 
   ; let's find out kernel entry point - we'll need it to jump back.
