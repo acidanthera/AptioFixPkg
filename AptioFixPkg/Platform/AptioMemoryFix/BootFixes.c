@@ -26,22 +26,6 @@
 #include "Hibernate.h"
 #include "RtShims.h"
 
-// DBG_TO: 0=no debug, 1=serial, 2=console
-// serial requires
-// [PcdsFixedAtBuild]
-//  gEfiMdePkgTokenSpaceGuid.PcdDebugPropertyMask|0x07
-//  gEfiMdePkgTokenSpaceGuid.PcdDebugPrintErrorLevel|0xFFFFFFFF
-// in package DSC file
-#define DBG_TO 0
-
-#if DBG_TO == 2
-	#define DBG(...) AsciiPrint(__VA_ARGS__);
-#elif DBG_TO == 1
-	#define DBG(...) DebugPrint(1, __VA_ARGS__);
-#else
-	#define DBG(...)
-#endif
-
 VOID *gRtShims = NULL;
 BOOLEAN gRtShimsAddrUpdated = FALSE;
 
@@ -88,7 +72,7 @@ BOOLEAN gSandyOrIvySet = FALSE;
 void PrintSample2(unsigned char *sample, int size) {
 	int i;
 	for (i = 0; i < size; i++) {
-		DBG(" %02x", *sample);
+		DEBUG ((DEBUG_VERBOSE, " %02x", *sample));
 		sample++;
 	}
 }
@@ -113,7 +97,7 @@ PrepareJumpFromKernel (
 	// chek if already prepared
 	//
 	if (JumpToKernel32Addr != 0) {
-		DBG("PrepareJumpFromKernel() - already prepared\n");
+		DEBUG ((DEBUG_VERBOSE, "PrepareJumpFromKernel() - already prepared\n"));
 		return EFI_SUCCESS;
 	}
 
@@ -147,16 +131,16 @@ PrepareJumpFromKernel (
 
 	CopyMem((VOID *)(UINTN)HigherMem, (VOID *)&JumpToKernel, Size);
 
-	DBG("PrepareJumpFromKernel(): JumpToKernel relocated from %p, to %x, size = %x\n",
-		&JumpToKernel, HigherMem, Size);
-	DBG(" JumpToKernel32 relocated from %p, to %x\n",
-		&JumpToKernel32, JumpToKernel32Addr);
-	DBG(" JumpToKernel64 relocated from %p, to %x\n",
-		&JumpToKernel64, JumpToKernel64Addr);
-	DBG("SavedCR3 = %x, SavedGDTR = %x, SavedIDTR = %x\n", SavedCR3, SavedGDTR, SavedIDTR);
+	DEBUG ((DEBUG_VERBOSE, "PrepareJumpFromKernel(): JumpToKernel relocated from %p, to %x, size = %x\n",
+		&JumpToKernel, HigherMem, Size));
+	DEBUG ((DEBUG_VERBOSE, " JumpToKernel32 relocated from %p, to %x\n",
+		&JumpToKernel32, JumpToKernel32Addr));
+	DEBUG ((DEBUG_VERBOSE, " JumpToKernel64 relocated from %p, to %x\n",
+		&JumpToKernel64, JumpToKernel64Addr));
+	DEBUG ((DEBUG_VERBOSE, "SavedCR3 = %x, SavedGDTR = %x, SavedIDTR = %x\n", SavedCR3, SavedGDTR, SavedIDTR));
 
-	DBG("PrepareJumpFromKernel(): JumpToKernel relocated from %p, to %x, size = %x\n",
-		&JumpToKernel, HigherMem, Size);
+	DEBUG ((DEBUG_VERBOSE, "PrepareJumpFromKernel(): JumpToKernel relocated from %p, to %x, size = %x\n",
+		&JumpToKernel, HigherMem, Size));
 
 	// Allocate 1 RT data page for copy of EFI system table for kernel
 	gSysTableRtArea = BASE_4GB;
@@ -166,12 +150,12 @@ PrepareJumpFromKernel (
 			  1, Status);
 		return Status;
 	}
-	DBG("gSysTableRtArea = %lx\n", gSysTableRtArea);
+	DEBUG ((DEBUG_VERBOSE, "gSysTableRtArea = %lx\n", gSysTableRtArea));
 
 	// Copy sys table to our location
 	EFI_SYSTEM_TABLE *Src  = (EFI_SYSTEM_TABLE*)(UINTN)gST;
 	EFI_SYSTEM_TABLE *Dest = (EFI_SYSTEM_TABLE*)(UINTN)gSysTableRtArea;
-	DBG("-Copy %p <- %p, size=0x%lx\n", Dest, Src, Src->Hdr.HeaderSize);
+	DEBUG ((DEBUG_VERBOSE, "-Copy %p <- %p, size=0x%lx\n", Dest, Src, Src->Hdr.HeaderSize));
 	CopyMem(Dest, Src, Src->Hdr.HeaderSize);
 
 	return Status;
@@ -187,16 +171,16 @@ KernelEntryPatchJump (
 
 	Status = EFI_SUCCESS;
 
-	DBG("KernelEntryPatchJump KernelEntry (reloc): %lx (%lx)\n", KernelEntry, KernelEntry);
+	DEBUG ((DEBUG_VERBOSE, "KernelEntryPatchJump KernelEntry (reloc): %lx (%lx)\n", KernelEntry, KernelEntry));
 
 	// Size of EntryPatchCode code
 	gOrigKernelCodeSize = (UINT8*)&EntryPatchCodeEnd - (UINT8*)&EntryPatchCode;
 	if (gOrigKernelCodeSize > sizeof(gOrigKernelCode)) {
-		DBG("KernelEntryPatchJump: not enough space for orig. kernel entry code: size needed: %d\n", gOrigKernelCodeSize);
+		DEBUG ((DEBUG_WARN, "KernelEntryPatchJump: not enough space for orig. kernel entry code: size needed: %d\n", gOrigKernelCodeSize));
 		return EFI_NOT_FOUND;
 	}
 
-	DBG("EntryPatchCode: %p, Size: %d, AsmJumpFromKernel: %p\n", &EntryPatchCode, gOrigKernelCodeSize, &AsmJumpFromKernel);
+	DEBUG ((DEBUG_VERBOSE, "EntryPatchCode: %p, Size: %d, AsmJumpFromKernel: %p\n", &EntryPatchCode, gOrigKernelCodeSize, &AsmJumpFromKernel));
 
 	// Save original kernel entry code
 	CopyMem((VOID *)gOrigKernelCode, (VOID *)(UINTN)KernelEntry, gOrigKernelCodeSize);
@@ -204,9 +188,9 @@ KernelEntryPatchJump (
 	// Copy EntryPatchCode code to kernel entry address
 	CopyMem((VOID *)(UINTN)KernelEntry, (VOID *)&EntryPatchCode, gOrigKernelCodeSize);
 
-	DBG("Entry point %x is now: ", KernelEntry);
+	DEBUG ((DEBUG_VERBOSE, "Entry point %x is now: ", KernelEntry));
 	PrintSample2((UINT8 *)(UINTN) KernelEntry, 12);
-	DBG("\n");
+	DEBUG ((DEBUG_VERBOSE, "\n"));
 
 	// pass KernelEntry to assembler funcs
 	// this is not needed really, since asm code will determine
@@ -222,10 +206,10 @@ KernelEntryFromMachOPatchJump(VOID *MachOImage, UINTN SlideAddr)
 {
 	UINTN  KernelEntry;
 
-	DBG("KernelEntryFromMachOPatchJump: MachOImage = %p, SlideAddr = %x\n", MachOImage, SlideAddr);
+	DEBUG ((DEBUG_VERBOSE, "KernelEntryFromMachOPatchJump: MachOImage = %p, SlideAddr = %x\n", MachOImage, SlideAddr));
 
 	KernelEntry = MachOGetEntryAddress(MachOImage);
-	DBG("KernelEntryFromMachOPatchJump: KernelEntry = %x\n", KernelEntry);
+	DEBUG ((DEBUG_VERBOSE, "KernelEntryFromMachOPatchJump: KernelEntry = %x\n", KernelEntry));
 
 	if (KernelEntry == 0) {
 		return EFI_NOT_FOUND;
@@ -233,7 +217,7 @@ KernelEntryFromMachOPatchJump(VOID *MachOImage, UINTN SlideAddr)
 
 	if (SlideAddr > 0) {
 		KernelEntry += SlideAddr;
-		DBG("KernelEntryFromMachOPatchJump: Slided KernelEntry = %x\n", KernelEntry);
+		DEBUG ((DEBUG_VERBOSE, "KernelEntryFromMachOPatchJump: Slided KernelEntry = %x\n", KernelEntry));
 	}
 
 	return KernelEntryPatchJump((UINT32)KernelEntry);
@@ -285,7 +269,7 @@ ExecSetVirtualAddressesToMemMap (
 	VirtualDesc = gVirtualMemoryMap;
 	gVirtualMapSize = 0;
 	gVirtualMapDescriptorSize = DescriptorSize;
-	DBG("ExecSetVirtualAddressesToMemMap: Size=%d, Addr=%p, DescSize=%d\n", MemoryMapSize, MemoryMap, DescriptorSize);
+	DEBUG ((DEBUG_VERBOSE, "ExecSetVirtualAddressesToMemMap: Size=%d, Addr=%p, DescSize=%d\n", MemoryMapSize, MemoryMap, DescriptorSize));
 
 	// get current VM page table
 	GetCurrentPageTable(&PageTable, &Flags);
@@ -296,7 +280,7 @@ ExecSetVirtualAddressesToMemMap (
 
 			// check if there is enough space in gVirtualMemoryMap
 			if (gVirtualMapSize + DescriptorSize > sizeof(gVirtualMemoryMap)) {
-				DBG("ERROR: too much mem map RT areas\n");
+				DEBUG ((DEBUG_WARN, "ERROR: too much mem map RT areas\n"));
 				return EFI_OUT_OF_RESOURCES;
 			}
 
@@ -304,7 +288,7 @@ ExecSetVirtualAddressesToMemMap (
 			CopyMem((VOID*)VirtualDesc, (VOID*)Desc, DescriptorSize);
 
 			// define virtual to phisical mapping
-			DBG("Map pages: %lx (%x) -> %lx\n", Desc->VirtualStart, Desc->NumberOfPages, Desc->PhysicalStart);
+			DEBUG ((DEBUG_VERBOSE, "Map pages: %lx (%x) -> %lx\n", Desc->VirtualStart, Desc->NumberOfPages, Desc->PhysicalStart));
 			VmMapVirtualPages(PageTable, Desc->VirtualStart, Desc->NumberOfPages, Desc->PhysicalStart);
 
 			// next gVirtualMemoryMap slot
@@ -326,10 +310,10 @@ ExecSetVirtualAddressesToMemMap (
 
 	VmFlashCaches();
 
-	DBG("ExecSetVirtualAddressesToMemMap: Size=%d, Addr=%p, DescSize=%d\nSetVirtualAddressMap ... ",
-		   gVirtualMapSize, MemoryMap, DescriptorSize);
+	DEBUG ((DEBUG_VERBOSE, "ExecSetVirtualAddressesToMemMap: Size=%d, Addr=%p, DescSize=%d\nSetVirtualAddressMap ... ",
+		   gVirtualMapSize, MemoryMap, DescriptorSize));
 	Status = gRT->SetVirtualAddressMap(gVirtualMapSize, DescriptorSize, DescriptorVersion, gVirtualMemoryMap);
-	DBG("%r\n", Status);
+	DEBUG ((DEBUG_VERBOSE, "%r\n", Status));
 
 	return Status;
 }
@@ -345,7 +329,7 @@ CopyEfiSysTableToSeparateRtDataArea (
 	Src = (EFI_SYSTEM_TABLE*)(UINTN)*EfiSystemTable;
 	Dest = (EFI_SYSTEM_TABLE*)(UINTN)gSysTableRtArea;
 
-	DBG("-Copy %p <- %p, size=0x%lx\n", Dest, Src, Src->Hdr.HeaderSize);
+	DEBUG ((DEBUG_VERBOSE, "-Copy %p <- %p, size=0x%lx\n", Dest, Src, Src->Hdr.HeaderSize));
 	CopyMem(Dest, Src, Src->Hdr.HeaderSize);
 
 	*EfiSystemTable = (UINT32)(UINTN)Dest;
@@ -445,10 +429,10 @@ UnlockSlideSupportForSafeModeAndCheckSlide (
 			CompareMem(StartOff + FirstOff, SearchSeq, sizeof(SearchSeq)))
 			FirstOff++;
 
-		DBG("Found first at off %X\n", (UINT32)FirstOff);
+		DEBUG ((DEBUG_VERBOSE, "Found first at off %X\n", (UINT32)FirstOff));
 
 		if (StartOff + FirstOff > EndOff) {
-			DBG("Failed to find first BOOT_MODE_SAFE | BOOT_MODE_ASLR sequence\n");
+			DEBUG ((DEBUG_WARN, "Failed to find first BOOT_MODE_SAFE | BOOT_MODE_ASLR sequence\n"));
 			break;
 		}
 
@@ -459,10 +443,10 @@ UnlockSlideSupportForSafeModeAndCheckSlide (
 			CompareMem(StartOff + SecondOff, SearchSeq, sizeof(SearchSeq)))
 			SecondOff++;
 
-		DBG("Found second at off %X\n", (UINT32)SecondOff);
+		DEBUG ((DEBUG_VERBOSE, "Found second at off %X\n", (UINT32)SecondOff));
 
 		if (FirstOff + MaxDist < SecondOff) {
-			DBG("Trying next match...\n");
+			DEBUG ((DEBUG_VERBOSE, "Trying next match...\n"));
 			SecondOff = 0;
 			FirstOff += sizeof(SearchSeq);
 		}
@@ -472,7 +456,7 @@ UnlockSlideSupportForSafeModeAndCheckSlide (
 		// Here we use 0xFFFFFFFF constant as a replacement value.
 		// Since the state values are contradictive (e.g. safe & single at the same time)
 		// We are allowed to use this instead of to simulate if (false).
-		DBG("Patching safe mode aslr check...\n");
+		DEBUG ((DEBUG_VERBOSE, "Patching safe mode aslr check...\n"));
 		SetMem(StartOff + FirstOff, sizeof(SearchSeq), 0xFF);
 		SetMem(StartOff + SecondOff, sizeof(SearchSeq), 0xFF);
 	}
@@ -488,7 +472,7 @@ ProcessBooterImage (
 
 	Status = gBS->HandleProtocol(ImageHandle, &gEfiLoadedImageProtocolGuid, (VOID **)&LoadedImage);
 	if (EFI_ERROR(Status) || LoadedImage->ImageSize < 0x1000) {
-		DBG("Failed to find sane loaded image protocol %r\n", Status);
+		DEBUG ((DEBUG_VERBOSE, "Failed to find sane loaded image protocol %r\n", Status));
 		return;
 	}
 
@@ -517,7 +501,7 @@ ProcessBooterImage (
 		Options[LastIndex] = Last;
 
 		if (Slide)
-			DBG("Found custom slide param\n");
+			DEBUG ((DEBUG_VERBOSE, "Found custom slide param\n"));
 	}
 
 	CHAR8 BootArgsVar[BOOT_LINE_LENGTH];
@@ -544,7 +528,7 @@ ProcessBooterImage (
 		gDumpMemArgPresent |= Dump != NULL;
 
 		if (Slide)
-			DBG("Found custom slide boot-arg value\n");
+			DEBUG ((DEBUG_VERBOSE, "Found custom slide boot-arg value\n"));
 	}
 }
 
@@ -575,7 +559,7 @@ GetSlideRangeForValue (
 		gSandyOrIvy = CpuFamily == 6 && (CpuModel == 0x2A || CpuModel == 0x3A);
 		gSandyOrIvySet = TRUE;
 
-		DBG("Discovered CpuFamily %d CpuModel %d SandyOrIvy %d\n", CpuFamily, CpuModel, gSandyOrIvy);
+		DEBUG ((DEBUG_VERBOSE, "Discovered CpuFamily %d CpuModel %d SandyOrIvy %d\n", CpuFamily, CpuModel, gSandyOrIvy));
 	}
 
 	*StartAddr = (UINTN)Slide * 0x200000 + BASE_KERNEL_ADDR;
@@ -591,9 +575,10 @@ UINT8
 GenerateRandomSlideValue (
 	)
 {
-	UINT32 Ecx = 0;
-	UINT8  Slide = 0;
-	UINT16 Value = 0;
+	UINT32  Clock = 0;
+	UINT32  Ecx = 0;
+	UINT8   Slide = 0;
+	UINT16  Value = 0;
 	BOOLEAN RdRandSupport;
 
 	AsmCpuid (0x1, NULL, NULL, &Ecx, NULL);
@@ -605,7 +590,7 @@ GenerateRandomSlideValue (
 			Slide != 0)
 			break;
 
-		UINT32 Clock = AsmReadTsc();
+		Clock = AsmReadTsc();
 		Slide = (Clock & 0xFF) ^ ((Clock >> 8) & 0xFF);
 	} while (Slide == 0);
 
@@ -639,7 +624,7 @@ DecideOnCustomSlideImplementation (
 		);
 
 	if (Status != EFI_BUFFER_TOO_SMALL) {
-		DBG("Insane GetMemoryMap %r\n", Status);
+		DEBUG ((DEBUG_WARN, "Insane GetMemoryMap %r\n", Status));
 		return;
 	}
 
@@ -652,7 +637,7 @@ DecideOnCustomSlideImplementation (
 		Status = AllocatePagesFromTop (EfiBootServicesData, EFI_SIZE_TO_PAGES(MemoryMapSize), (EFI_PHYSICAL_ADDRESS *)&MemoryMap);
 
 		if (EFI_ERROR(Status)) {
-			DBG("Temp memory map allocation failure %r\n", Status);
+			DEBUG ((DEBUG_WARN, "Temp memory map allocation failure %r\n", Status));
 			return;
 		}
 
@@ -669,7 +654,7 @@ DecideOnCustomSlideImplementation (
 	} while (Status == EFI_BUFFER_TOO_SMALL);
 
 	if (Status != EFI_SUCCESS) {
-		DBG("Failed to obtain memory map %r\n", Status);
+		DEBUG ((DEBUG_WARN, "Failed to obtain memory map %r\n", Status));
 		return;
 	}
 
@@ -740,7 +725,7 @@ DecideOnCustomSlideImplementation (
 		}
 
 		if (Supported) {
-			DBG("Slide %03d at %08x:%08x should be ok.\n", (UINT32)Slide, (UINT32)StartAddr, (UINT32)EndAddr);
+			DEBUG ((DEBUG_VERBOSE, "Slide %03d at %08x:%08x should be ok.\n", (UINT32)Slide, (UINT32)StartAddr, (UINT32)EndAddr));
 			gValidSlides[gValidSlidesNum++] = (UINT8)Slide;
 		} else {
 			Print(L"Slide %03d at %08x:%08x cannot be used!\n", (UINT32)Slide, (UINT32)StartAddr, (UINT32)EndAddr);
@@ -827,7 +812,7 @@ GetVariableCustomSlide (
 		Status = RealGetVariable (VariableName, VendorGuid, Attributes, DataSize, Data);
 		UINT32 *Config = (UINT32 *)Data;
 		if (EFI_ERROR (Status)) {
-			DBG("GetVariable csr-active-config returned %r\n", Status);
+			DEBUG ((DEBUG_WARN, "GetVariable csr-active-config returned %r\n", Status));
 			*Config = 0;
 			Status = EFI_SUCCESS;
 			if (Attributes) {
@@ -849,11 +834,11 @@ GetVariableCustomSlide (
 			
 			CHAR8 *AppendPtr = gStoredBootArgsVar;
 			if (EFI_ERROR (Status)) {
-				DBG("boot-args returned %r error\n", Status);
+				DEBUG ((DEBUG_WARN, "boot-args returned %r error\n", Status));
 			} else {
 				UINTN Len = AsciiStrLen(gStoredBootArgsVar);
 				if (Len + sizeof(" slide=123") > BOOT_LINE_LENGTH) {
-					DBG("boot-args are invalid, ignoring\n");
+					DEBUG ((DEBUG_WARN, "boot-args are invalid, ignoring\n"));
 				} else {
 					AppendPtr    += Len;
 					*AppendPtr++ = ' ';
@@ -928,9 +913,9 @@ HideSlideFromOS (
 
 	DTInit(DevTree);
 	if (DTLookupEntry(NULL, "/chosen", &Chosen) == kSuccess) {
-		DBG("Found /chosen\n");
+		DEBUG ((DEBUG_VERBOSE, "Found /chosen\n"));
 		if (DTGetProperty(Chosen, "boot-args", (VOID **)&ArgsStr, &ArgsSize) == kSuccess) {
-			DBG("Found boot-args in /chosen\n")
+			DEBUG ((DEBUG_VERBOSE, "Found boot-args in /chosen\n"));
 			RemoveArgumentFromCommandLine(ArgsStr, "slide=");
 		}
 	}
@@ -1001,7 +986,7 @@ ProtectRtMemoryFromRelocation (
 
 	Desc = MemoryMap;
 	NumEntries = MemoryMapSize / DescriptorSize;
-	DBG("FixNvramRelocation\n");
+	DEBUG ((DEBUG_VERBOSE, "FixNvramRelocation\n"));
 
 	gRelocInfoData.NumEntries = 0;
 
@@ -1017,10 +1002,10 @@ ProtectRtMemoryFromRelocation (
 					++RelocInfo;
 					++gRelocInfoData.NumEntries;
 				} else {
-					DBG(" WARNING: Cannot save mem type for entry: %lx (type 0x%x)\n", Desc->PhysicalStart, (UINTN)Desc->Type);
+					DEBUG ((DEBUG_WARN, " WARNING: Cannot save mem type for entry: %lx (type 0x%x)\n", Desc->PhysicalStart, (UINTN)Desc->Type));
 				}
 
-				DBG(" RT mem %lx (0x%x) -> MemMapIO\n", Desc->PhysicalStart, Desc->NumberOfPages);
+				DEBUG ((DEBUG_VERBOSE, " RT mem %lx (0x%x) -> MemMapIO\n", Desc->PhysicalStart, Desc->NumberOfPages));
 				Desc->Type = EfiMemoryMappedIO;
 			}
 		}
@@ -1042,7 +1027,7 @@ FixBootingWithoutRelocBlock (
 	EFI_MEMORY_DESCRIPTOR   *MemoryMap;
 	UINTN                   DescriptorSize;
 
-	DBG("FixBootingWithoutRelocBlock:\n");
+	DEBUG ((DEBUG_VERBOSE, "FixBootingWithoutRelocBlock:\n"));
 
 	BA = GetBootArgs(pBootArgs);
 

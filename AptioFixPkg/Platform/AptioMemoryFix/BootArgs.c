@@ -14,22 +14,6 @@
 #include "BootArgs.h"
 #include "Lib.h"
 
-// DBG_TO: 0=no debug, 1=serial, 2=console
-// serial requires
-// [PcdsFixedAtBuild]
-//  gEfiMdePkgTokenSpaceGuid.PcdDebugPropertyMask|0x07
-//  gEfiMdePkgTokenSpaceGuid.PcdDebugPrintErrorLevel|0xFFFFFFFF
-// in package DSC file
-#define DBG_TO 0
-
-#if DBG_TO == 2
-	#define DBG(...) AsciiPrint(__VA_ARGS__);
-#elif DBG_TO == 1
-	#define DBG(...) DebugPrint(1, __VA_ARGS__);
-#else
-	#define DBG(...)
-#endif
-
 BootArgs gBootArgs;
 
 BootArgs *
@@ -141,7 +125,7 @@ BootArgsFind (
 		ptr += 0x1000;
 	}
 
-	DBG("Found bootArgs at %p\n", ptr);
+	DEBUG ((DEBUG_VERBOSE, "Found bootArgs at %p\n", ptr));
 	return ptr;
 }
 
