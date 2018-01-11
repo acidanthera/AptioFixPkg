@@ -10,13 +10,21 @@ cd "$BUILDDIR"
 if [ "$(nasm -v | grep Apple)" != "" ]; then
   echo "Incompatible nasm version!"
   echo "Download the latest nasm from http://www.nasm.us/pub/nasm/releasebuilds/"
-  echo "Last tested with nasm 2.12.02 and 2.13.02"
+  echo "Last tested with nasm 2.12.02 and 2.13.02."
   exit 1
 fi
 
+if [ "$(which mtoc.NEW)" == "" ] || [ "$(which mtoc)" == "" ]; then
+  echo "Missing mtoc or mtoc.NEW!"
+  echo "To build mtoc follow: https://github.com/tianocore/tianocore.github.io/wiki/Xcode#mac-os-x-xcode"
+  echo "You may also use one in external directory."
+  exit 1
+fi
+
+
 if [ "$1" != "" ]; then
-	MODE="$1"
-	shift
+  MODE="$1"
+  shift
 fi
 
 if [ ! -f edk2/edk2.ready ]; then
