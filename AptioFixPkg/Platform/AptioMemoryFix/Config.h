@@ -29,11 +29,17 @@
  */
 #define APTIOFIX_PROTECT_IGPU_RESERVED_MEMORY 1
 
-/**  Attempt to protect some memory region from being used by the kernel.
- *   After we disabled memory relocation this should no longer be needed.
- *   Left for historical reasons, do NOT use!!!
+/** It is believed that boot.efi on Sandy & Ivy skips 0x10200000 bytes from 0x10000000
+ *  to protect from IGPU bugs, yet if this memory is marked available, it will may be
+ *  used by XNU. So far attempts to enable this did not show any pattern but boot failures.
  */
-#define APTIOFIX_SLICE_OVERLAPPING_REGION_FIX 0
+#define APTIOFIX_PROTECT_IGPU_SANDY_IVY_RESERVED_MEMORY 0
+
+/** Attempt to protect some memory region from being used by the kernel (by Slice).
+ *  It is believed to cause sleep issues on some systems, because this region
+ *  is generally marked as conventional memory.
+ */
+#define APTIOFIX_UNMARKED_OVERLAPPING_REGION_FIX 1
 
 /** Calculate aslr slide ourselves when some addresses are not available for XNU. */
 #define APTIOFIX_ALLOW_CUSTOM_ASLR_IMPLEMENTATION 1

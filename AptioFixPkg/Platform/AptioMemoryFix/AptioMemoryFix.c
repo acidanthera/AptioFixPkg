@@ -441,6 +441,16 @@ RunImageWithOverrides(
 	gRtShims             = (VOID *)(UINTN)RtShims;
 #endif
 
+#if APTIOFIX_PROTECT_IGPU_SANDY_IVY_RESERVED_MEMORY == 1
+	if (IsSandyOrIvy()) {
+		EFI_PHYSICAL_ADDRESS    Addr = 0x10000000;
+		// More precisely this should be 0x10200 pages at 0x10100000, but we have to fine-tune it
+		// to the lower available region and its size, otherwise it won't boot.
+		Status = gBS->AllocatePages(AllocateAddress, EfiMemoryMappedIO, 0x10000, &Addr);
+		// Print(L"IGPU page allocation at 0x10000000 returned %r\n", Status);
+	}
+#endif
+
 	if (!EFI_ERROR (Status)) {
 		gGetVariable         = (UINTN)gRT->GetVariable;
 		gGetNextVariableName = (UINTN)gRT->GetNextVariableName;
@@ -566,7 +576,7 @@ MOStartImage (
 				EFI_VARIABLE_NON_VOLATILE | EFI_VARIABLE_BOOTSERVICE_ACCESS | EFI_VARIABLE_RUNTIME_ACCESS,
 				Size2, Value);
 			if (EFI_ERROR(Status)) {
-			  DEBUG ((DEBUG_WARN, "Something goes wrong while setting recovery-boot-mode\n"));
+				DEBUG ((DEBUG_WARN, "Something goes wrong while setting recovery-boot-mode\n"));
 			}
 			Status = gRT->SetVariable (L"aptiofixflag", &gAppleBootVariableGuid, 0, 0, NULL);
 			gBS->FreePool(Value);
@@ -603,7 +613,7 @@ MOStartImage (
 		Status = gRT->GetVariable(L"boot-switch-vars", &gAppleBootVariableGuid, NULL, &Size, NULL);
 		gHibernateWake = (Status == EFI_BUFFER_TOO_SMALL);
 
-		Print(L"\nAptioMemoryFix(RC4): Starting %s\nHibernate wake: %s\n",
+		Print(L"\nAptioMemoryFix(RC5): Starting %s\nHibernate wake: %s\n",
 			FilePathText, gHibernateWake ? L"yes" : L"no");
 		//gBS->Stall(2000000);
 

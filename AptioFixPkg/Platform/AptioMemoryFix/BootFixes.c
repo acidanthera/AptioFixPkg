@@ -113,7 +113,7 @@ PrepareJumpFromKernel (
 	Status = AllocatePagesFromTop(EfiBootServicesCode, 1, &HigherMem);
 	if (Status != EFI_SUCCESS) {
 		Print(L"AptioMemoryFix: PrepareJumpFromKernel(): can not allocate mem for JumpToKernel (0x%x pages on mem top): %r\n",
-			  1, Status);
+			1, Status);
 		return Status;
 	}
 
@@ -147,7 +147,7 @@ PrepareJumpFromKernel (
 	Status = AllocatePagesFromTop(EfiRuntimeServicesData, 1, &gSysTableRtArea);
 	if (Status != EFI_SUCCESS) {
 		Print(L"AptioMemoryFix: PrepareJumpFromKernel(): can not allocate mem for RT area for EFI system table: %r\n",
-			  1, Status);
+			1, Status);
 		return Status;
 	}
 	DEBUG ((DEBUG_VERBOSE, "gSysTableRtArea = %lx\n", gSysTableRtArea));
@@ -311,7 +311,7 @@ ExecSetVirtualAddressesToMemMap (
 	VmFlashCaches();
 
 	DEBUG ((DEBUG_VERBOSE, "ExecSetVirtualAddressesToMemMap: Size=%d, Addr=%p, DescSize=%d\nSetVirtualAddressMap ... ",
-		   gVirtualMapSize, MemoryMap, DescriptorSize));
+		gVirtualMapSize, MemoryMap, DescriptorSize));
 	Status = gRT->SetVirtualAddressMap(gVirtualMapSize, DescriptorSize, DescriptorVersion, gVirtualMemoryMap);
 	DEBUG ((DEBUG_VERBOSE, "%r\n", Status));
 
@@ -532,11 +532,8 @@ ProcessBooterImage (
 	}
 }
 
-VOID
-GetSlideRangeForValue (
-	UINT8   Slide,
-	UINTN   *StartAddr,
-	UINTN   *EndAddr
+BOOLEAN
+IsSandyOrIvy (
 	)
 {
 	UINT32  Eax;
@@ -562,10 +559,24 @@ GetSlideRangeForValue (
 		DEBUG ((DEBUG_VERBOSE, "Discovered CpuFamily %d CpuModel %d SandyOrIvy %d\n", CpuFamily, CpuModel, gSandyOrIvy));
 	}
 
+	return gSandyOrIvy;
+}
+
+VOID
+GetSlideRangeForValue (
+	UINT8   Slide,
+	UINTN   *StartAddr,
+	UINTN   *EndAddr
+	)
+{
+	BOOLEAN SandyOrIvy;
+
+	SandyOrIvy = IsSandyOrIvy();
+
 	*StartAddr = (UINTN)Slide * 0x200000 + BASE_KERNEL_ADDR;
 
 	// Skip ranges improperly used by Intel HD 2000/3000.
-	if (Slide >= 0x80 && gSandyOrIvy)
+	if (Slide >= 0x80 && SandyOrIvy)
 		*StartAddr += 0x10200000;
 
 	*EndAddr   = *StartAddr + APTIOFIX_SPECULATED_KERNEL_SIZE;

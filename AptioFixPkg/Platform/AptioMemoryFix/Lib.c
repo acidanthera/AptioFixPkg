@@ -196,7 +196,7 @@ StrStriBasic (
 		String = FirstMatch + 1;
 	}
 
-  return NULL;
+	return NULL;
 }
 
 /** Returns TRUE if String1 starts with String2, FALSE otherwise. Compares just first 8 bits of chars (valid for ASCII), case insensitive.. */
@@ -273,11 +273,14 @@ FixMemMap (
 		}
 #endif
 
-#if APTIOFIX_SLICE_OVERLAPPING_REGION_FIX == 1
+#if APTIOFIX_UNMARKED_OVERLAPPING_REGION_FIX == 1
 		//
 		// Fix by Slice - fixes sleep/wake on GB boards.
+		// Appears that some motherboards have a conventional memory region, when it is actually
+		// used in runtime and causes sleep issues & memory corruption.
 		//
-		if ((Desc->PhysicalStart < 0xa0000) && (PhysicalEnd >= 0x9e000)) {
+		if (Desc->PhysicalStart < 0xa0000 && PhysicalEnd >= 0x9e000 && (Desc->Type == EfiConventionalMemory ||
+			Desc->Type == EfiBootServicesData || Desc->Type == EfiBootServicesCode)) {
 			Desc->Type = EfiACPIMemoryNVS;
 			Desc->Attribute = 0;
 		}
