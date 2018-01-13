@@ -30,9 +30,7 @@ Abs (
   IN INT32 Value
   )
 {
-  if (Value < 0)
-    return -Value;
-  return Value;
+  return (UINT8)(Value < 0 ? -Value : Value);
 }
 
 INT32

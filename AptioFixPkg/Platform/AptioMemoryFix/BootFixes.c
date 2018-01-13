@@ -593,7 +593,7 @@ GenerateRandomSlideValue (
 	BOOLEAN RdRandSupport;
 
 	AsmCpuid (0x1, NULL, NULL, &Ecx, NULL);
-	RdRandSupport = (Ecx & 0x40000000);
+	RdRandSupport = (Ecx & 0x40000000) != 0;
 
 	do {
 		if (RdRandSupport &&
@@ -601,7 +601,7 @@ GenerateRandomSlideValue (
 			Slide != 0)
 			break;
 
-		Clock = AsmReadTsc();
+		Clock = (UINT32)AsmReadTsc();
 		Slide = (Clock & 0xFF) ^ ((Clock >> 8) & 0xFF);
 	} while (Slide == 0);
 
