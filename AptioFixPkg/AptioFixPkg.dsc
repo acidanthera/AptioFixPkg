@@ -57,8 +57,11 @@
 !endif
 
 [BuildOptions]
-!if $(TARGET) != DEBUG
-  XCODE:*_*_*_CC_FLAGS = -Wno-varargs -flto -DMDEPKG_NDEBUG
-!else
-  XCODE:*_*_*_CC_FLAGS = -Wno-varargs
-!endif
+  INTEL:DEBUG_*_*_CC_FLAGS   =
+  INTEL:RELEASE_*_*_CC_FLAGS = /D MDEPKG_NDEBUG
+  GCC:DEBUG_*_*_CC_FLAGS     =
+  GCC:RELEASE_*_*_CC_FLAGS   = -DMDEPKG_NDEBUG
+  MSFT:DEBUG_*_*_CC_FLAGS    =
+  MSFT:RELEASE_*_*_CC_FLAGS  = /D MDEPKG_NDEBUG
+  XCODE:RELEASE_*_*_CC_FLAGS = -Wno-varargs -flto -DMDEPKG_NDEBUG
+  XCODE:DEBUG_*_*_CC_FLAGS = -Wno-varargs
