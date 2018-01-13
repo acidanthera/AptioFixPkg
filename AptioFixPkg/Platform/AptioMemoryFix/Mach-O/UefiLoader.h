@@ -64,23 +64,23 @@ typedef UINT64  __uint64_t;
 #define _STRUCT_X86_THREAD_STATE32 struct __darwin_i386_thread_state
 _STRUCT_X86_THREAD_STATE32
 {
-    // all fields are unsigned int in xnu rources
+	// all fields are unsigned int in xnu rources
 	UINT32 eax;
-    UINT32 ebx;
-    UINT32 ecx;
-    UINT32 edx;
-    UINT32 edi;
-    UINT32 esi;
-    UINT32 ebp;
-    UINT32 esp;
-    UINT32 ss;
-    UINT32 eflags;
-    UINT32 eip;
-    UINT32 cs;
-    UINT32 ds;
-    UINT32 es;
-    UINT32 fs;
-    UINT32 gs;
+	UINT32 ebx;
+	UINT32 ecx;
+	UINT32 edx;
+	UINT32 edi;
+	UINT32 esi;
+	UINT32 ebp;
+	UINT32 esp;
+	UINT32 ss;
+	UINT32 eflags;
+	UINT32 eip;
+	UINT32 cs;
+	UINT32 ds;
+	UINT32 es;
+	UINT32 fs;
+	UINT32 gs;
 };
 
 #define _STRUCT_X86_THREAD_STATE64 struct __darwin_x86_thread_state64

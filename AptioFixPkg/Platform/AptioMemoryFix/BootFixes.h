@@ -90,6 +90,10 @@ VOID
 DecideOnCustomSlideImplementation (
 	);
 
+BOOLEAN
+IsSandyOrIvy (
+	);
+
 EFI_STATUS
 EFIAPI
 GetVariableCustomSlide (
