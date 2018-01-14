@@ -23,7 +23,9 @@
  *  However, gBS->AllocatePool is dangerous, because it may overlap with the kernel
  *  region and break aslr.
  */
+#ifndef APTIOFIX_ALLOCATE_POOL_GIVES_STABLE_ADDR
 #define APTIOFIX_ALLOCATE_POOL_GIVES_STABLE_ADDR APTIOFIX_HIBERNATION_FORCE_OLD_MEMORYMAP
+#endif
 
 /** Assign virtual addresses to a reserved IGPU area.
  *  It is believed that smth accesses this area via virtual addresses if it is mapped.
@@ -60,7 +62,9 @@
 #endif
 
 /** Hide slide=x value from os for increased security when using custom aslr. */
+#ifndef APTIOFIX_CLEANUP_SLIDE_BOOT_ARGUMENT
 #define APTIOFIX_CLEANUP_SLIDE_BOOT_ARGUMENT APTIOFIX_ALLOW_CUSTOM_ASLR_IMPLEMENTATION
+#endif
 
 /** Speculated maximum kernel size (in bytes) to use when looking for a free memory region.
  *  Used by APTIOFIX_ALLOW_CUSTOM_ASLR_IMPLEMENTATION to determine valid slide values.
