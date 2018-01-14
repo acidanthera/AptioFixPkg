@@ -39,23 +39,24 @@
 # Fixme
 
 [Packages]
-  MdePkg/MdePkg.dec
-  MdeModulePkg/MdeModulePkg.dec
+  AptioFixPkg/AptioFixPkg.dec
   CupertinoModulePkg/CupertinoModulePkg.dec
   EfiMiscPkg/EfiMiscPkg.dec
   EfiPkg/EfiPkg.dec
+  MdeModulePkg/MdeModulePkg.dec
+  MdePkg/MdePkg.dec
 
 [LibraryClasses]
-  MemoryAllocationLib
-  UefiLib
-  UefiBootServicesTableLib
-  UefiDriverEntryPoint
-  UefiRuntimeServicesTableLib
   BaseMemoryLib
   DebugLib
-  PcdLib
-  UefiUsbLib
   HiiLib
+  MemoryAllocationLib
+  PcdLib
+  UefiBootServicesTableLib
+  UefiDriverEntryPoint
+  UefiLib
+  UefiRuntimeServicesTableLib
+  UefiUsbLib
 
 [Guids]
   #
