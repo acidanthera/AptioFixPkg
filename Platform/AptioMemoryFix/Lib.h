@@ -31,7 +31,22 @@ typedef struct {
 	CHAR16      *Str;
 } MAP_EFI_GUID_STR;
 
+/** Known guids provided by different dependencies (compatibility hack) */
+extern EFI_GUID gEfiConsoleControlProtocolGuid;
+extern EFI_GUID gAppleFirmwarePasswordProtocolGuid;
+extern EFI_GUID gEfiDevicePathPropertyDatabaseProtocolGuid;
 extern EFI_GUID gAppleBootVariableGuid;
+extern EFI_GUID gAppleVendorVariableGuid;
+extern EFI_GUID gAppleFramebufferInfoProtocolGuid;
+extern EFI_GUID gAppleKeyMapAggregatorProtocolGuid;
+extern EFI_GUID gAppleNetBootProtocolGuid;
+extern EFI_GUID gAppleImageCodecProtocolGuid;
+extern EFI_GUID gAppleTrbSecureVariableGuid;
+extern EFI_GUID gEfiDataHubProtocolGuid;
+extern EFI_GUID gEfiMiscSubClassGuid;
+extern EFI_GUID gEfiProcessorSubClassGuid;
+extern EFI_GUID gEfiMemorySubClassGuid;
+extern EFI_GUID gEfiLegacy8259ProtocolGuid;
 
 /** Returns GUID as string, with friendly name for known guids. */
 CHAR16*
