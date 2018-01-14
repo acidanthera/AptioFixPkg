@@ -41,7 +41,7 @@ if [ ! -f edk2/edk2.ready ]; then
   git clone https://github.com/CupertinoNet/CupertinoModulePkg || exit 1
   git clone https://github.com/CupertinoNet/EfiMiscPkg || exit 1
   git clone https://github.com/CupertinoNet/EfiPkg || exit 1
-  ln -s ../AptioFixPkg AptioFixPkg
+  ln -s .. AptioFixPkg
   source edksetup.sh || exit 1
   make -C BaseTools || exit 1
   touch edk2.ready
