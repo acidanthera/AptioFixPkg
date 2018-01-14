@@ -857,7 +857,7 @@ GetVariableCustomSlide (
 			}
 
 			CONST UINTN SlideStrSize = sizeof("slide=") - 1;
-			AsciiStrnCpy(AppendPtr, "slide=", SlideStrSize + 1);
+			AsciiStrnCpyS(AppendPtr, SlideStrSize + 1, "slide=", SlideStrSize + 1);
 			UINT8 First  = Slide / 100;
 			UINT8 Second = (Slide % 100) / 10;
 			UINT8 Third  = Slide % 10;
@@ -892,7 +892,7 @@ GetVariableCustomSlide (
 		}
 
 		if (*DataSize >= gStoredBootArgsVarSize && Data) {
-			AsciiStrnCpy(Data, gStoredBootArgsVar, gStoredBootArgsVarSize);
+			AsciiStrnCpyS(Data, *DataSize, gStoredBootArgsVar, gStoredBootArgsVarSize);
 			Status = EFI_SUCCESS;
 		} else {
 			Status = EFI_BUFFER_TOO_SMALL;
