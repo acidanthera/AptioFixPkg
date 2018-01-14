@@ -21,11 +21,11 @@ if [ "$(which mtoc.NEW)" == "" ] || [ "$(which mtoc)" == "" ]; then
   exit 1
 fi
 
-if [ ! -d "Binaries" ]; then
+if [ ! -d "binaries" ]; then
   mkdir Binaries || exit 1
   cd Binaries || exit 1
-  ln -s ../edk2/Build/AptioFixPlatform/RELEASE_XCODE5/X64 RELEASE || exit 1
-  ln -s ../edk2/Build/AptioFixPlatform/DEBUG_XCODE5/X64 DEBUG || exit 1
+  ln -s ../edk2/Build/AptioFixPkg/RELEASE_XCODE5/X64 RELEASE || exit 1
+  ln -s ../edk2/Build/AptioFixPkg/DEBUG_XCODE5/X64 DEBUG || exit 1
   cd .. || exit 1
 fi
 

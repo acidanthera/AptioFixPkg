@@ -16,21 +16,22 @@
   ENTRY_POINT                    = AptioMemoryFixEntrypoint
 
 [Packages]
-  MdePkg/MdePkg.dec
+  AptioFixPkg/AptioFixPkg.dec
   MdeModulePkg/MdeModulePkg.dec
+  MdePkg/MdePkg.dec
   UefiCpuPkg/UefiCpuPkg.dec
 
 [LibraryClasses]
-  UefiLib
-  UefiBootServicesTableLib
-  UefiRuntimeServicesTableLib
-  BaseMemoryLib
-  MemoryAllocationLib
-  UefiDriverEntryPoint
   BaseLib
+  BaseMemoryLib
   BaseRngLib
   CpuLib
   DevicePathLib
+  MemoryAllocationLib
+  UefiBootServicesTableLib
+  UefiDriverEntryPoint
+  UefiLib
+  UefiRuntimeServicesTableLib
 
 [Sources]
   AptioMemoryFix.c
