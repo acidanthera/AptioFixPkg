@@ -17,6 +17,8 @@
 
 [Packages]
   AptioFixPkg/AptioFixPkg.dec
+  EfiPkg/EfiPkg.dec
+  IntelFrameworkPkg/IntelFrameworkPkg.dec
   MdeModulePkg/MdeModulePkg.dec
   MdePkg/MdePkg.dec
   UefiCpuPkg/UefiCpuPkg.dec
@@ -58,20 +60,35 @@
   X64/RtShims.nasm
 
 [Guids]
-  gEfiFileInfoGuid                     ## CONSUMES
-  gEfiFileSystemInfoGuid               ## CONSUMES
-  gEfiFileSystemVolumeLabelInfoIdGuid  ## CONSUMES
-  gEfiGlobalVariableGuid
+  gEfiFileInfoGuid                            ## CONSUMES
+  gEfiFileSystemInfoGuid                      ## CONSUMES
+  gEfiFileSystemVolumeLabelInfoIdGuid         ## CONSUMES
+  gEfiGlobalVariableGuid                      ## CONSUMES
+  gAppleBootVariableGuid                      ## SOMETIMES_CONSUMES
+  gAppleVendorVariableGuid                    ## SOMETIMES_CONSUMES
+  gAppleTrbSecureVariableGuid                 ## SOMETIMES_CONSUMES
+  gEfiMiscSubClassGuid                        ## SOMETIMES_CONSUMES
+  gEfiProcessorSubClassGuid                   ## SOMETIMES_CONSUMES
+  gEfiMemorySubClassGuid                      ## SOMETIMES_CONSUMES
 
 [Protocols]
-  gEfiLoadedImageProtocolGuid
-  gEfiDevicePathProtocolGuid
-  gEfiSimpleFileSystemProtocolGuid
-  gEfiBlockIoProtocolGuid
-  gEfiBlockIo2ProtocolGuid
-  gEfiDiskIoProtocolGuid
-  gEfiDiskIo2ProtocolGuid
-  gEfiGraphicsOutputProtocolGuid
+  gEfiLoadedImageProtocolGuid                 ## CONSUMES
+  gEfiDevicePathProtocolGuid                  ## CONSUMES
+  gEfiGraphicsOutputProtocolGuid              ## CONSUMES
+  gEfiSimpleFileSystemProtocolGuid            ## CONSUMES
+  gEfiBlockIoProtocolGuid                     ## CONSUMES
+  gEfiBlockIo2ProtocolGuid                    ## CONSUMES
+  gEfiDiskIoProtocolGuid                      ## CONSUMES
+  gEfiDiskIo2ProtocolGuid                     ## CONSUMES
+  gEfiConsoleControlProtocolGuid              ## SOMETIMES_CONSUMES
+  gAppleFirmwarePasswordProtocolGuid          ## SOMETIMES_CONSUMES
+  gEfiDevicePathPropertyDatabaseProtocolGuid  ## SOMETIMES_CONSUMES
+  gAppleFramebufferInfoProtocolGuid           ## SOMETIMES_CONSUMES
+  gAppleKeyMapAggregatorProtocolGuid          ## SOMETIMES_CONSUMES
+  gAppleNetBootProtocolGuid                   ## SOMETIMES_CONSUMES
+  gAppleImageCodecProtocolGuid                ## SOMETIMES_CONSUMES
+  gEfiDataHubProtocolGuid                     ## SOMETIMES_CONSUMES
+  gEfiLegacy8259ProtocolGuid                  ## SOMETIMES_CONSUMES
 
 # if built as runtime driver
 [Depex]
