@@ -17,13 +17,16 @@
 /** Memory allocation for VM map pages that we will create with VmMapVirtualPage.
   * We need to have it preallocated during boot services.
   */
-UINT8	*VmMemoryPool = NULL;
-INTN	VmMemoryPoolFreePages = 0;
+UINT8  *VmMemoryPool = NULL;
+INTN   VmMemoryPoolFreePages = 0;
 
 VOID
-GetCurrentPageTable(PAGE_MAP_AND_DIRECTORY_POINTER **PageTable, UINTN *Flags)
+GetCurrentPageTable (
+	PAGE_MAP_AND_DIRECTORY_POINTER  **PageTable,
+	UINTN                           *Flags
+	)
 {
-	UINTN	CR3;
+	UINTN   CR3;
 
 	CR3 = AsmReadCr3();
 	DEBUG ((DEBUG_VERBOSE, "GetCurrentPageTable: CR3 = 0x%lx\n", CR3));
@@ -32,11 +35,14 @@ GetCurrentPageTable(PAGE_MAP_AND_DIRECTORY_POINTER **PageTable, UINTN *Flags)
 }
 
 VOID
-PrintPageTablePTE(PAGE_TABLE_4K_ENTRY *PTE, VIRTUAL_ADDR VA)
+PrintPageTablePTE (
+	PAGE_TABLE_4K_ENTRY  *PTE,
+	VIRTUAL_ADDR         VA
+	)
 {
 #if !defined (MDEPKG_NDEBUG)
-	UINTN							Index;
-	UINT64							Start;
+	UINTN                Index;
+	UINT64               Start;
 
 	for (Index = 0; Index < 10; Index++) {
 		VA.Pg4K.PTOffset = Index;
@@ -52,13 +58,16 @@ PrintPageTablePTE(PAGE_TABLE_4K_ENTRY *PTE, VIRTUAL_ADDR VA)
 }
 
 VOID
-PrintPageTablePDE(PAGE_MAP_AND_DIRECTORY_POINTER *PDE, VIRTUAL_ADDR VA)
+PrintPageTablePDE (
+	PAGE_MAP_AND_DIRECTORY_POINTER  *PDE,
+	VIRTUAL_ADDR                    VA
+	)
 {
 #if !defined (MDEPKG_NDEBUG)
-	UINTN							Index;
-	PAGE_TABLE_2M_ENTRY				*PT2M;
-	PAGE_TABLE_4K_ENTRY				*PTE;
-	UINT64							Start;
+	UINTN                           Index;
+	PAGE_TABLE_2M_ENTRY             *PT2M;
+	PAGE_TABLE_4K_ENTRY             *PTE;
+	UINT64                          Start;
 
 	for (Index = 0; Index < 10; Index++) {
 		VA.Pg4K.PDOffset = Index;
@@ -81,13 +90,16 @@ PrintPageTablePDE(PAGE_MAP_AND_DIRECTORY_POINTER *PDE, VIRTUAL_ADDR VA)
 }
 
 VOID
-PrintPageTablePDPE(PAGE_MAP_AND_DIRECTORY_POINTER *PDPE, VIRTUAL_ADDR VA)
+PrintPageTablePDPE (
+	PAGE_MAP_AND_DIRECTORY_POINTER  *PDPE,
+	VIRTUAL_ADDR                    VA
+	)
 {
 #if !defined (MDEPKG_NDEBUG)
-	UINTN							Index;
-	PAGE_TABLE_1G_ENTRY				*PT1G;
-	PAGE_MAP_AND_DIRECTORY_POINTER	*PDE;
-	UINT64							Start;
+	UINTN                           Index;
+	PAGE_TABLE_1G_ENTRY             *PT1G;
+	PAGE_MAP_AND_DIRECTORY_POINTER  *PDE;
+	UINT64                          Start;
 
 	for (Index = 0; Index < 10; Index++) {
 		VA.Pg4K.PDPOffset = Index;
@@ -110,12 +122,15 @@ PrintPageTablePDPE(PAGE_MAP_AND_DIRECTORY_POINTER *PDPE, VIRTUAL_ADDR VA)
 }
 
 VOID
-PrintPageTable(PAGE_MAP_AND_DIRECTORY_POINTER *PageTable, UINTN Flags)
+PrintPageTable (
+	PAGE_MAP_AND_DIRECTORY_POINTER  *PageTable,
+	UINTN                           Flags
+	)
 {
-	UINTN							Index;
-	VIRTUAL_ADDR					VA;
-	PAGE_MAP_AND_DIRECTORY_POINTER	*PML4;
-	PAGE_MAP_AND_DIRECTORY_POINTER	*PDPE;
+	UINTN                           Index;
+	VIRTUAL_ADDR                    VA;
+	PAGE_MAP_AND_DIRECTORY_POINTER  *PML4;
+	PAGE_MAP_AND_DIRECTORY_POINTER  *PDPE;
 
 	DEBUG ((DEBUG_VERBOSE, "PrintPageTable: %p, Flags: PWT: %d, PCD: %d\n", PageTable, (Flags & CR3_FLAG_PWT), (Flags & CR3_FLAG_PCD)));
 	PML4 = PageTable;
@@ -132,18 +147,22 @@ PrintPageTable(PAGE_MAP_AND_DIRECTORY_POINTER *PageTable, UINTN Flags)
 }
 
 EFI_STATUS
-GetPhysicalAddr(PAGE_MAP_AND_DIRECTORY_POINTER *PageTable, EFI_VIRTUAL_ADDRESS  VirtualAddr, EFI_PHYSICAL_ADDRESS *PhysicalAddr)
+GetPhysicalAddr (
+	PAGE_MAP_AND_DIRECTORY_POINTER   *PageTable,
+	EFI_VIRTUAL_ADDRESS              VirtualAddr,
+	EFI_PHYSICAL_ADDRESS             *PhysicalAddr
+	)
 {
-	EFI_PHYSICAL_ADDRESS			Start;
-	VIRTUAL_ADDR					VA;
-	VIRTUAL_ADDR					VAStart;
-	VIRTUAL_ADDR					VAEnd;
-	PAGE_MAP_AND_DIRECTORY_POINTER	*PML4;
-	PAGE_MAP_AND_DIRECTORY_POINTER	*PDPE;
-	PAGE_MAP_AND_DIRECTORY_POINTER	*PDE;
-	PAGE_TABLE_4K_ENTRY				*PTE4K;
-	PAGE_TABLE_2M_ENTRY				*PTE2M;
-	PAGE_TABLE_1G_ENTRY				*PTE1G;
+	EFI_PHYSICAL_ADDRESS            Start;
+	VIRTUAL_ADDR                    VA;
+	VIRTUAL_ADDR                    VAStart;
+	VIRTUAL_ADDR                    VAEnd;
+	PAGE_MAP_AND_DIRECTORY_POINTER  *PML4;
+	PAGE_MAP_AND_DIRECTORY_POINTER  *PDPE;
+	PAGE_MAP_AND_DIRECTORY_POINTER  *PDE;
+	PAGE_TABLE_4K_ENTRY             *PTE4K;
+	PAGE_TABLE_2M_ENTRY             *PTE2M;
+	PAGE_TABLE_1G_ENTRY             *PTE1G;
 
 	VA.Uint64 = (UINT64)VirtualAddr;
 	//VA_FIX_SIGN_EXTEND(VA);
@@ -261,10 +280,12 @@ GetPhysicalAddr(PAGE_MAP_AND_DIRECTORY_POINTER *PageTable, EFI_VIRTUAL_ADDRESS  
 
 /** Inits vm memory pool. Should be called while boot services are still usable. */
 EFI_STATUS
-VmAllocateMemoryPool(VOID)
+VmAllocateMemoryPool (
+	VOID
+	)
 {
-	EFI_STATUS				Status;
-	EFI_PHYSICAL_ADDRESS	Addr;
+	EFI_STATUS              Status;
+	EFI_PHYSICAL_ADDRESS    Addr;
 
 	if (VmMemoryPool != NULL) {
 		// already allocated
@@ -286,9 +307,11 @@ VmAllocateMemoryPool(VOID)
 
 /** Central method for allocating pages for VM page maps. */
 VOID *
-VmAllocatePages(UINTN NumPages)
+VmAllocatePages (
+	UINTN NumPages
+	)
 {
-	VOID					*AllocatedPages = NULL;
+	VOID   *AllocatedPages = NULL;
 
 	if (VmMemoryPoolFreePages >= (INTN)NumPages) {
 		AllocatedPages = VmMemoryPool;
@@ -303,20 +326,24 @@ VmAllocatePages(UINTN NumPages)
 
 /** Maps (remaps) 4K page given by VirtualAddr to PhysicalAddr page in PageTable. */
 EFI_STATUS
-VmMapVirtualPage(PAGE_MAP_AND_DIRECTORY_POINTER *PageTable, EFI_VIRTUAL_ADDRESS VirtualAddr, EFI_PHYSICAL_ADDRESS PhysicalAddr)
+VmMapVirtualPage (
+	PAGE_MAP_AND_DIRECTORY_POINTER  *PageTable,
+	EFI_VIRTUAL_ADDRESS             VirtualAddr,
+	EFI_PHYSICAL_ADDRESS            PhysicalAddr
+	)
 {
-	EFI_PHYSICAL_ADDRESS			Start;
-	VIRTUAL_ADDR					VA;
-	VIRTUAL_ADDR					VAStart;
-	VIRTUAL_ADDR					VAEnd;
-	PAGE_MAP_AND_DIRECTORY_POINTER	*PML4;
-	PAGE_MAP_AND_DIRECTORY_POINTER	*PDPE;
-	PAGE_MAP_AND_DIRECTORY_POINTER	*PDE;
-	PAGE_TABLE_4K_ENTRY				*PTE4K;
-	PAGE_TABLE_4K_ENTRY				*PTE4KTmp;
-	PAGE_TABLE_2M_ENTRY				*PTE2M;
-	PAGE_TABLE_1G_ENTRY				*PTE1G;
-	UINTN							Index;
+	EFI_PHYSICAL_ADDRESS            Start;
+	VIRTUAL_ADDR                    VA;
+	VIRTUAL_ADDR                    VAStart;
+	VIRTUAL_ADDR                    VAEnd;
+	PAGE_MAP_AND_DIRECTORY_POINTER  *PML4;
+	PAGE_MAP_AND_DIRECTORY_POINTER  *PDPE;
+	PAGE_MAP_AND_DIRECTORY_POINTER  *PDE;
+	PAGE_TABLE_4K_ENTRY             *PTE4K;
+	PAGE_TABLE_4K_ENTRY             *PTE4KTmp;
+	PAGE_TABLE_2M_ENTRY             *PTE2M;
+	PAGE_TABLE_1G_ENTRY             *PTE1G;
+	UINTN                           Index;
 
 	VA.Uint64 = (UINT64)VirtualAddr;
 	//VA_FIX_SIGN_EXTEND(VA);
@@ -494,9 +521,14 @@ VmMapVirtualPage(PAGE_MAP_AND_DIRECTORY_POINTER *PageTable, EFI_VIRTUAL_ADDRESS 
 
 /** Maps (remaps) NumPages 4K pages given by VirtualAddr to PhysicalAddr pages in PageTable. */
 EFI_STATUS
-VmMapVirtualPages(PAGE_MAP_AND_DIRECTORY_POINTER *PageTable, EFI_VIRTUAL_ADDRESS VirtualAddr, UINTN NumPages, EFI_PHYSICAL_ADDRESS PhysicalAddr)
+VmMapVirtualPages (
+	PAGE_MAP_AND_DIRECTORY_POINTER  *PageTable,
+	EFI_VIRTUAL_ADDRESS             VirtualAddr,
+	UINTN                           NumPages,
+	EFI_PHYSICAL_ADDRESS            PhysicalAddr
+	)
 {
-	EFI_STATUS		Status;
+	EFI_STATUS  Status;
 
 	Status = EFI_SUCCESS;
 	while (NumPages > 0 && (Status == EFI_SUCCESS)) {
@@ -512,9 +544,10 @@ VmMapVirtualPages(PAGE_MAP_AND_DIRECTORY_POINTER *PageTable, EFI_VIRTUAL_ADDRESS
 
 /** Flashes TLB caches. */
 VOID
-VmFlashCaches(VOID)
+VmFlashCaches (
+	VOID
+	)
 {
-
 	// just reload CR3
 	AsmWriteCr3(AsmReadCr3());
 }
