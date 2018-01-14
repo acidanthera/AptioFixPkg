@@ -848,7 +848,7 @@ GetVariableCustomSlide (
 				DEBUG ((DEBUG_WARN, "boot-args returned %r error\n", Status));
 			} else {
 				UINTN Len = AsciiStrLen(gStoredBootArgsVar);
-				if (Len + sizeof(" slide=123") > BOOT_LINE_LENGTH) {
+				if (Len + ARRAY_SIZE(" slide=123") > BOOT_LINE_LENGTH) {
 					DEBUG ((DEBUG_WARN, "boot-args are invalid, ignoring\n"));
 				} else {
 					AppendPtr    += Len;
@@ -856,8 +856,8 @@ GetVariableCustomSlide (
 				}
 			}
 
-			CONST UINTN SlideStrSize = sizeof("slide=") - 1;
-			AsciiStrnCpyS(AppendPtr, SlideStrSize + 1, "slide=", SlideStrSize + 1);
+			CONST UINTN SlideStrLen = ARRAY_SIZE("slide=") - 1;
+			AsciiStrnCpyS(AppendPtr, SlideStrLen + 1, "slide=", SlideStrLen + 1);
 			UINT8 First  = Slide / 100;
 			UINT8 Second = (Slide % 100) / 10;
 			UINT8 Third  = Slide % 10;
@@ -875,10 +875,10 @@ GetVariableCustomSlide (
 			}
 
 			// Note, the point is to always pass 3 characters to avoid side attacks on value length.
-			AppendPtr[SlideStrSize + 0] = DEC_TO_ASCII(First);
-			AppendPtr[SlideStrSize + 1] = DEC_TO_ASCII(Second);
-			AppendPtr[SlideStrSize + 2] = DEC_TO_ASCII(Third);
-			AppendPtr[SlideStrSize + 3] = '\0';
+			AppendPtr[SlideStrLen + 0] = DEC_TO_ASCII(First);
+			AppendPtr[SlideStrLen + 1] = DEC_TO_ASCII(Second);
+			AppendPtr[SlideStrLen + 2] = DEC_TO_ASCII(Third);
+			AppendPtr[SlideStrLen + 3] = '\0';
 
 			gStoredBootArgsVarSize = AsciiStrLen(gStoredBootArgsVar) + 1;
 			gStoredBootArgsVarSet = TRUE;
