@@ -5,20 +5,47 @@ pushd "$BUILDDIR" >/dev/null
 BUILDDIR=$(pwd)
 popd >/dev/null
 
+NASMVER="2.13.02"
+
 cd "$BUILDDIR"
 
-if [ "$(nasm -v | grep Apple)" != "" ]; then
-  echo "Incompatible nasm version!"
-  echo "Download the latest nasm from http://www.nasm.us/pub/nasm/releasebuilds/"
-  echo "Last tested with nasm 2.12.02 and 2.13.02."
+prompt() {
+  echo "$1"
+  read -p "Enter [Y]es to continue: " v
+  if [ "$v" != "Y" ] && [ "$v" != "y" ]; then
+    exit 1
+  fi
+}
+
+if [ "$(which clang)" = "" ] || [ "$(which git)" = "" ] || [ "$(clang -v 2>&1 | grep "no developer")" != "" ] || [ "$(git -v 2>&1 | grep "no developer")" != "" ]; then
+  echo "Missing Xcode tools, please install them!"
   exit 1
+fi
+
+if [ "$(nasm -v)" = "" ] || [ "$(nasm -v | grep Apple)" != "" ]; then
+  echo "Missing or incompatible nasm!"
+  echo "Download the latest nasm from http://www.nasm.us/pub/nasm/releasebuilds/"
+  prompt "Last tested with nasm $NASMVER. Install it automatically?"
+  pushd /tmp >/dev/null
+  rm -rf "nasm-${NASMVER}-macosx.zip" "nasm-${NASMVER}"
+  curl -O "http://www.nasm.us/pub/nasm/releasebuilds/${NASMVER}/macosx/nasm-${NASMVER}-macosx.zip" || exit 1
+  unzip -q "nasm-${NASMVER}-macosx.zip" "nasm-${NASMVER}/nasm" "nasm-${NASMVER}/ndisasm" || exit 1
+  sudo mkdir -p /usr/local/bin || exit 1
+  sudo mv "nasm-${NASMVER}/nasm" /usr/local/bin/ || exit 1
+  sudo mv "nasm-${NASMVER}/ndisasm" /usr/local/bin/ || exit 1
+  rm -rf "nasm-${NASMVER}-macosx.zip" "nasm-${NASMVER}"
+  popd >/dev/null
 fi
 
 if [ "$(which mtoc.NEW)" == "" ] || [ "$(which mtoc)" == "" ]; then
   echo "Missing mtoc or mtoc.NEW!"
   echo "To build mtoc follow: https://github.com/tianocore/tianocore.github.io/wiki/Xcode#mac-os-x-xcode"
-  echo "You may also use one in external directory."
-  exit 1
+  prompt "Install prebuilt mtoc and mtoc.NEW automatically?"
+  rm -f mtoc mtoc.NEW
+  unzip -q external/mtoc-mac64.zip mtoc mtoc.NEW || exit 1
+  sudo mkdir -p /usr/local/bin || exit 1
+  sudo mv mtoc /usr/local/bin/ || exit 1
+  sudo mv mtoc.NEW /usr/local/bin/ || exit 1
 fi
 
 if [ ! -d "binaries" ]; then
@@ -41,7 +68,7 @@ if [ ! -f edk2/edk2.ready ]; then
   git clone https://github.com/CupertinoNet/CupertinoModulePkg || exit 1
   git clone https://github.com/CupertinoNet/EfiMiscPkg || exit 1
   git clone https://github.com/CupertinoNet/EfiPkg || exit 1
-  ln -s .. AptioFixPkg
+  ln -s .. AptioFixPkg || exit 1
   source edksetup.sh || exit 1
   make -C BaseTools || exit 1
   touch edk2.ready
@@ -50,10 +77,10 @@ else
   source edksetup.sh || exit 1
 fi
 
-if [ "$MODE" == "" ] || [ "$MODE" == "DEBUG" ]; then
+if [ "$MODE" = "" ] || [ "$MODE" = "DEBUG" ]; then
   build -a X64 -b DEBUG -t XCODE5 -p AptioFixPkg/AptioFixPkg.dsc || exit 1
 fi
 
-if [ "$MODE" == "" ] || [ "$MODE" == "RELEASE" ]; then
+if [ "$MODE" = "" ] || [ "$MODE" = "RELEASE" ]; then
   build -a X64 -b RELEASE -t XCODE5 -p AptioFixPkg/AptioFixPkg.dsc || exit 1
 fi
