@@ -452,9 +452,16 @@ RunImageWithOverrides(
 #endif
 
 	if (!EFI_ERROR (Status)) {
-		gGetVariable         = (UINTN)gRT->GetVariable;
-		gGetNextVariableName = (UINTN)gRT->GetNextVariableName;
-		gSetVariable         = (UINTN)gRT->SetVariable;
+		gGetVariable          = (UINTN)gRT->GetVariable;
+		gGetNextVariableName  = (UINTN)gRT->GetNextVariableName;
+		gSetVariable          = (UINTN)gRT->SetVariable;
+		gGetTime              = (UINTN)gRT->GetTime;
+		gSetTime              = (UINTN)gRT->SetTime;
+		gGetWakeupTime        = (UINTN)gRT->GetWakeupTime;
+		gSetWakeupTime        = (UINTN)gRT->SetWakeupTime;
+		gGetNextHighMonoCount = (UINTN)gRT->GetNextHighMonotonicCount;
+		gResetSystem          = (UINTN)gRT->ResetSystem;
+
 		gGetVariableBoot     = (UINTN)GetVariableCustomSlide;
 
 		CopyMem (
@@ -463,9 +470,15 @@ RunImageWithOverrides(
 			((UINTN)&gRtShimsDataEnd - (UINTN)&gRtShimsDataStart)
 			);
 
-		gRT->GetVariable         = (EFI_GET_VARIABLE)((UINTN)gRtShims           + ((UINTN)&RtShimGetVariable         - (UINTN)&gRtShimsDataStart));
-		gRT->GetNextVariableName = (EFI_GET_NEXT_VARIABLE_NAME)((UINTN)gRtShims + ((UINTN)&RtShimGetNextVariableName - (UINTN)&gRtShimsDataStart));
-		gRT->SetVariable         = (EFI_SET_VARIABLE)((UINTN)gRtShims           + ((UINTN)&RtShimSetVariable         - (UINTN)&gRtShimsDataStart));
+		gRT->GetVariable               = (EFI_GET_VARIABLE)((UINTN)gRtShims              + ((UINTN)&RtShimGetVariable          - (UINTN)&gRtShimsDataStart));
+		gRT->GetNextVariableName       = (EFI_GET_NEXT_VARIABLE_NAME)((UINTN)gRtShims    + ((UINTN)&RtShimGetNextVariableName  - (UINTN)&gRtShimsDataStart));
+		gRT->SetVariable               = (EFI_SET_VARIABLE)((UINTN)gRtShims              + ((UINTN)&RtShimSetVariable          - (UINTN)&gRtShimsDataStart));
+		gRT->GetTime                   = (EFI_GET_TIME)((UINTN)gRtShims                  + ((UINTN)&RtShimGetTime              - (UINTN)&gRtShimsDataStart));
+		gRT->SetTime                   = (EFI_SET_TIME)((UINTN)gRtShims                  + ((UINTN)&RtShimSetTime              - (UINTN)&gRtShimsDataStart));
+		gRT->GetWakeupTime             = (EFI_GET_WAKEUP_TIME)((UINTN)gRtShims           + ((UINTN)&RtShimGetWakeupTime        - (UINTN)&gRtShimsDataStart));
+		gRT->SetWakeupTime             = (EFI_SET_WAKEUP_TIME)((UINTN)gRtShims           + ((UINTN)&RtShimSetWakeupTime        - (UINTN)&gRtShimsDataStart));
+		gRT->GetNextHighMonotonicCount = (EFI_GET_NEXT_HIGH_MONO_COUNT)((UINTN)gRtShims  + ((UINTN)&RtShimGetNextHighMonoCount - (UINTN)&gRtShimsDataStart));
+		gRT->ResetSystem               = (EFI_RESET_SYSTEM)((UINTN)gRtShims              + ((UINTN)&RtShimResetSystem          - (UINTN)&gRtShimsDataStart));
 	} else {
 		DEBUG ((DEBUG_VERBOSE, "Nulling RtShims\n"));
 		gRtShims = NULL;
