@@ -78,7 +78,6 @@ GET_SKIP_RESTORE_INTR:
 
 global ASM_PFX(RtShimGetNextVariableName)
 ASM_PFX(RtShimGetNextVariableName):
-    nop
     push       rsi
     push       rbx
     sub        rsp, 0x28
@@ -104,6 +103,168 @@ NEXT_SKIP_RESTORE_INTR:
     pop        rsi
     ret
 
+global ASM_PFX(RtShimGetTime)
+ASM_PFX(RtShimGetTime):
+    push       rsi
+    push       rbx
+    sub        rsp, 0x28
+    pushfq
+    pop        rsi
+    cli
+    mov        rbx, cr0
+    mov        rax, rbx
+    and        rax, 0xfffffffffffeffff
+    mov        cr0, rax
+    mov        rax, qword [ASM_PFX(gGetTime)]
+    call       rax
+    test       ebx, 0x10000
+    je         GET_TIME_SKIP_RESTORE_WP
+    mov        cr0, rbx
+GET_TIME_SKIP_RESTORE_WP:
+    test       esi, 0x200
+    je         GET_TIME_SKIP_RESTORE_INTR
+    sti
+GET_TIME_SKIP_RESTORE_INTR:
+    add        rsp, 0x28
+    pop        rbx
+    pop        rsi
+    ret
+
+global ASM_PFX(RtShimSetTime)
+ASM_PFX(RtShimSetTime):
+    push       rsi
+    push       rbx
+    sub        rsp, 0x28
+    pushfq
+    pop        rsi
+    cli
+    mov        rbx, cr0
+    mov        rax, rbx
+    and        rax, 0xfffffffffffeffff
+    mov        cr0, rax
+    mov        rax, qword [ASM_PFX(gSetTime)]
+    call       rax
+    test       ebx, 0x10000
+    je         SET_TIME_SKIP_RESTORE_WP
+    mov        cr0, rbx
+SET_TIME_SKIP_RESTORE_WP:
+    test       esi, 0x200
+    je         SET_TIME_SKIP_RESTORE_INTR
+    sti
+SET_TIME_SKIP_RESTORE_INTR:
+    add        rsp, 0x28
+    pop        rbx
+    pop        rsi
+    ret
+
+global ASM_PFX(RtShimGetWakeupTime)
+ASM_PFX(RtShimGetWakeupTime):
+    push       rsi
+    push       rbx
+    sub        rsp, 0x28
+    pushfq
+    pop        rsi
+    cli
+    mov        rbx, cr0
+    mov        rax, rbx
+    and        rax, 0xfffffffffffeffff
+    mov        cr0, rax
+    mov        rax, qword [ASM_PFX(gGetWakeupTime)]
+    call       rax
+    test       ebx, 0x10000
+    je         GET_WAKEUP_SKIP_RESTORE_WP
+    mov        cr0, rbx
+GET_WAKEUP_SKIP_RESTORE_WP:
+    test       esi, 0x200
+    je         GET_WAKEUP_SKIP_RESTORE_INTR
+    sti
+GET_WAKEUP_SKIP_RESTORE_INTR:
+    add        rsp, 0x28
+    pop        rbx
+    pop        rsi
+    ret
+
+global ASM_PFX(RtShimSetWakeupTime)
+ASM_PFX(RtShimSetWakeupTime):
+    push       rsi
+    push       rbx
+    sub        rsp, 0x28
+    pushfq
+    pop        rsi
+    cli
+    mov        rbx, cr0
+    mov        rax, rbx
+    and        rax, 0xfffffffffffeffff
+    mov        cr0, rax
+    mov        rax, qword [ASM_PFX(gSetWakeupTime)]
+    call       rax
+    test       ebx, 0x10000
+    je         SET_WAKEUP_SKIP_RESTORE_WP
+    mov        cr0, rbx
+SET_WAKEUP_SKIP_RESTORE_WP:
+    test       esi, 0x200
+    je         SET_WAKEUP_SKIP_RESTORE_INTR
+    sti
+SET_WAKEUP_SKIP_RESTORE_INTR:
+    add        rsp, 0x28
+    pop        rbx
+    pop        rsi
+    ret
+
+global ASM_PFX(RtShimGetNextHighMonoCount)
+ASM_PFX(RtShimGetNextHighMonoCount):
+    push       rsi
+    push       rbx
+    sub        rsp, 0x28
+    pushfq
+    pop        rsi
+    cli
+    mov        rbx, cr0
+    mov        rax, rbx
+    and        rax, 0xfffffffffffeffff
+    mov        cr0, rax
+    mov        rax, qword [ASM_PFX(gGetNextHighMonoCount)]
+    call       rax
+    test       ebx, 0x10000
+    je         MONO_SKIP_RESTORE_WP
+    mov        cr0, rbx
+MONO_SKIP_RESTORE_WP:
+    test       esi, 0x200
+    je         MONO_SKIP_RESTORE_INTR
+    sti
+MONO_SKIP_RESTORE_INTR:
+    add        rsp, 0x28
+    pop        rbx
+    pop        rsi
+    ret
+
+global ASM_PFX(RtShimResetSystem)
+ASM_PFX(RtShimResetSystem):
+    push       rsi
+    push       rbx
+    sub        rsp, 0x28
+    pushfq
+    pop        rsi
+    cli
+    mov        rbx, cr0
+    mov        rax, rbx
+    and        rax, 0xfffffffffffeffff
+    mov        cr0, rax
+    mov        rax, qword [ASM_PFX(gResetSystem)]
+    call       rax
+    test       ebx, 0x10000
+    je         RESET_SKIP_RESTORE_WP
+    mov        cr0, rbx
+RESET_SKIP_RESTORE_WP:
+    test       esi, 0x200
+    je         RESET_SKIP_RESTORE_INTR
+    sti
+RESET_SKIP_RESTORE_INTR:
+    add        rsp, 0x28
+    pop        rbx
+    pop        rsi
+    ret
+
 global ASM_PFX(gGetNextVariableName)
 ASM_PFX(gGetNextVariableName):    dq  0
 
@@ -112,6 +273,24 @@ ASM_PFX(gGetVariable):            dq  0
 
 global ASM_PFX(gSetVariable)
 ASM_PFX(gSetVariable):            dq  0
+
+global ASM_PFX(gGetTime)
+ASM_PFX(gGetTime):                dq  0
+
+global ASM_PFX(gSetTime)
+ASM_PFX(gSetTime):                dq  0
+
+global ASM_PFX(gGetWakeupTime)
+ASM_PFX(gGetWakeupTime):          dq  0
+
+global ASM_PFX(gSetWakeupTime)
+ASM_PFX(gSetWakeupTime):          dq  0
+
+global ASM_PFX(gGetNextHighMonoCount)
+ASM_PFX(gGetNextHighMonoCount):   dq  0
+
+global ASM_PFX(gResetSystem)
+ASM_PFX(gResetSystem):            dq  0
 
 global ASM_PFX(gGetVariableBoot)
 ASM_PFX(gGetVariableBoot):        dq  0

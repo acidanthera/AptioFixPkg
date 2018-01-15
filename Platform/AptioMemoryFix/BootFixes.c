@@ -347,13 +347,27 @@ VirtualizeRtShimPointers (
 
 	// For some reason creating an event does not work at least on APTIO IV Z77
 
-	BOOLEAN SetVarFixed     = FALSE;
-	BOOLEAN GetVarFixed     = FALSE;
-	BOOLEAN GetNextVarFixed = FALSE;
+	//TODO: Put those to an array
+
+	BOOLEAN SetVarFixed               = FALSE;
+	BOOLEAN GetVarFixed               = FALSE;
+	BOOLEAN GetNextVarFixed           = FALSE;
+	BOOLEAN GetTimeFixed              = FALSE;
+	BOOLEAN SetTimeFixed              = FALSE;
+	BOOLEAN GetWakeupTimeFixed        = FALSE;
+	BOOLEAN SetWakeupTimeFixed        = FALSE;
+	BOOLEAN GetNextHighMonoCountFixed = FALSE;
+	BOOLEAN ResetSystemFixed          = FALSE;
 
 	UINTN *GetVar;
 	UINTN *SetVar;
 	UINTN *GetNextVarName;
+	UINTN *GetTime;
+	UINTN *SetTime;
+	UINTN *GetWakeupTime;
+	UINTN *SetWakeupTime;
+	UINTN *GetNextHighMonoCount;
+	UINTN *ResetSystem;
 	UINTN *GetVarBoot;
 
 	// Are we already done?
@@ -362,10 +376,16 @@ VirtualizeRtShimPointers (
 
 	Desc = MemoryMap;
 
-	GetVar         = (UINTN *)((UINTN)gRtShims + ((UINTN)&gGetVariable         - (UINTN)&gRtShimsDataStart));
-	SetVar         = (UINTN *)((UINTN)gRtShims + ((UINTN)&gSetVariable         - (UINTN)&gRtShimsDataStart));
-	GetNextVarName = (UINTN *)((UINTN)gRtShims + ((UINTN)&gGetNextVariableName - (UINTN)&gRtShimsDataStart));
-	GetVarBoot     = (UINTN *)((UINTN)gRtShims + ((UINTN)&gGetVariableBoot     - (UINTN)&gRtShimsDataStart));
+	GetVar               = (UINTN *)((UINTN)gRtShims + ((UINTN)&gGetVariable          - (UINTN)&gRtShimsDataStart));
+	SetVar               = (UINTN *)((UINTN)gRtShims + ((UINTN)&gSetVariable          - (UINTN)&gRtShimsDataStart));
+	GetNextVarName       = (UINTN *)((UINTN)gRtShims + ((UINTN)&gGetNextVariableName  - (UINTN)&gRtShimsDataStart));
+	GetTime              = (UINTN *)((UINTN)gRtShims + ((UINTN)&gGetTime              - (UINTN)&gRtShimsDataStart));
+	SetTime              = (UINTN *)((UINTN)gRtShims + ((UINTN)&gSetTime              - (UINTN)&gRtShimsDataStart));
+	GetWakeupTime        = (UINTN *)((UINTN)gRtShims + ((UINTN)&gGetWakeupTime        - (UINTN)&gRtShimsDataStart));
+	SetWakeupTime        = (UINTN *)((UINTN)gRtShims + ((UINTN)&gSetWakeupTime        - (UINTN)&gRtShimsDataStart));
+	GetNextHighMonoCount = (UINTN *)((UINTN)gRtShims + ((UINTN)&gGetNextHighMonoCount - (UINTN)&gRtShimsDataStart));
+	ResetSystem          = (UINTN *)((UINTN)gRtShims + ((UINTN)&gResetSystem          - (UINTN)&gRtShimsDataStart));
+	GetVarBoot           = (UINTN *)((UINTN)gRtShims + ((UINTN)&gGetVariableBoot      - (UINTN)&gRtShimsDataStart));
 
 	// Custom GetVariable wrapper is no longer allowed!
 	*GetVarBoot = 0;
@@ -386,7 +406,38 @@ VirtualizeRtShimPointers (
 			GetNextVarFixed = TRUE;
 		}
 
-		if (SetVarFixed && GetVarFixed && GetNextVarFixed)
+		if (gGetTime >= Desc->PhysicalStart && gGetTime < Desc->PhysicalStart + EFI_PAGES_TO_SIZE (Desc->NumberOfPages)) {
+			*GetTime += (Desc->VirtualStart - Desc->PhysicalStart);
+			GetTimeFixed = TRUE;
+		}
+
+		if (gSetTime >= Desc->PhysicalStart && gSetTime < Desc->PhysicalStart + EFI_PAGES_TO_SIZE (Desc->NumberOfPages)) {
+			*SetTime += (Desc->VirtualStart - Desc->PhysicalStart);
+			SetTimeFixed = TRUE;
+		}
+
+		if (gGetWakeupTime >= Desc->PhysicalStart && gGetWakeupTime < Desc->PhysicalStart + EFI_PAGES_TO_SIZE (Desc->NumberOfPages)) {
+			*GetWakeupTime += (Desc->VirtualStart - Desc->PhysicalStart);
+			GetWakeupTimeFixed = TRUE;
+		}
+
+		if (gSetWakeupTime >= Desc->PhysicalStart && gSetWakeupTime < Desc->PhysicalStart + EFI_PAGES_TO_SIZE (Desc->NumberOfPages)) {
+			*SetWakeupTime += (Desc->VirtualStart - Desc->PhysicalStart);
+			SetWakeupTimeFixed = TRUE;
+		}
+
+		if (gGetNextHighMonoCount >= Desc->PhysicalStart && gGetNextHighMonoCount < Desc->PhysicalStart + EFI_PAGES_TO_SIZE (Desc->NumberOfPages)) {
+			*GetNextHighMonoCount += (Desc->VirtualStart - Desc->PhysicalStart);
+			GetNextHighMonoCountFixed = TRUE;
+		}
+
+		if (gResetSystem >= Desc->PhysicalStart && gResetSystem < Desc->PhysicalStart + EFI_PAGES_TO_SIZE (Desc->NumberOfPages)) {
+			*ResetSystem += (Desc->VirtualStart - Desc->PhysicalStart);
+			ResetSystemFixed = TRUE;
+		}
+
+		if (SetVarFixed && GetVarFixed && GetNextVarFixed && GetTimeFixed && SetTimeFixed &&
+			GetWakeupTimeFixed && SetWakeupTimeFixed && GetNextHighMonoCountFixed && ResetSystemFixed)
 			break;
 
 		Desc = NEXT_MEMORY_DESCRIPTOR (Desc, DescriptorSize);
