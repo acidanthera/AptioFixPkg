@@ -17,6 +17,11 @@ prompt() {
   fi
 }
 
+if [ "$BUILDDIR" != "$(printf "%s\n" $BUILDDIR)" ]; then
+  echo "EDK2 build system may still fail to support directories with spaces!"
+  exit 1
+fi
+
 if [ "$(which clang)" = "" ] || [ "$(which git)" = "" ] || [ "$(clang -v 2>&1 | grep "no developer")" != "" ] || [ "$(git -v 2>&1 | grep "no developer")" != "" ]; then
   echo "Missing Xcode tools, please install them!"
   exit 1
