@@ -15,8 +15,8 @@
 VOID
 EFIAPI
 AsmPrepareJumpFromKernel (
-	VOID
-	);
+  VOID
+  );
 
 /** Start and end address of the 32 and 64 bit code
  that is copied to kernel entry address to jump back
@@ -29,8 +29,8 @@ extern UINT8           EntryPatchCodeEnd;
 VOID
 EFIAPI
 AsmJumpFromKernel (
-	VOID
-	);
+  VOID
+  );
 
 /** 32 bit function start and end that copies kernel to proper mem and jumps to kernel. */
 extern UINT8           JumpToKernel;

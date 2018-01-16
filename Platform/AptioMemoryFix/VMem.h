@@ -159,52 +159,52 @@ typedef union {
 /** Returns pointer to PML4 table in PageTable and PWT and PCD flags in Flags. */
 VOID
 GetCurrentPageTable (
-	PAGE_MAP_AND_DIRECTORY_POINTER  **PageTable,
-	UINTN                           *Flags
-	);
+  PAGE_MAP_AND_DIRECTORY_POINTER  **PageTable,
+  UINTN                           *Flags
+  );
 
 /** Prints given PageTable. */
 VOID
 PrintPageTable (
-	PAGE_MAP_AND_DIRECTORY_POINTER  *PageTable,
-	UINTN                           Flags
-	);
+  PAGE_MAP_AND_DIRECTORY_POINTER  *PageTable,
+  UINTN                           Flags
+  );
 
 /** Returns physical addr for given virtual addr. */
 EFI_STATUS 
 GetPhysicalAddr (
-	PAGE_MAP_AND_DIRECTORY_POINTER *PageTable,
-	EFI_VIRTUAL_ADDRESS            VirtualAddr,
-	EFI_PHYSICAL_ADDRESS           *PhysicalAddr
-	);
+  PAGE_MAP_AND_DIRECTORY_POINTER *PageTable,
+  EFI_VIRTUAL_ADDRESS            VirtualAddr,
+  EFI_PHYSICAL_ADDRESS           *PhysicalAddr
+  );
 
 /** Inits vm memory pool. Should be called while boot services are still usable. */
 EFI_STATUS
 VmAllocateMemoryPool (
-	VOID
-	);
+  VOID
+  );
 
 /** Maps (remaps) 4K page given by VirtualAddr to PhysicalAddr page in PageTable. */
 EFI_STATUS
 VmMapVirtualPage (
-	PAGE_MAP_AND_DIRECTORY_POINTER *PageTable,
-	EFI_VIRTUAL_ADDRESS            VirtualAddr,
-	EFI_PHYSICAL_ADDRESS           PhysicalAddr
-	);
+  PAGE_MAP_AND_DIRECTORY_POINTER *PageTable,
+  EFI_VIRTUAL_ADDRESS            VirtualAddr,
+  EFI_PHYSICAL_ADDRESS           PhysicalAddr
+  );
 
 /** Maps (remaps) NumPages 4K pages given by VirtualAddr to PhysicalAddr pages in PageTable. */
 EFI_STATUS
 VmMapVirtualPages (
-	PAGE_MAP_AND_DIRECTORY_POINTER *PageTable,
-	EFI_VIRTUAL_ADDRESS            VirtualAddr,
-	UINTN                          NumPages,
-	EFI_PHYSICAL_ADDRESS           PhysicalAddr
-	);
+  PAGE_MAP_AND_DIRECTORY_POINTER *PageTable,
+  EFI_VIRTUAL_ADDRESS            VirtualAddr,
+  UINTN                          NumPages,
+  EFI_PHYSICAL_ADDRESS           PhysicalAddr
+  );
 
 /** Flashes TLB caches. */
 VOID
 VmFlashCaches (
-	VOID
-	);
+  VOID
+  );
 
 #endif //APTIOFIX_VMEM_H
