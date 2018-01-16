@@ -35,26 +35,71 @@
 -------------------------------------------------------------------------------
 */
 enum {
-	kDTPathNameSeparator	= '/'				/* 0x2F */
+  kDTPathNameSeparator        = '/'   /* 0x2F */
 };
-
 
 /* Property Name Definitions (Property Names are C-Strings)*/
 enum {
-	kDTMaxPropertyNameLength=31	/* Max length of Property Name (terminator not included) */
+  kDTMaxPropertyNameLength    = 31    /* Max length of Property Name (terminator not included) */
 };
 
 typedef char DTPropertyNameBuf[32];
 
-
 /* Entry Name Definitions (Entry Names are C-Strings)*/
 enum {
-	kDTMaxEntryNameLength		= 31	/* Max length of a C-String Entry Name (terminator not included) */
+  kDTMaxEntryNameLength       = 63    /* Max length of a C-String Entry Name (terminator not included) */
 };
 
 /* length of DTEntryNameBuf = kDTMaxEntryNameLength +1*/
-typedef char DTEntryNameBuf[32];
+typedef char DTEntryNameBuf[kDTMaxEntryNameLength+1];
 
+/*
+ Structures for a Flattened Device Tree
+ */
+
+//These definitions show the primitivity of C-language where there is no possibility to
+//explain the structure of DT
+
+#define kPropNameLength 32
+
+typedef struct DeviceTreeNodeProperty {
+  char               name[kPropNameLength];     // NUL terminated property name
+  UINT32             length;                    // Length (bytes) of following prop value
+//unsigned long      value[1];                  // Variable length value of property
+                                                // Padded to a multiple of a longword?
+} DeviceTreeNodeProperty;
+
+typedef struct OpaqueDTEntry {
+  UINT32                    nProperties;    // Number of props[] elements (0 => end)
+  UINT32                    nChildren;      // Number of children[] elements
+//DeviceTreeNodeProperty    props[];        // array size == nProperties
+//DeviceTreeNode            children[];     // array size == nChildren
+} DeviceTreeNode;
+
+typedef DeviceTreeNode *RealDTEntry;
+
+typedef struct DTSavedScope {
+  struct DTSavedScope * nextScope;
+  RealDTEntry scope;
+  RealDTEntry entry;
+  unsigned long index;
+} *DTSavedScopePtr;
+
+/* Entry Iterator*/
+typedef struct OpaqueDTEntryIterator {
+  RealDTEntry outerScope;
+  RealDTEntry currentScope;
+  RealDTEntry currentEntry;
+  DTSavedScopePtr savedScope;
+  unsigned long currentIndex;   
+} *RealDTEntryIterator;
+
+/* Property Iterator*/
+typedef struct OpaqueDTPropertyIterator {
+  RealDTEntry entry;
+  DeviceTreeNodeProperty *currentProperty;
+  unsigned long currentIndex;
+} *RealDTPropertyIterator;
 
 /* Entry*/
 typedef struct OpaqueDTEntry* DTEntry;
@@ -65,62 +110,12 @@ typedef struct OpaqueDTEntryIterator* DTEntryIterator;
 /* Property Iterator*/
 typedef struct OpaqueDTPropertyIterator* DTPropertyIterator;
 
-
 /* status values*/
 enum {
-		kError = -1,
-		kIterationDone = 0,
-		kSuccess = 1
+  kError = -1,
+  kIterationDone = 0,
+  kSuccess = 1
 };
-
-/*
-
-Structures for a Flattened Device Tree
- */
-
-//These definitions show the primitivity of C-language where there is no possibility to
-//explain the structure of DT
-
-#define kPropNameLength	32
-
-typedef struct DeviceTreeNodeProperty {
-    char		name[kPropNameLength];	// NUL terminated property name
-    UINT32		length;		// Length (bytes) of following prop value
-//  unsigned long	value[1];	// Variable length value of property
-					// Padded to a multiple of a longword?
-} DeviceTreeNodeProperty;
-
-typedef struct OpaqueDTEntry {
-    UINT32		nProperties;	// Number of props[] elements (0 => end)
-    UINT32		nChildren;	// Number of children[] elements
-//  DeviceTreeNodeProperty	props[];// array size == nProperties
-//  DeviceTreeNode	children[];	// array size == nChildren
-} DeviceTreeNode;
-
-typedef DeviceTreeNode *RealDTEntry;
-
-typedef struct DTSavedScope {
-	struct DTSavedScope * nextScope;
-	RealDTEntry scope;
-	RealDTEntry entry;
-	unsigned long index;		
-} *DTSavedScopePtr;
-
-/* Entry Iterator*/
-typedef struct OpaqueDTEntryIterator {
-	RealDTEntry outerScope;
-	RealDTEntry currentScope;
-	RealDTEntry currentEntry;
-	DTSavedScopePtr savedScope;
-	UINT32 currentIndex;		
-} *RealDTEntryIterator;
-
-/* Property Iterator*/
-typedef struct OpaqueDTPropertyIterator {
-	RealDTEntry entry;
-	DeviceTreeNodeProperty *currentProperty;
-	UINT32 currentIndex;
-} *RealDTPropertyIterator;
 
 /*
 -------------------------------------------------------------------------------
@@ -209,7 +204,7 @@ extern INTN DTExitEntry(DTEntryIterator iterator, DTEntry *currentPosition);
  Iterate Entries 
  Iterate and return entries contained within the entry defined by the current
  scope of the iterator.  Entries are returned one at a time. When
-INTN== kIterationDone, all entries have been exhausted, and the
+ int == kIterationDone, all entries have been exhausted, and the
  value of nextEntry will be Nil. 
 */
 extern INTN DTIterateEntries(DTEntryIterator iterator, DTEntry *nextEntry);
@@ -230,7 +225,6 @@ extern INTN DTRestartEntryIteration(DTEntryIterator iterator);
 */
 /*
  Get the value of the specified property for the specified entry.  
-
  Get Property
 */
 extern INTN DTGetProperty(const DTEntry entry, const CHAR8 *propertyName, void **propertyValue, UINTN *propertySize);
@@ -245,8 +239,7 @@ extern INTN DTGetProperty(const DTEntry entry, const CHAR8 *propertyName, void *
  Create the property iterator structure. The target entry is defined by entry.
 */
 
-extern INTN DTCreatePropertyIterator(const DTEntry entry,
-					DTPropertyIterator *iterator);
+extern INTN DTCreatePropertyIterator(const DTEntry entry, DTPropertyIterator *iterator);
 
 /* Dispose Property Iterator*/
 extern INTN DTDisposePropertyIterator(DTPropertyIterator iterator);
@@ -257,8 +250,7 @@ extern INTN DTDisposePropertyIterator(DTPropertyIterator iterator);
  WhenINTN== kIterationDone, all properties have been exhausted.
 */
 
-extern INTN DTIterateProperties(DTPropertyIterator iterator,
-						CHAR8 **foundProperty);
+extern INTN DTIterateProperties(DTPropertyIterator iterator, CHAR8 **foundProperty);
 
 /*
  Restart Property Iteration
@@ -267,8 +259,6 @@ extern INTN DTIterateProperties(DTPropertyIterator iterator,
 */
 
 extern INTN DTRestartPropertyIteration(DTPropertyIterator iterator);
-
-
 
 // dmazar: do not have boot services when fixing dev tree in BootFixes,
 // so need one version without AllocPool.
