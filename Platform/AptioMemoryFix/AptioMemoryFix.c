@@ -626,7 +626,7 @@ MOStartImage (
     Status = gRT->GetVariable(L"boot-switch-vars", &gAppleBootVariableGuid, NULL, &Size, NULL);
     gHibernateWake = (Status == EFI_BUFFER_TOO_SMALL);
 
-    Print(L"\nAptioMemoryFix(RC5): Starting %s\nHibernate wake: %s\n",
+    Print(L"\nAptioMemoryFix(RC6): Starting %s\nHibernate wake: %s\n",
       FilePathText, gHibernateWake ? L"yes" : L"no");
     //gBS->Stall(2000000);
 
