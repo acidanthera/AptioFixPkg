@@ -53,6 +53,7 @@
   Mach-O/Mach-O.c
   FlatDevTree/device_tree.c
   FlatDevTree/device_tree.h
+  CsrConfig.h
   Hibernate.h
 
 [Sources.X64]
