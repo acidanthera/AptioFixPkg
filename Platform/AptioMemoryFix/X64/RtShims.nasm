@@ -48,16 +48,16 @@ SECTION .text
 
 ALIGN          8         ; to align the dqs
 
-global ASM_PFX(gRTShimsDataStart)
-ASM_PFX(gRTShimsDataStart):
+global ASM_PFX(gRtShimsDataStart)
+ASM_PFX(gRtShimsDataStart):
 
-global ASM_PFX(RTShimSetVariable)
-ASM_PFX(RTShimSetVariable):
+global ASM_PFX(RtShimSetVariable)
+ASM_PFX(RtShimSetVariable):
     mov        rax, qword [ASM_PFX(gSetVariable)]
     jmp        short FiveArgsShim
 
-global ASM_PFX(RTShimGetVariable)
-ASM_PFX(RTShimGetVariable):
+global ASM_PFX(RtShimGetVariable)
+ASM_PFX(RtShimGetVariable):
     ; Until boot.efi virtualizes the pointers we use a custom wrapper.
     mov        rax, qword [ASM_PFX(gGetVariableBoot)]
     test       rax, rax
@@ -70,38 +70,38 @@ ASM_PFX(RTShimGetVariable):
 FiveArgsShim:
     ConstructShim 5
 
-global ASM_PFX(RTShimGetNextVariableName)
-ASM_PFX(RTShimGetNextVariableName):
+global ASM_PFX(RtShimGetNextVariableName)
+ASM_PFX(RtShimGetNextVariableName):
     mov        rax, qword [ASM_PFX(gGetNextVariableName)]
     jmp        short FourArgsShim
 
-global ASM_PFX(RTShimGetTime)
-ASM_PFX(RTShimGetTime):
+global ASM_PFX(RtShimGetTime)
+ASM_PFX(RtShimGetTime):
     mov        rax, qword [ASM_PFX(gGetTime)]
     jmp        short FourArgsShim
 
-global ASM_PFX(RTShimSetTime)
-ASM_PFX(RTShimSetTime):
+global ASM_PFX(RtShimSetTime)
+ASM_PFX(RtShimSetTime):
     mov        rax, qword [ASM_PFX(gSetTime)]
     jmp        short FourArgsShim
 
-global ASM_PFX(RTShimGetWakeupTime)
-ASM_PFX(RTShimGetWakeupTime):
+global ASM_PFX(RtShimGetWakeupTime)
+ASM_PFX(RtShimGetWakeupTime):
     mov        rax, qword [ASM_PFX(gGetWakeupTime)]
     jmp        short FourArgsShim
 
-global ASM_PFX(RTShimSetWakeupTime)
-ASM_PFX(RTShimSetWakeupTime):
+global ASM_PFX(RtShimSetWakeupTime)
+ASM_PFX(RtShimSetWakeupTime):
     mov        rax, qword [ASM_PFX(gSetWakeupTime)]
     jmp        short FourArgsShim
 
-global ASM_PFX(RTShimGetNextHighMonoCount)
-ASM_PFX(RTShimGetNextHighMonoCount):
+global ASM_PFX(RtShimGetNextHighMonoCount)
+ASM_PFX(RtShimGetNextHighMonoCount):
     mov        rax, qword [ASM_PFX(gGetNextHighMonoCount)]
     jmp        short FourArgsShim
 
-global ASM_PFX(RTShimResetSystem)
-ASM_PFX(RTShimResetSystem):
+global ASM_PFX(RtShimResetSystem)
+ASM_PFX(RtShimResetSystem):
     mov        rax, qword [ASM_PFX(gResetSystem)]   ; Note - doesn't return!
     ;jmp       short FourArgsShim
     ; fall through to FourArgsShim
@@ -141,5 +141,5 @@ ASM_PFX(gResetSystem):            dq  0
 global ASM_PFX(gGetVariableBoot)
 ASM_PFX(gGetVariableBoot):        dq  0
 
-global ASM_PFX(gRTShimsDataEnd)
-ASM_PFX(gRTShimsDataEnd):
+global ASM_PFX(gRtShimsDataEnd)
+ASM_PFX(gRtShimsDataEnd):
