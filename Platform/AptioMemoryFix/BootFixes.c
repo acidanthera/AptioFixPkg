@@ -48,6 +48,18 @@ EFI_PHYSICAL_ADDRESS gRelocatedSysTableRtArea = 0;
 
 RT_RELOC_PROTECT_DATA gRelocInfoData;
 
+ShimPtrs gShimPtrArray[] = {
+  { &gGetVariable },
+  { &gSetVariable },
+  { &gGetNextVariableName },
+  { &gGetTime },
+  { &gSetTime },
+  { &gGetWakeupTime },
+  { &gSetWakeupTime },
+  { &gGetNextHighMonoCount },
+  { &gResetSystem }
+};
+
 // used for restoring csr-active-config in boot-args
 BOOLEAN gCsrActiveConfigSet = FALSE;
 UINT32  gCsrActiveConfig = 0;
@@ -344,102 +356,40 @@ VirtualizeRtShimPointers (
   )
 {
   EFI_MEMORY_DESCRIPTOR  *Desc;
-  UINTN                  Index;
+  UINTN                  Index, Index2, FixedCount = 0;
 
   // For some reason creating an event does not work at least on APTIO IV Z77
 
-  //TODO: Put those to an array
-
-  BOOLEAN SetVarFixed               = FALSE;
-  BOOLEAN GetVarFixed               = FALSE;
-  BOOLEAN GetNextVarFixed           = FALSE;
-  BOOLEAN GetTimeFixed              = FALSE;
-  BOOLEAN SetTimeFixed              = FALSE;
-  BOOLEAN GetWakeupTimeFixed        = FALSE;
-  BOOLEAN SetWakeupTimeFixed        = FALSE;
-  BOOLEAN GetNextHighMonoCountFixed = FALSE;
-  BOOLEAN ResetSystemFixed          = FALSE;
-
-  UINTN *GetVar;
-  UINTN *SetVar;
-  UINTN *GetNextVarName;
-  UINTN *GetTime;
-  UINTN *SetTime;
-  UINTN *GetWakeupTime;
-  UINTN *SetWakeupTime;
-  UINTN *GetNextHighMonoCount;
-  UINTN *ResetSystem;
-  UINTN *GetVarBoot;
-
   // Are we already done?
-  if (gRtShimsAddrUpdated)
+  if (gRtShimsAddrUpdated) {
     return;
+  }
 
   Desc = MemoryMap;
 
-  GetVar               = (UINTN *)((UINTN)gRtShims + ((UINTN)&gGetVariable          - (UINTN)&gRtShimsDataStart));
-  SetVar               = (UINTN *)((UINTN)gRtShims + ((UINTN)&gSetVariable          - (UINTN)&gRtShimsDataStart));
-  GetNextVarName       = (UINTN *)((UINTN)gRtShims + ((UINTN)&gGetNextVariableName  - (UINTN)&gRtShimsDataStart));
-  GetTime              = (UINTN *)((UINTN)gRtShims + ((UINTN)&gGetTime              - (UINTN)&gRtShimsDataStart));
-  SetTime              = (UINTN *)((UINTN)gRtShims + ((UINTN)&gSetTime              - (UINTN)&gRtShimsDataStart));
-  GetWakeupTime        = (UINTN *)((UINTN)gRtShims + ((UINTN)&gGetWakeupTime        - (UINTN)&gRtShimsDataStart));
-  SetWakeupTime        = (UINTN *)((UINTN)gRtShims + ((UINTN)&gSetWakeupTime        - (UINTN)&gRtShimsDataStart));
-  GetNextHighMonoCount = (UINTN *)((UINTN)gRtShims + ((UINTN)&gGetNextHighMonoCount - (UINTN)&gRtShimsDataStart));
-  ResetSystem          = (UINTN *)((UINTN)gRtShims + ((UINTN)&gResetSystem          - (UINTN)&gRtShimsDataStart));
-  GetVarBoot           = (UINTN *)((UINTN)gRtShims + ((UINTN)&gGetVariableBoot      - (UINTN)&gRtShimsDataStart));
-
   // Custom GetVariable wrapper is no longer allowed!
-  *GetVarBoot = 0;
+  *(UINTN *)((UINTN)gRtShims + ((UINTN)&gGetVariableBoot - (UINTN)&gRtShimsDataStart)) = 0;
+
+  for (Index = 0; Index < ARRAY_SIZE (gShimPtrArray); ++Index) {
+    gShimPtrArray[Index].Func = (UINTN *)((UINTN)gRtShims + ((UINTN)(gShimPtrArray[Index].gFunc) - (UINTN)&gRtShimsDataStart));
+  }
 
   for (Index = 0; Index < (MemoryMapSize / DescriptorSize); ++Index) {
-    if (gGetVariable >= Desc->PhysicalStart && gGetVariable < Desc->PhysicalStart + EFI_PAGES_TO_SIZE (Desc->NumberOfPages)) {
-      *GetVar += (Desc->VirtualStart - Desc->PhysicalStart);
-      GetVarFixed = TRUE;
+    for (Index2 = 0; Index2 < ARRAY_SIZE (gShimPtrArray); ++Index2) {
+      if (
+        !gShimPtrArray[Index2].Fixed &&
+        (*(gShimPtrArray[Index2].gFunc) >= Desc->PhysicalStart) &&
+        (*(gShimPtrArray[Index2].gFunc) < (Desc->PhysicalStart + EFI_PAGES_TO_SIZE (Desc->NumberOfPages)))
+      ) {
+        gShimPtrArray[Index2].Fixed = TRUE;
+        *(gShimPtrArray[Index2].Func) += (Desc->VirtualStart - Desc->PhysicalStart);
+        FixedCount++;
+      }
     }
 
-    if (gSetVariable >= Desc->PhysicalStart && gSetVariable < Desc->PhysicalStart + EFI_PAGES_TO_SIZE (Desc->NumberOfPages)) {
-      *SetVar += (Desc->VirtualStart - Desc->PhysicalStart);
-      SetVarFixed = TRUE;
-    }
-
-    if (gGetNextVariableName >= Desc->PhysicalStart && gGetNextVariableName < Desc->PhysicalStart + EFI_PAGES_TO_SIZE (Desc->NumberOfPages)) {
-      *GetNextVarName += (Desc->VirtualStart - Desc->PhysicalStart);
-      GetNextVarFixed = TRUE;
-    }
-
-    if (gGetTime >= Desc->PhysicalStart && gGetTime < Desc->PhysicalStart + EFI_PAGES_TO_SIZE (Desc->NumberOfPages)) {
-      *GetTime += (Desc->VirtualStart - Desc->PhysicalStart);
-      GetTimeFixed = TRUE;
-    }
-
-    if (gSetTime >= Desc->PhysicalStart && gSetTime < Desc->PhysicalStart + EFI_PAGES_TO_SIZE (Desc->NumberOfPages)) {
-      *SetTime += (Desc->VirtualStart - Desc->PhysicalStart);
-      SetTimeFixed = TRUE;
-    }
-
-    if (gGetWakeupTime >= Desc->PhysicalStart && gGetWakeupTime < Desc->PhysicalStart + EFI_PAGES_TO_SIZE (Desc->NumberOfPages)) {
-      *GetWakeupTime += (Desc->VirtualStart - Desc->PhysicalStart);
-      GetWakeupTimeFixed = TRUE;
-    }
-
-    if (gSetWakeupTime >= Desc->PhysicalStart && gSetWakeupTime < Desc->PhysicalStart + EFI_PAGES_TO_SIZE (Desc->NumberOfPages)) {
-      *SetWakeupTime += (Desc->VirtualStart - Desc->PhysicalStart);
-      SetWakeupTimeFixed = TRUE;
-    }
-
-    if (gGetNextHighMonoCount >= Desc->PhysicalStart && gGetNextHighMonoCount < Desc->PhysicalStart + EFI_PAGES_TO_SIZE (Desc->NumberOfPages)) {
-      *GetNextHighMonoCount += (Desc->VirtualStart - Desc->PhysicalStart);
-      GetNextHighMonoCountFixed = TRUE;
-    }
-
-    if (gResetSystem >= Desc->PhysicalStart && gResetSystem < Desc->PhysicalStart + EFI_PAGES_TO_SIZE (Desc->NumberOfPages)) {
-      *ResetSystem += (Desc->VirtualStart - Desc->PhysicalStart);
-      ResetSystemFixed = TRUE;
-    }
-
-    if (SetVarFixed && GetVarFixed && GetNextVarFixed && GetTimeFixed && SetTimeFixed &&
-      GetWakeupTimeFixed && SetWakeupTimeFixed && GetNextHighMonoCountFixed && ResetSystemFixed)
+    if (FixedCount == ARRAY_SIZE (gShimPtrArray)) {
       break;
+    }
 
     Desc = NEXT_MEMORY_DESCRIPTOR (Desc, DescriptorSize);
   }
@@ -570,7 +520,7 @@ ProcessBooterImage (
   if (!EFI_ERROR(Status) && BootArgsVarLen > 0) {
     // Just in case we do not have 0-termination
     BootArgsVar[BootArgsVarLen-1] = '\0';
-    
+
     CHAR8 *Slide = AsciiStrStr(BootArgsVar, "slide=");
     VERIFY_BOOT_ARG(Slide, BootArgsVar, "slide=");
     gSlideArgPresent |= Slide != NULL;
@@ -711,7 +661,7 @@ DecideOnCustomSlideImplementation (
       &DescriptorSize,
       &DescriptorVersion
       );
-    
+
     if (EFI_ERROR (Status))
       gBS->FreePages ((EFI_PHYSICAL_ADDRESS)MemoryMap, EFI_SIZE_TO_PAGES (AllocatedMapSize));
   } while (Status == EFI_BUFFER_TOO_SMALL);
@@ -735,9 +685,9 @@ DecideOnCustomSlideImplementation (
     UINTN                  EndAddr;
     UINTN                  DescEndAddr;
     UINTN                  AvailableSize;
-    
+
     GetSlideRangeForValue((UINT8)Slide, &StartAddr, &EndAddr);
-    
+
     AvailableSize = 0;
 
     for (Index = 0; Index < NumEntries; Index++) {
@@ -869,7 +819,7 @@ GetVariableCustomSlide (
       *Config = 0;
       Status = EFI_SUCCESS;
       if (Attributes) {
-        *Attributes = 
+        *Attributes =
           EFI_VARIABLE_BOOTSERVICE_ACCESS |
           EFI_VARIABLE_RUNTIME_ACCESS |
           EFI_VARIABLE_NON_VOLATILE;
@@ -884,7 +834,7 @@ GetVariableCustomSlide (
       UINTN StoredBootArgsSize = BOOT_LINE_LENGTH;
       UINT8 Slide = GenerateRandomSlideValue ();
       Status = RealGetVariable (VariableName, VendorGuid, Attributes, &StoredBootArgsSize, gStoredBootArgsVar);
-      
+
       CHAR8 *AppendPtr = gStoredBootArgsVar;
       if (EFI_ERROR (Status)) {
         DEBUG ((DEBUG_WARN, "boot-args returned %r error\n", Status));
@@ -927,7 +877,7 @@ GetVariableCustomSlide (
     }
 
     if (Attributes) {
-      *Attributes = 
+      *Attributes =
         EFI_VARIABLE_BOOTSERVICE_ACCESS |
         EFI_VARIABLE_RUNTIME_ACCESS |
         EFI_VARIABLE_NON_VOLATILE;
@@ -1047,7 +997,7 @@ ProtectRtMemoryFromRelocation (
 
   for (Index = 0; Index < NumEntries; Index++) {
     if ((Desc->Attribute & EFI_MEMORY_RUNTIME) != 0) {
-      if (Desc->Type == EfiRuntimeServicesCode || 
+      if (Desc->Type == EfiRuntimeServicesCode ||
         (Desc->Type == EfiRuntimeServicesData && Desc->PhysicalStart != gSysTableRtArea)) {
         if (gRelocInfoData.NumEntries < ARRAY_SIZE (gRelocInfoData.RelocInfo)) {
           RelocInfo->PhysicalStart = Desc->PhysicalStart;
@@ -1156,7 +1106,7 @@ FixHibernateWakeWithoutRelocBlock (
   // will not be unmapped and this will result in a memory leak if some new runtime pages are added.
   // But even that should not cause crashes.
   //
-  // From the top of my head I could imagine a new memory mapping 
+  // From the top of my head I could imagine a new memory mapping
   // SystemTable gets a new address, and this address is marked as "Available".
   Handoff = (IOHibernateHandoff *)(UINTN)(ImageHeader->handoffPages << EFI_PAGE_SHIFT);
   while (Handoff->type != kIOHibernateHandoffTypeEnd) {
