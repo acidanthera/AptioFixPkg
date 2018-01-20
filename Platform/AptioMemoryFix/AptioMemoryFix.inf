@@ -73,6 +73,7 @@
   gEfiMemorySubClassGuid                      ## SOMETIMES_CONSUMES
 
 [Protocols]
+  gAptioMemoryFixProtocolGuid                 ## PRODUCES
   gEfiLoadedImageProtocolGuid                 ## CONSUMES
   gEfiDevicePathProtocolGuid                  ## CONSUMES
   gEfiGraphicsOutputProtocolGuid              ## CONSUMES

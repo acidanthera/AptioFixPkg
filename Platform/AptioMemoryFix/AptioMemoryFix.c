@@ -17,6 +17,7 @@
 #include <Guid/GlobalVariable.h>
 
 #include <Protocol/LoadedImage.h>
+#include <Protocol/AptioMemoryFixProtocol.h>
 
 #include "Config.h"
 #include "BootArgs.h"
@@ -26,6 +27,11 @@
 #include "Lib.h"
 #include "Hibernate.h"
 #include "RtShims.h"
+
+// One could discover AptioMemoryFix with this protocol.
+STATIC APTIOMEMORYFIX_PROTOCOL mAptioMemoryFixProtocol = {
+  APTIOMEMORYFIX_PROTOCOL_REVISION
+};
 
 STATIC UINTN                mCounter = 0;
 
@@ -626,8 +632,10 @@ MOStartImage (
     Status = gRT->GetVariable(L"boot-switch-vars", &gAppleBootVariableGuid, NULL, &Size, NULL);
     gHibernateWake = (Status == EFI_BUFFER_TOO_SMALL);
 
-    Print(L"\nAptioMemoryFix(RC6): Starting %s\nHibernate wake: %s\n",
-      FilePathText, gHibernateWake ? L"yes" : L"no");
+    Print(L"\nAptioMemoryFix(R%d): Starting %s\nHibernate wake: %s\n",
+      mAptioMemoryFixProtocol.Revision,
+      FilePathText,
+      gHibernateWake ? L"yes" : L"no");
     //gBS->Stall(2000000);
 
     // run with our overrides
@@ -654,6 +662,28 @@ AptioMemoryFixEntrypoint (
   IN EFI_SYSTEM_TABLE  *SystemTable
   )
 {
+  EFI_STATUS    Status;
+  VOID          *Interface;
+  EFI_HANDLE    Handle;
+
+  Status = gBS->LocateProtocol (
+                  &gAptioMemoryFixProtocolGuid,
+                  NULL,
+                  &Interface
+                );
+
+  if (!EFI_ERROR (Status)) {
+    // In case for whatever reason one tried to reload the driver.
+    return EFI_ALREADY_STARTED;
+  }
+
+  gBS->InstallProtocolInterface (
+        &Handle,
+        &gAptioMemoryFixProtocolGuid,
+        EFI_NATIVE_INTERFACE,
+        &mAptioMemoryFixProtocol
+        );
+
   // install StartImage override
   // all other overrides will be started when boot.efi is started
   gStartImage = gBS->StartImage;

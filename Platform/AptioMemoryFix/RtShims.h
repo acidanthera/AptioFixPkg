@@ -35,4 +35,10 @@ extern UINTN RtShimResetSystem;
 
 extern VOID *gRtShims;
 
+typedef struct {
+  UINTN           *gFunc;
+  UINTN           *Func;
+  BOOLEAN         Fixed;
+} ShimPtrs;
+
 #endif // APTIOFIX_RT_SHIMS_H
