@@ -23,6 +23,7 @@
 #include "Lib.h"
 #include "Mach-O/Mach-O.h"
 #include "FlatDevTree/device_tree.h"
+#include "CsrConfig.h"
 #include "Hibernate.h"
 #include "RtShims.h"
 
@@ -63,7 +64,7 @@ CHAR8   gStoredBootArgsVar[BOOT_LINE_LENGTH] = {0};
 
 // user for custom aslr implimentation, when some values are not valid
 UINT8   gValidSlides[TOTAL_SLIDE_NUM] = {0};
-UINT32  gValidSlidesNum   = TOTAL_SLIDE_NUM;
+UINT32  gValidSlidesNum = TOTAL_SLIDE_NUM;
 
 // slide calculation on Sandy and Ivy Bridge CPUs needs special treatment
 BOOLEAN gSandyOrIvy = FALSE;
@@ -797,22 +798,12 @@ DecideOnCustomSlideImplementation (
   gBS->FreePages ((EFI_PHYSICAL_ADDRESS)MemoryMap, EFI_SIZE_TO_PAGES (AllocatedMapSize));
 
   if (gValidSlidesNum != TOTAL_SLIDE_NUM) {
-    Print(L"Some slide values (%d/%d) are not available for usage! Booting may fail!\n", gValidSlidesNum, TOTAL_SLIDE_NUM);
+    Print(L"Only %d/%d slide values are available for usage! Booting may fail!\n", gValidSlidesNum, TOTAL_SLIDE_NUM);
+    if (gValidSlidesNum == 0) {
+      Print(L"No slide values are available for usage! You should use custom slide.\n");
+    }
   }
 }
-
-/* Rootless configuration flags (xnu/bsd/sys/csr.h) */
-#define CSR_ALLOW_UNTRUSTED_KEXTS             (1 << 0)
-#define CSR_ALLOW_UNRESTRICTED_FS             (1 << 1)
-#define CSR_ALLOW_TASK_FOR_PID                (1 << 2)
-#define CSR_ALLOW_KERNEL_DEBUGGER             (1 << 3)
-#define CSR_ALLOW_APPLE_INTERNAL              (1 << 4)
-#define CSR_ALLOW_DESTRUCTIVE_DTRACE          (1 << 5) /* name deprecated */
-#define CSR_ALLOW_UNRESTRICTED_DTRACE         (1 << 5)
-#define CSR_ALLOW_UNRESTRICTED_NVRAM          (1 << 6)
-#define CSR_ALLOW_DEVICE_CONFIGURATIO         (1 << 7)
-#define CSR_ALLOW_ANY_RECOVERY_OS             (1 << 8)
-#define CSR_ALLOW_UNAPPROVED_KEXTS            (1 << 9)
 
 EFI_STATUS
 EFIAPI
@@ -862,7 +853,7 @@ GetVariableCustomSlide (
         //Print(L"Slides were analyzed!\n");
       }
 #endif
-      if (gValidSlidesNum != TOTAL_SLIDE_NUM) {
+      if (gValidSlidesNum != TOTAL_SLIDE_NUM && gValidSlidesNum > 0) {
         // Only return custom boot-args if gValidSlidesNum were determined to be less than TOTAL_SLIDE_NUM
         // And thus we have to use a custom slide implementation to boot reliably
         IsBootArgs = TRUE;
