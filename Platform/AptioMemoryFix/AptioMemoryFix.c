@@ -615,7 +615,7 @@ MOStartImage (
         if (EFI_ERROR(Status)) {
           DEBUG ((DEBUG_WARN, "Something goes wrong: %r\n", Status));
         }
-        gRT->ResetSystem(EfiResetWarm, EFI_SUCCESS, 0, NULL);
+        gRT->ResetSystem(EfiResetCold, EFI_SUCCESS, 0, NULL);
       }
     } else {
       StartFlag = StrStriBasic(FilePathText,L"boot.efi");
