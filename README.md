@@ -22,11 +22,11 @@ To debug boot.efi errors on 10.13, aside the usual verbose (-v) boot-arg, you wi
 
 Before using AptioMemoryFix please ensure that you have:
 - Most up-to-date UEFI BIOS firmware ([patch it](https://github.com/LongSoft/UEFITool/blob/master/UEFIPatch/patches.txt) to unlock 0xE2 register if you know how).
-- ACPI DMAR table dropped by your bootloader.
+- ACPI DMAR table dropped by your bootloader (unless you need VT-d support in macOS, which is unlikely).
 - Fast Boot and Hardware Fast Boot disabled in BIOS if present.
 - Above 4G Decoding enabled in BIOS if present.
 - EHCI/XHCI Hand-off enabled in BIOS if boot stalls unless USB devices are disconnected.
-- VT-d, VT-x, Hyper Threading, Execute Disable Bit enabled in BIOS if present.
+- VT-x, Hyper Threading, Execute Disable Bit enabled in BIOS if present.
 
 #### Features (compared to the original)
 - Automatically finds the available memory region for boot.efi to use
