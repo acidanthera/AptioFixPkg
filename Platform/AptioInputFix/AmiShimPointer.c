@@ -402,7 +402,7 @@ AmiShimPointerTimerUninstall (
   if (mAmiShimPointer.TimerProtocol != NULL) {
     Status = mAmiShimPointer.TimerProtocol->GetTimerPeriod(mAmiShimPointer.TimerProtocol, &mAmiShimPointer.OriginalTimerPeriod);
     if (!EFI_ERROR (Status)) {
-      if (mAmiShimPointer.OriginalTimerPeriod != mAmiShimPointer.OriginalTimerPeriod) {
+      if (mAmiShimPointer.OriginalTimerPeriod > AMI_SHIM_TIMER_PERIOD) {
         Status = mAmiShimPointer.TimerProtocol->SetTimerPeriod(mAmiShimPointer.TimerProtocol, AMI_SHIM_TIMER_PERIOD);
         DEBUG((EFI_D_ERROR, "AmiShimPointerTimerUninstall changed period %d to %d, error %d\n", mAmiShimPointer.OriginalTimerPeriod, AMI_SHIM_TIMER_PERIOD, Status));
       }

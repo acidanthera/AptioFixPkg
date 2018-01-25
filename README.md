@@ -18,11 +18,15 @@ Reference driver to shim AMI APTIO proprietary mouse & keyboard protocols for Fi
 Fork of the original [OsxAptioFix2](https://sourceforge.net/p/cloverefiboot/code/HEAD/tree/OsxAptioFixDrv/) driver with a cleaner (yet still terrible) codebase and improved stability and functionality.
 
 **Important Notes**:
-To debug boot.efi errors on 10.13 aside the usual verbose (-v) boot-arg you will also need a boot.efi patch. Before using AptioMemoryFix please ensure that you have:
-- Most up-to-date UEFI BIOS firmware (patch it to unlock 0xE2 register if you know how).
+To debug boot.efi errors on 10.13, aside the usual verbose (-v) boot-arg, you will need a boot.efi [patch](http://www.insanelymac.com/forum/topic/331381-aptiomemoryfix/page-7#entry2572595). The patch is necessary to get sensible error messages instead of 'does printf work??'.
+
+Before using AptioMemoryFix please ensure that you have:
+- Most up-to-date UEFI BIOS firmware ([patch it](https://github.com/LongSoft/UEFITool/blob/master/UEFIPatch/patches.txt) to unlock 0xE2 register if you know how).
+- ACPI DMAR table dropped by your bootloader.
 - Fast Boot and Hardware Fast Boot disabled in BIOS if present.
-- Above 4G Decoding enabled if present.
-- EHCI/XHCI Hand-off enabled if boot stalls unless USB devices are disconnected.
+- Above 4G Decoding enabled in BIOS if present.
+- EHCI/XHCI Hand-off enabled in BIOS if boot stalls unless USB devices are disconnected.
+- VT-d, VT-x, Hyper Threading, Execute Disable Bit enabled in BIOS if present.
 
 #### Features (compared to the original)
 - Automatically finds the available memory region for boot.efi to use
