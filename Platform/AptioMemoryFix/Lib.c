@@ -103,7 +103,7 @@ MAP_EFI_GUID_STR EfiGuidStrMap[] = {
   {NULL, NULL}
 };
 
-CHAR16 EfiGuidStrTmp[47 + 1];
+CHAR16 EfiGuidStrTmp[48];
 
 /** Returns GUID as string, with friendly name for known guids. */
 CHAR16 *
@@ -123,7 +123,7 @@ GuidStr (
   }
 
   if (Str == NULL) {
-    UnicodeSPrint(EfiGuidStrTmp, 47 * 2, L"%g", Guid); 
+    UnicodeSPrint(EfiGuidStrTmp, sizeof(EfiGuidStrTmp) - sizeof(EfiGuidStrTmp[0]), L"%g", Guid);
     Str = EfiGuidStrTmp;
   }
   return Str;
@@ -266,8 +266,8 @@ FixMemMap (
     // Appears that some motherboards have a conventional memory region, when it is actually
     // used in runtime and causes sleep issues & memory corruption.
     //
-    if (Desc->PhysicalStart < 0xa0000 && PhysicalEnd >= 0x9e000 && (Desc->Type == EfiConventionalMemory ||
-      Desc->Type == EfiBootServicesData || Desc->Type == EfiBootServicesCode)) {
+    if (Desc->PhysicalStart < 0xa0000 && PhysicalEnd >= 0x9e000 && 
+      (Desc->Type == EfiConventionalMemory || Desc->Type == EfiBootServicesData || Desc->Type == EfiBootServicesCode)) {
       Desc->Type = EfiACPIMemoryNVS;
       Desc->Attribute = 0;
     }
@@ -281,10 +281,10 @@ FixMemMap (
       // block with RT flag.
       // if it is not RT or MMIO, then report to log
       //
-      if (Desc->Type != EfiRuntimeServicesCode
-        && Desc->Type != EfiRuntimeServicesData
-        && Desc->Type != EfiMemoryMappedIO
-        && Desc->Type != EfiMemoryMappedIOPortSpace
+      if (Desc->Type != EfiRuntimeServicesCode &&
+        Desc->Type != EfiRuntimeServicesData &&
+        Desc->Type != EfiMemoryMappedIO &&
+        Desc->Type != EfiMemoryMappedIOPortSpace
         )
       {
         DEBUG ((DEBUG_VERBOSE, " %s with RT flag: %lx (0x%x) - ???\n", mEfiMemoryTypeDesc[Desc->Type], Desc->PhysicalStart, Desc->NumberOfPages));
@@ -294,10 +294,10 @@ FixMemMap (
       // block without RT flag.
       // if it is RT or MMIO, then report to log
       //
-      if (Desc->Type == EfiRuntimeServicesCode
-        || Desc->Type == EfiRuntimeServicesData
-        || Desc->Type == EfiMemoryMappedIO
-        || Desc->Type == EfiMemoryMappedIOPortSpace
+      if (Desc->Type == EfiRuntimeServicesCode ||
+        Desc->Type == EfiRuntimeServicesData ||
+        Desc->Type == EfiMemoryMappedIO ||
+        Desc->Type == EfiMemoryMappedIOPortSpace
         )
       {
         DEBUG ((DEBUG_VERBOSE, " %s without RT flag: %lx (0x%x) - ???\n", mEfiMemoryTypeDesc[Desc->Type], Desc->PhysicalStart, Desc->NumberOfPages));
@@ -308,6 +308,7 @@ FixMemMap (
   }
 }
 
+/** Older boot.efi versions did not support too large memory maps, so we try to join BS_Code and BS_Data areas. */
 VOID
 EFIAPI
 ShrinkMemMap (
@@ -324,21 +325,18 @@ ShrinkMemMap (
   BOOLEAN                 CanBeJoined;
   BOOLEAN                 HasEntriesToRemove;
 
-  PrevDesc = MemoryMap;
-  Desc = NEXT_MEMORY_DESCRIPTOR(PrevDesc, DescriptorSize);
-  SizeFromDescToEnd = *MemoryMapSize - DescriptorSize;
-  *MemoryMapSize = DescriptorSize;
+  PrevDesc           = MemoryMap;
+  Desc               = NEXT_MEMORY_DESCRIPTOR(PrevDesc, DescriptorSize);
+  SizeFromDescToEnd  = *MemoryMapSize - DescriptorSize;
+  *MemoryMapSize     = DescriptorSize;
   HasEntriesToRemove = FALSE;
+
   while (SizeFromDescToEnd > 0) {
     Bytes = (((UINTN) PrevDesc->NumberOfPages) * EFI_PAGE_SIZE);
     CanBeJoined = FALSE;
-    if ((Desc->Attribute == PrevDesc->Attribute) && (PrevDesc->PhysicalStart + Bytes == Desc->PhysicalStart)) {
-      if (Desc->Type == EfiBootServicesCode || Desc->Type == EfiBootServicesData || Desc->Type == EfiConventionalMemory) {
-        CanBeJoined = 
-          PrevDesc->Type == EfiBootServicesCode ||
-          PrevDesc->Type == EfiBootServicesData ||
-          PrevDesc->Type == EfiConventionalMemory;
-      }
+    if (Desc->Attribute == PrevDesc->Attribute && PrevDesc->PhysicalStart + Bytes == Desc->PhysicalStart) {
+      CanBeJoined = (Desc->Type == EfiBootServicesCode || Desc->Type == EfiBootServicesData) &&
+        (PrevDesc->Type == EfiBootServicesCode || PrevDesc->Type == EfiBootServicesData);
     }
 
     if (CanBeJoined) {
@@ -354,8 +352,8 @@ ShrinkMemMap (
         // we need to copy [Desc, end of list] to PrevDesc + 1
         CopyMem(PrevDesc, Desc, SizeFromDescToEnd);
         Desc = PrevDesc;
+        HasEntriesToRemove = FALSE;
       }
-      HasEntriesToRemove = FALSE;
     }
     // move to next
     Desc = NEXT_MEMORY_DESCRIPTOR(Desc, DescriptorSize);
@@ -493,6 +491,7 @@ EFI_STATUS
 EFIAPI
 GetMemoryMapAlloc (
   IN EFI_GET_MEMORY_MAP           GetMemoryMapFunction,
+  IN OUT UINTN                    *AllocatedTopPages,
   OUT UINTN                       *MemoryMapSize,
   OUT EFI_MEMORY_DESCRIPTOR       **MemoryMap,
   OUT UINTN                       *MapKey,
@@ -500,21 +499,65 @@ GetMemoryMapAlloc (
   OUT UINT32                      *DescriptorVersion
   )
 {
-  EFI_STATUS      Status;
+  EFI_STATUS     Status;
 
   *MemoryMapSize = 0;
-  *MemoryMap = NULL;
-  Status = GetMemoryMapFunction(MemoryMapSize, *MemoryMap, MapKey, DescriptorSize, DescriptorVersion);
-  if (Status == EFI_BUFFER_TOO_SMALL) {
-    // OK. Space needed for mem map is in MemoryMapSize
-    // Important: next AllocatePool can increase mem map size - we must add some space for this
-    *MemoryMapSize += 256;
-    *MemoryMap = DirectAllocatePool(*MemoryMapSize);
-    Status = GetMemoryMapFunction(MemoryMapSize, *MemoryMap, MapKey, DescriptorSize, DescriptorVersion);
-    if (EFI_ERROR(Status)) {
-      DirectFreePool(*MemoryMap);
-    }
+  *MemoryMap     = NULL;
+  Status = GetMemoryMapFunction (
+    MemoryMapSize,
+    *MemoryMap,
+    MapKey,
+    DescriptorSize,
+    DescriptorVersion
+    );
+
+  if (Status != EFI_BUFFER_TOO_SMALL) {
+    DEBUG ((DEBUG_WARN, "Insane GetMemoryMap %r\n", Status));
+    return Status;
   }
+
+  do {
+    // This is done because extra allocations may increase memory map size.
+    *MemoryMapSize   += 256;
+
+    // Requested to allocate from top via pages.
+    // This may be needed, because the pool memory may collide with the kernel.
+    if (AllocatedTopPages) {
+      *MemoryMap         = (EFI_MEMORY_DESCRIPTOR *)BASE_4GB;
+      *AllocatedTopPages = EFI_SIZE_TO_PAGES(*MemoryMapSize);
+      Status = AllocatePagesFromTop (EfiBootServicesData, *AllocatedTopPages, (EFI_PHYSICAL_ADDRESS *)*MemoryMap);
+      if (EFI_ERROR (Status)) {
+        DEBUG ((DEBUG_WARN, "Temp memory map allocation from top failure %r\n", Status));
+        *MemoryMap = NULL;
+        return Status;
+      }
+    } else {
+      *MemoryMap = DirectAllocatePool (*MemoryMapSize);
+      if (!*MemoryMap) {
+        DEBUG ((DEBUG_WARN, "Temp memory map direct allocation failure\n"));
+        return EFI_OUT_OF_RESOURCES;
+      }
+    }
+
+    Status = GetMemoryMapFunction (
+      MemoryMapSize,
+      *MemoryMap,
+      MapKey,
+      DescriptorSize,
+      DescriptorVersion
+      );
+
+    if (EFI_ERROR (Status)) {
+      if (AllocatedTopPages)
+        gBS->FreePages ((EFI_PHYSICAL_ADDRESS)*MemoryMap, *AllocatedTopPages);
+      else
+        DirectFreePool (*MemoryMap);
+      *MemoryMap = NULL;
+    }
+  } while (Status == EFI_BUFFER_TOO_SMALL);
+
+  if (Status != EFI_SUCCESS)
+    DEBUG ((DEBUG_WARN, "Failed to obtain memory map %r\n", Status));
 
   return Status;
 }
@@ -537,7 +580,7 @@ AllocatePagesFromTop (
   EFI_MEMORY_DESCRIPTOR   *MemoryMapEnd;
   EFI_MEMORY_DESCRIPTOR   *Desc;
 
-  Status = GetMemoryMapAlloc(gBS->GetMemoryMap, &MemoryMapSize, &MemoryMap, &MapKey, &DescriptorSize, &DescriptorVersion);
+  Status = GetMemoryMapAlloc(gBS->GetMemoryMap, NULL, &MemoryMapSize, &MemoryMap, &MapKey, &DescriptorSize, &DescriptorVersion);
   if (EFI_ERROR(Status)) {
     return Status;
   }

@@ -617,9 +617,9 @@ VOID
 DecideOnCustomSlideImplementation (
   )
 {
-  UINTN                  AllocatedMapSize = 0;
-  UINTN                  MemoryMapSize    = 0;
-  EFI_MEMORY_DESCRIPTOR  *MemoryMap       = (EFI_MEMORY_DESCRIPTOR *)BASE_4GB;
+  UINTN                  AllocatedMapPages;
+  UINTN                  MemoryMapSize;
+  EFI_MEMORY_DESCRIPTOR  *MemoryMap;
   UINTN                  MapKey;
   EFI_STATUS             Status;
   UINTN                  DescriptorSize;
@@ -628,51 +628,21 @@ DecideOnCustomSlideImplementation (
   UINTN                  Slide;
   UINTN                  NumEntries;
 
-  Status = gStoredGetMemoryMap (
+  Status = GetMemoryMapAlloc (
+    gStoredGetMemoryMap,
+    &AllocatedMapPages,
     &MemoryMapSize,
-    MemoryMap,
+    &MemoryMap,
     &MapKey,
     &DescriptorSize,
     &DescriptorVersion
     );
 
-  if (Status != EFI_BUFFER_TOO_SMALL) {
-    DEBUG ((DEBUG_WARN, "Insane GetMemoryMap %r\n", Status));
-    return;
-  }
-
-  do {
-    // This is done because extra allocations may increase memory map size.
-    MemoryMapSize += 256;
-    AllocatedMapSize = MemoryMapSize;
-    // We use AllocatePagesFromTop, because we pool memory may collide with the kernel.
-    // If it does some slides will be invalid.
-    Status = AllocatePagesFromTop (EfiBootServicesData, EFI_SIZE_TO_PAGES(MemoryMapSize), (EFI_PHYSICAL_ADDRESS *)&MemoryMap);
-
-    if (EFI_ERROR(Status)) {
-      DEBUG ((DEBUG_WARN, "Temp memory map allocation failure %r\n", Status));
-      return;
-    }
-
-    Status = gStoredGetMemoryMap (
-      &MemoryMapSize,
-      MemoryMap,
-      &MapKey,
-      &DescriptorSize,
-      &DescriptorVersion
-      );
-
-    if (EFI_ERROR (Status))
-      gBS->FreePages ((EFI_PHYSICAL_ADDRESS)MemoryMap, EFI_SIZE_TO_PAGES (AllocatedMapSize));
-  } while (Status == EFI_BUFFER_TOO_SMALL);
-
   if (Status != EFI_SUCCESS) {
-    DEBUG ((DEBUG_WARN, "Failed to obtain memory map %r\n", Status));
     return;
   }
 
   // At this point we have a memory map that we could use to determine what slide values are allowed.
-
   NumEntries = MemoryMapSize / DescriptorSize;
 
   // Reset valid slides to zero and find actually working ones.
@@ -745,7 +715,7 @@ DecideOnCustomSlideImplementation (
     }
   }
 
-  gBS->FreePages ((EFI_PHYSICAL_ADDRESS)MemoryMap, EFI_SIZE_TO_PAGES (AllocatedMapSize));
+  gBS->FreePages ((EFI_PHYSICAL_ADDRESS)MemoryMap, AllocatedMapPages);
 
   if (gValidSlidesNum != TOTAL_SLIDE_NUM) {
     Print(L"Only %d/%d slide values are available for usage! Booting may fail!\n", gValidSlidesNum, TOTAL_SLIDE_NUM);
@@ -917,7 +887,7 @@ HideSlideFromOS (
   DTInit(DevTree);
   if (DTLookupEntry(NULL, "/chosen", &Chosen) == kSuccess) {
     DEBUG ((DEBUG_VERBOSE, "Found /chosen\n"));
-    if (DTGetProperty(Chosen, "boot-args", (VOID **)&ArgsStr, &ArgsSize) == kSuccess) {
+    if (DTGetProperty(Chosen, "boot-args", (VOID **)&ArgsStr, &ArgsSize) == kSuccess && ArgsSize > 0) {
       DEBUG ((DEBUG_VERBOSE, "Found boot-args in /chosen\n"));
       RemoveArgumentFromCommandLine(ArgsStr, "slide=");
     }
