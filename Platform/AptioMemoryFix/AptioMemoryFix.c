@@ -76,16 +76,16 @@ UINTN                       gExitBSMapKey       = 0;
  * Uses gStoredGetMemoryMap, so can be called only after gStoredGetMemoryMap is set.
  */
 EFI_STATUS
-GetMemoryMapKey(OUT UINTN *MapKey)
+GetMemoryMapKey(
+  OUT UINTN                   *MapKey,
+  OUT EFI_MEMORY_DESCRIPTOR   **MemoryMap
+  )
 {
-  EFI_STATUS              Status;
   UINTN                   MemoryMapSize;
-  EFI_MEMORY_DESCRIPTOR   *MemoryMap;
   UINTN                   DescriptorSize;
   UINT32                  DescriptorVersion;
 
-  Status = GetMemoryMapAlloc(gStoredGetMemoryMap, &MemoryMapSize, &MemoryMap, MapKey, &DescriptorSize, &DescriptorVersion);
-  return Status;
+  return GetMemoryMapAlloc (gStoredGetMemoryMap, NULL, &MemoryMapSize, MemoryMap, MapKey, &DescriptorSize, &DescriptorVersion);
 }
 
 /** gBS->HandleProtocol override:
@@ -252,6 +252,7 @@ MOExitBootServices (
 {
   EFI_STATUS               Status;
   UINTN                    NewMapKey;
+  EFI_MEMORY_DESCRIPTOR    *MemoryMap;
   UINTN                    SlideAddr = 0;
   VOID                     *MachOImage = NULL;
   IOHibernateImageHeader   *ImageHeader = NULL;
@@ -269,7 +270,7 @@ MOExitBootServices (
   if (gDumpMemArgPresent) {
     gExitBSImageHandle = ImageHandle;
     gExitBSMapKey      = MapKey; 
-    Status = EFI_SUCCESS;
+    Status             = EFI_SUCCESS;
   } else
 #endif
   {
@@ -286,7 +287,9 @@ MOExitBootServices (
       "Yes"
       );
 
-    Status = GetMemoryMapKey(&NewMapKey);
+    //Note: it is too late to free memory map here, but it does not matter,
+    // because boot.efi has an old one and will freely use the memory.
+    Status = GetMemoryMapKey(&NewMapKey, &MemoryMap);
     DEBUG ((DEBUG_VERBOSE, "ExitBootServices: GetMemoryMapKey = %r\n", Status));
     if (Status == EFI_SUCCESS) {
       // we have latest mem map and NewMapKey
@@ -468,7 +471,7 @@ RunImageWithOverrides(
     gGetNextHighMonoCount = (UINTN)gRT->GetNextHighMonotonicCount;
     gResetSystem          = (UINTN)gRT->ResetSystem;
 
-    gGetVariableBoot     = (UINTN)GetVariableCustomSlide;
+    gGetVariableBoot      = (UINTN)GetVariableCustomSlide;
 
     CopyMem (
       gRtShims,
@@ -598,7 +601,7 @@ MOStartImage (
         DEBUG ((DEBUG_WARN, "Something goes wrong while setting recovery-boot-mode\n"));
       }
       Status = gRT->SetVariable (L"aptiofixflag", &gAppleBootVariableGuid, 0, 0, NULL);
-      gBS->FreePool(Value);
+      DirectFreePool(Value);
     }
 
     Size2 =0;
@@ -618,9 +621,9 @@ MOStartImage (
         gRT->ResetSystem(EfiResetCold, EFI_SUCCESS, 0, NULL);
       }
     } else {
-      StartFlag = StrStriBasic(FilePathText,L"boot.efi");
+      StartFlag = StrStriBasic(FilePathText, L"boot.efi");
     }
-    gBS->FreePool(Value);
+    DirectFreePool(Value);
   }
 
   // check if this is boot.efi

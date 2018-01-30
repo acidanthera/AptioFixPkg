@@ -126,6 +126,7 @@ EFI_STATUS
 EFIAPI
 GetMemoryMapAlloc (
   IN EFI_GET_MEMORY_MAP       GetMemoryMapFunction,
+  IN OUT UINTN                *AllocatedTopPages,
   OUT UINTN                   *MemoryMapSize,
   OUT EFI_MEMORY_DESCRIPTOR   **MemoryMap,
   OUT UINTN                   *MapKey,
