@@ -295,7 +295,6 @@ FixMemMap (
   }
 }
 
-/** Older boot.efi versions did not support too large memory maps, so we try to join BS_Code and BS_Data areas. */
 VOID
 EFIAPI
 ShrinkMemMap (
@@ -322,12 +321,23 @@ ShrinkMemMap (
     Bytes = (((UINTN) PrevDesc->NumberOfPages) * EFI_PAGE_SIZE);
     CanBeJoined = FALSE;
     if (Desc->Attribute == PrevDesc->Attribute && PrevDesc->PhysicalStart + Bytes == Desc->PhysicalStart) {
-      CanBeJoined = (Desc->Type == EfiBootServicesCode || Desc->Type == EfiBootServicesData) &&
-        (PrevDesc->Type == EfiBootServicesCode || PrevDesc->Type == EfiBootServicesData);
+      // It *should* be safe to join this with conventional memory, because the firmware should not use
+      // GetMemoryMap for allocation, and for the kernel it does not matter, since it joins them.
+      CanBeJoined = (Desc->Type == EfiBootServicesCode ||
+        Desc->Type == EfiBootServicesData ||
+        Desc->Type == EfiConventionalMemory ||
+        Desc->Type == EfiLoaderCode ||
+        Desc->Type == EfiLoaderData) && (
+        PrevDesc->Type == EfiBootServicesCode ||
+        PrevDesc->Type == EfiBootServicesData ||
+        PrevDesc->Type == EfiConventionalMemory ||
+        PrevDesc->Type == EfiLoaderCode ||
+        PrevDesc->Type == EfiLoaderData);
     }
 
     if (CanBeJoined) {
       // two entries are the same/similar - join them
+      PrevDesc->Type = EfiConventionalMemory;
       PrevDesc->NumberOfPages += Desc->NumberOfPages;
       HasEntriesToRemove = TRUE;
     } else {
