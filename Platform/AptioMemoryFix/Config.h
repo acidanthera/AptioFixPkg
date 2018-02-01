@@ -27,14 +27,6 @@
 #define APTIOFIX_ALLOCATE_POOL_GIVES_STABLE_ADDR APTIOFIX_HIBERNATION_FORCE_OLD_MEMORYMAP
 #endif
 
-/** It is believed that boot.efi on Sandy & Ivy skips 0x10200000 bytes from 0x10000000
- *  to protect from IGPU bugs, yet if this memory is marked available, it will may be
- *  used by XNU. So far attempts to enable this did not show any pattern but boot failures.
- */
-#ifndef APTIOFIX_PROTECT_IGPU_SANDY_IVY_RESERVED_MEMORY
-#define APTIOFIX_PROTECT_IGPU_SANDY_IVY_RESERVED_MEMORY 0
-#endif
-
 /** Attempt to protect some memory region from being used by the kernel (by Slice).
  *  It is believed to cause sleep issues on some systems, because this region
  *  is generally marked as conventional memory.

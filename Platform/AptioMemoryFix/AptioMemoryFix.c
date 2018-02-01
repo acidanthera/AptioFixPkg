@@ -449,16 +449,6 @@ RunImageWithOverrides(
   gRtShims             = (VOID *)(UINTN)RtShims;
 #endif
 
-#if APTIOFIX_PROTECT_IGPU_SANDY_IVY_RESERVED_MEMORY == 1
-  if (IsSandyOrIvy()) {
-    EFI_PHYSICAL_ADDRESS    Addr = 0x10000000;
-    // More precisely this should be 0x10200 pages at 0x10100000, but we have to fine-tune it
-    // to the lower available region and its size, otherwise it won't boot.
-    Status = gBS->AllocatePages(AllocateAddress, EfiMemoryMappedIO, 0x10000, &Addr);
-    // Print(L"IGPU page allocation at 0x10000000 returned %r\n", Status);
-  }
-#endif
-
   if (!EFI_ERROR (Status)) {
     gGetVariable          = (UINTN)gRT->GetVariable;
     gGetNextVariableName  = (UINTN)gRT->GetNextVariableName;
