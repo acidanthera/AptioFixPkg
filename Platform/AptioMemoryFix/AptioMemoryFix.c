@@ -200,7 +200,7 @@ MOFreePool (
 }
 
 /** gBS->GetMemoryMap override:
- * Returns shrinked memory map. I think kernel can handle up to 128 entries.
+ * Returns shrinked memory map. XNU can handle up to PMAP_MEMORY_REGIONS_SIZE (128) entries.
  */
 EFI_STATUS
 EFIAPI
