@@ -16,6 +16,7 @@ extern CHAR16 *mEfiLocateSearchType[];
 
 extern EFI_ALLOCATE_POOL  gStoredAllocatePool;
 extern EFI_FREE_POOL      gStoredFreePool;
+extern EFI_GET_MEMORY_MAP gStoredGetMemoryMap;
 
 /** MemMap reversed scan */
 #define PREV_MEMORY_DESCRIPTOR(MemoryDescriptor, Size) \
@@ -125,7 +126,6 @@ FileDevicePathToText (
 EFI_STATUS
 EFIAPI
 GetMemoryMapAlloc (
-  IN EFI_GET_MEMORY_MAP       GetMemoryMapFunction,
   IN OUT UINTN                *AllocatedTopPages,
   OUT UINTN                   *MemoryMapSize,
   OUT EFI_MEMORY_DESCRIPTOR   **MemoryMap,
