@@ -277,20 +277,35 @@ ExecSetVirtualAddressesToMemMap (
   UINTN                           Flags;
   UINTN                           BlockSize;
 
-  Desc = MemoryMap;
-  NumEntries = MemoryMapSize / DescriptorSize;
-  VirtualDesc = gVirtualMemoryMap;
-  gVirtualMapSize = 0;
+  Desc                      = MemoryMap;
+  NumEntries                = MemoryMapSize / DescriptorSize;
+  VirtualDesc               = gVirtualMemoryMap;
+  gVirtualMapSize           = 0;
   gVirtualMapDescriptorSize = DescriptorSize;
   DEBUG ((DEBUG_VERBOSE, "ExecSetVirtualAddressesToMemMap: Size=%d, Addr=%p, DescSize=%d\n", MemoryMapSize, MemoryMap, DescriptorSize));
 
   // get current VM page table
-  GetCurrentPageTable(&PageTable, &Flags);
+  GetCurrentPageTable (&PageTable, &Flags);
 
   for (Index = 0; Index < NumEntries; Index++) {
-
-    if ((Desc->Attribute & EFI_MEMORY_RUNTIME) != 0) {
-
+    //
+    // Some UEFIs end up with "reserved" area with EFI_MEMORY_RUNTIME flag set when Intel HD3000 or HD4000 is used.
+    // For example, on GA-H81N-D2H there is a single 1 GB descriptor:
+    // 000000009F800000-00000000DF9FFFFF 0000000000040200 8000000000000000
+    //
+    // All known boot.efi starting from at least 10.5.8 properly handle this flag and do not assign virtual addresses
+    // to reserved descriptors.
+    // However, the issue was with AptioFix itself, which did not check for EfiReservedMemoryType and replaced
+    // it by EfiMemoryMappedIO to prevent boot.efi relocations.
+    //
+    // The relevant discussion and the original fix can be found here:
+    // http://web.archive.org/web/20141111124211/http://www.projectosx.com:80/forum/lofiversion/index.php/t2428-450.html
+    // https://sourceforge.net/p/cloverefiboot/code/605/
+    //
+    // Since it is not the bug in boot.efi, AptioMemoryFix only needs to properly handle EfiReservedMemoryType with
+    // EFI_MEMORY_RUNTIME attribute set, and there is no reason to mess with the memory map passed to boot.efi.
+    //
+    if (Desc->Type != EfiReservedMemoryType && (Desc->Attribute & EFI_MEMORY_RUNTIME) != 0) {
       // check if there is enough space in gVirtualMemoryMap
       if (gVirtualMapSize + DescriptorSize > sizeof(gVirtualMemoryMap)) {
         DEBUG ((DEBUG_WARN, "ERROR: too much mem map RT areas\n"));
@@ -298,19 +313,19 @@ ExecSetVirtualAddressesToMemMap (
       }
 
       // copy region with EFI_MEMORY_RUNTIME flag to gVirtualMemoryMap
-      CopyMem((VOID*)VirtualDesc, (VOID*)Desc, DescriptorSize);
+      CopyMem ((VOID*)VirtualDesc, (VOID*)Desc, DescriptorSize);
 
       // define virtual to phisical mapping
       DEBUG ((DEBUG_VERBOSE, "Map pages: %lx (%x) -> %lx\n", Desc->VirtualStart, Desc->NumberOfPages, Desc->PhysicalStart));
-      VmMapVirtualPages(PageTable, Desc->VirtualStart, Desc->NumberOfPages, Desc->PhysicalStart);
+      VmMapVirtualPages (PageTable, Desc->VirtualStart, Desc->NumberOfPages, Desc->PhysicalStart);
 
       // next gVirtualMemoryMap slot
-      VirtualDesc = NEXT_MEMORY_DESCRIPTOR(VirtualDesc, DescriptorSize);
+      VirtualDesc = NEXT_MEMORY_DESCRIPTOR (VirtualDesc, DescriptorSize);
       gVirtualMapSize += DescriptorSize;
 
       // Remember future physical address for our special relocated
       // efi system table
-      BlockSize = EFI_PAGES_TO_SIZE((UINTN)Desc->NumberOfPages);
+      BlockSize = EFI_PAGES_TO_SIZE ((UINTN)Desc->NumberOfPages);
       if (Desc->PhysicalStart <= gSysTableRtArea &&  gSysTableRtArea < (Desc->PhysicalStart + BlockSize)) {
         // block contains our future sys table - remember new address
         // future physical = VirtualStart & 0x7FFFFFFFFF
@@ -318,14 +333,14 @@ ExecSetVirtualAddressesToMemMap (
       }
     }
 
-    Desc = NEXT_MEMORY_DESCRIPTOR(Desc, DescriptorSize);
+    Desc = NEXT_MEMORY_DESCRIPTOR (Desc, DescriptorSize);
   }
 
-  VmFlashCaches();
+  VmFlashCaches ();
 
   DEBUG ((DEBUG_VERBOSE, "ExecSetVirtualAddressesToMemMap: Size=%d, Addr=%p, DescSize=%d\nSetVirtualAddressMap ... ",
     gVirtualMapSize, MemoryMap, DescriptorSize));
-  Status = gRT->SetVirtualAddressMap(gVirtualMapSize, DescriptorSize, DescriptorVersion, gVirtualMemoryMap);
+  Status = gRT->SetVirtualAddressMap (gVirtualMapSize, DescriptorSize, DescriptorVersion, gVirtualMemoryMap);
   DEBUG ((DEBUG_VERBOSE, "%r\n", Status));
 
   return Status;
@@ -942,6 +957,14 @@ RestoreRelocInfoProtectMemTypes (
  *
  *  It seems this does not do any harm to others where this is not needed,
  *  so it's added as standard fix for all.
+ *
+ *  Starting with APTIO V for nvram to work not only data but could too can no longer be moved
+ *  due to the use of commbuffers. This, however, creates a memory protection issue, because
+ *  XNU maps RT data as RW and code as RX, and AMI appears use global variables in some RT drivers.
+ *  For this reason we shim (most?) affected RT services via wrapers that unset the WP bit during
+ *  the UEFI call and set it back on return.
+ *  Explained in detail by Download-Fritz and vit9696:
+ *  http://www.insanelymac.com/forum/topic/331381-aptiomemoryfix (first 2 links in particular).
  */
 VOID
 ProtectRtMemoryFromRelocation (
@@ -966,21 +989,21 @@ ProtectRtMemoryFromRelocation (
   RelocInfo = &gRelocInfoData.RelocInfo[0];
 
   for (Index = 0; Index < NumEntries; Index++) {
-    if ((Desc->Attribute & EFI_MEMORY_RUNTIME) != 0) {
-      if (Desc->Type == EfiRuntimeServicesCode ||
-        (Desc->Type == EfiRuntimeServicesData && Desc->PhysicalStart != gSysTableRtArea)) {
-        if (gRelocInfoData.NumEntries < ARRAY_SIZE (gRelocInfoData.RelocInfo)) {
-          RelocInfo->PhysicalStart = Desc->PhysicalStart;
-          RelocInfo->Type          = Desc->Type;
-          ++RelocInfo;
-          ++gRelocInfoData.NumEntries;
-        } else {
-          DEBUG ((DEBUG_WARN, " WARNING: Cannot save mem type for entry: %lx (type 0x%x)\n", Desc->PhysicalStart, (UINTN)Desc->Type));
-        }
+    if ((Desc->Attribute & EFI_MEMORY_RUNTIME) != 0 &&
+        (Desc->Type == EfiRuntimeServicesCode ||
+        (Desc->Type == EfiRuntimeServicesData && Desc->PhysicalStart != gSysTableRtArea))) {
 
-        DEBUG ((DEBUG_VERBOSE, " RT mem %lx (0x%x) -> MemMapIO\n", Desc->PhysicalStart, Desc->NumberOfPages));
-        Desc->Type = EfiMemoryMappedIO;
+      if (gRelocInfoData.NumEntries < ARRAY_SIZE (gRelocInfoData.RelocInfo)) {
+        RelocInfo->PhysicalStart = Desc->PhysicalStart;
+        RelocInfo->Type          = Desc->Type;
+        ++RelocInfo;
+        ++gRelocInfoData.NumEntries;
+      } else {
+        DEBUG ((DEBUG_WARN, " WARNING: Cannot save mem type for entry: %lx (type 0x%x)\n", Desc->PhysicalStart, (UINTN)Desc->Type));
       }
+
+      DEBUG ((DEBUG_VERBOSE, " RT mem %lx (0x%x) -> MemMapIO\n", Desc->PhysicalStart, Desc->NumberOfPages));
+      Desc->Type = EfiMemoryMappedIO;
     }
 
     Desc = NEXT_MEMORY_DESCRIPTOR(Desc, DescriptorSize);
