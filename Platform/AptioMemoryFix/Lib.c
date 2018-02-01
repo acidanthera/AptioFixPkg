@@ -487,7 +487,6 @@ FileDevicePathToText (
 EFI_STATUS
 EFIAPI
 GetMemoryMapAlloc (
-  IN EFI_GET_MEMORY_MAP           GetMemoryMapFunction,
   IN OUT UINTN                    *AllocatedTopPages,
   OUT UINTN                       *MemoryMapSize,
   OUT EFI_MEMORY_DESCRIPTOR       **MemoryMap,
@@ -496,10 +495,12 @@ GetMemoryMapAlloc (
   OUT UINT32                      *DescriptorVersion
   )
 {
-  EFI_STATUS     Status;
+  EFI_STATUS               Status;
+  EFI_GET_MEMORY_MAP       GetMemoryMapFunction;
 
-  *MemoryMapSize = 0;
-  *MemoryMap     = NULL;
+  GetMemoryMapFunction = gStoredGetMemoryMap ? gStoredGetMemoryMap : gBS->GetMemoryMap;
+  *MemoryMapSize       = 0;
+  *MemoryMap           = NULL;
   Status = GetMemoryMapFunction (
     MemoryMapSize,
     *MemoryMap,
@@ -577,7 +578,7 @@ AllocatePagesFromTop (
   EFI_MEMORY_DESCRIPTOR   *MemoryMapEnd;
   EFI_MEMORY_DESCRIPTOR   *Desc;
 
-  Status = GetMemoryMapAlloc(gBS->GetMemoryMap, NULL, &MemoryMapSize, &MemoryMap, &MapKey, &DescriptorSize, &DescriptorVersion);
+  Status = GetMemoryMapAlloc(NULL, &MemoryMapSize, &MemoryMap, &MapKey, &DescriptorSize, &DescriptorVersion);
   if (EFI_ERROR(Status)) {
     return Status;
   }

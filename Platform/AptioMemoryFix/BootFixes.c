@@ -644,7 +644,6 @@ DecideOnCustomSlideImplementation (
   UINTN                  NumEntries;
 
   Status = GetMemoryMapAlloc (
-    gStoredGetMemoryMap,
     &AllocatedMapPages,
     &MemoryMapSize,
     &MemoryMap,

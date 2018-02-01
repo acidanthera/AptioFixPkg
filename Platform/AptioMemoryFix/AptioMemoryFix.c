@@ -73,7 +73,6 @@ EFI_HANDLE                  gExitBSImageHandle = 0;
 UINTN                       gExitBSMapKey       = 0; 
 
 /** Helper function that calls GetMemoryMap() and returns new MapKey.
- * Uses gStoredGetMemoryMap, so can be called only after gStoredGetMemoryMap is set.
  */
 EFI_STATUS
 GetMemoryMapKey(
@@ -85,7 +84,7 @@ GetMemoryMapKey(
   UINTN                   DescriptorSize;
   UINT32                  DescriptorVersion;
 
-  return GetMemoryMapAlloc (gStoredGetMemoryMap, NULL, &MemoryMapSize, MemoryMap, MapKey, &DescriptorSize, &DescriptorVersion);
+  return GetMemoryMapAlloc (NULL, &MemoryMapSize, MemoryMap, MapKey, &DescriptorSize, &DescriptorVersion);
 }
 
 /** gBS->HandleProtocol override:
