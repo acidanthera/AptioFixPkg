@@ -247,20 +247,6 @@ FixMemMap (
     BlockSize = EFI_PAGES_TO_SIZE((UINTN)Desc->NumberOfPages);
     PhysicalEnd = Desc->PhysicalStart + BlockSize;
 
-#if APTIOFIX_PROTECT_RESERVED_MEMORY == 1
-    //
-    // Some UEFIs end up with "reserved" area with EFI_MEMORY_RUNTIME flag set when Intel HD3000 or HD4000 is used.
-    // Even though boot.efi does unset this flag when assigning the virtual addresses, it still includes
-    // the descriptor size in the allocation (see right after IODT allocation "Couldn't allocate device tree").
-    //
-    if ((Desc->Attribute & EFI_MEMORY_RUNTIME) != 0 && Desc->Type == EfiReservedMemoryType) {
-      DEBUG ((DEBUG_VERBOSE, " %s as RT: %lx (0x%x) - Att: %lx",
-        mEfiMemoryTypeDesc[Desc->Type], Desc->PhysicalStart, Desc->NumberOfPages, Desc->Attribute));
-      Desc->Attribute = Desc->Attribute & (~EFI_MEMORY_RUNTIME);
-      DEBUG ((DEBUG_VERBOSE, " -> %lx\n", Desc->Attribute));
-    }
-#endif
-
 #if APTIOFIX_UNMARKED_OVERLAPPING_REGION_FIX == 1
     //
     // Fix by Slice - fixes sleep/wake on GB boards.

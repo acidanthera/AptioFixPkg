@@ -27,15 +27,6 @@
 #define APTIOFIX_ALLOCATE_POOL_GIVES_STABLE_ADDR APTIOFIX_HIBERNATION_FORCE_OLD_MEMORYMAP
 #endif
 
-/** boot.efi still tries to allocate runtime memory for reserved segments as of 10.13.3.
- *  This results in boot failure with "Couldn't allocate memory map" error.
- *  Proven by GA-H81N-D2H with a single reserved segment:
- *  000000009F800000-00000000DF9FFFFF 0000000000040200 8000000000000000
- */
-#ifndef APTIOFIX_PROTECT_RESERVED_MEMORY
-#define APTIOFIX_PROTECT_RESERVED_MEMORY 1
-#endif
-
 /** It is believed that boot.efi on Sandy & Ivy skips 0x10200000 bytes from 0x10000000
  *  to protect from IGPU bugs, yet if this memory is marked available, it will may be
  *  used by XNU. So far attempts to enable this did not show any pattern but boot failures.
