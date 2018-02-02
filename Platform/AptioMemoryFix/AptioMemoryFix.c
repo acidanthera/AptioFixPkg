@@ -656,7 +656,7 @@ AptioMemoryFixEntrypoint (
 {
   EFI_STATUS    Status;
   VOID          *Interface;
-  EFI_HANDLE    Handle;
+  EFI_HANDLE    Handle = NULL;
 
   Status = gBS->LocateProtocol (
                   &gAptioMemoryFixProtocolGuid,
@@ -665,7 +665,9 @@ AptioMemoryFixEntrypoint (
                 );
 
   if (!EFI_ERROR (Status)) {
+    //
     // In case for whatever reason one tried to reload the driver.
+    //
     return EFI_ALREADY_STARTED;
   }
 
@@ -676,12 +678,14 @@ AptioMemoryFixEntrypoint (
         &mAptioMemoryFixProtocol
         );
 
-  // install StartImage override
-  // all other overrides will be started when boot.efi is started
+  //
+  // Install StartImage override
+  // All other overrides will be started when boot.efi is started
+  //
   gStartImage = gBS->StartImage;
   gBS->StartImage = MOStartImage;
   gBS->Hdr.CRC32 = 0;
-  gBS->CalculateCrc32(gBS, gBS->Hdr.HeaderSize, &gBS->Hdr.CRC32);
+  gBS->CalculateCrc32 (gBS, gBS->Hdr.HeaderSize, &gBS->Hdr.CRC32);
 
   return EFI_SUCCESS;
 }
