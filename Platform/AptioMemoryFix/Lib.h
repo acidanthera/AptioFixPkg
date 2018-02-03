@@ -73,24 +73,13 @@ StrStriBasic (
   IN CONST CHAR16 *SearchString
   );
 
-/** Applies some fixes to mem map. */
-VOID
-EFIAPI
-FixMemMap (
-  IN UINTN                    MemoryMapSize,
-  IN EFI_MEMORY_DESCRIPTOR    *MemoryMap,
-  IN UINTN                    DescriptorSize,
-  IN UINT32                   DescriptorVersion
-  );
-
 /** Shrinks mem map by joining EfiBootServicesCode and EfiBootServicesData records. */
 VOID
 EFIAPI
 ShrinkMemMap (
   IN UINTN                    *MemoryMapSize,
   IN EFI_MEMORY_DESCRIPTOR    *MemoryMap,
-  IN UINTN                    DescriptorSize,
-  IN UINT32                   DescriptorVersion
+  IN UINTN                    DescriptorSize
   );
 
 /** Prints mem map. */

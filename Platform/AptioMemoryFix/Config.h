@@ -27,12 +27,11 @@
 #define APTIOFIX_ALLOCATE_POOL_GIVES_STABLE_ADDR APTIOFIX_HIBERNATION_FORCE_OLD_MEMORYMAP
 #endif
 
-/** Attempt to protect some memory region from being used by the kernel (by Slice).
- *  It is believed to cause sleep issues on some systems, because this region
- *  is generally marked as conventional memory.
+/** Attempt to protect certain CSM memory regions from being used by the kernel (by Slice).
+ *  On older firmwares this caused wake issues.
  */
-#ifndef APTIOFIX_UNMARKED_OVERLAPPING_REGION_FIX
-#define APTIOFIX_UNMARKED_OVERLAPPING_REGION_FIX 1
+#ifndef APTIOFIX_PROTECT_CSM_REGION
+#define APTIOFIX_PROTECT_CSM_REGION 1
 #endif
 
 /** Calculate aslr slide ourselves when some addresses are not available for XNU. */
