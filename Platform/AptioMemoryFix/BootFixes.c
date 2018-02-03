@@ -1125,7 +1125,7 @@ FixHibernateWake (
   while (Handoff->type != kIOHibernateHandoffTypeEnd) {
     if (Handoff->type == kIOHibernateHandoffTypeMemoryMap) {
       // boot.efi removes any memory from the memory map but the one with runtime attribute.
-      RestoreRelocInfoProtectMemTypes(Handoff->bytecount, gLastDescriptorSize, (EFI_MEMORY_DESCRIPTOR *)Handoff->data);
+      RestoreRelocInfoProtectMemTypes(Handoff->bytecount, gMemoryMapDescriptorSize, (EFI_MEMORY_DESCRIPTOR *)Handoff->data);
       break;
     }
     Handoff = (IOHibernateHandoff *)(UINTN)((UINTN)Handoff + sizeof(Handoff) + Handoff->bytecount);
