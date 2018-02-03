@@ -174,14 +174,6 @@ typedef struct _BootArgs {
   UINT32  *deviceTreeP;
   UINT32  *deviceTreeLength;
 
-  UINT32  *kaddr;
-  UINT32  *ksize;
-
-  UINT32  *efiRuntimeServicesPageStart;
-  UINT32  *efiRuntimeServicesPageCount;
-  UINT64  *efiRuntimeServicesVirtualPageStart;
-  UINT32  *efiSystemTable;
-
   UINT32  *csrActiveConfig;
 } BootArgs;
 
