@@ -163,7 +163,7 @@ typedef struct {
 } BootArgs2;
 
 /** Our internal structure to hold boot args params to make the code independent of the boot args version. */
-typedef struct _BootArgs {
+typedef struct {
   UINT32  *MemoryMap;      /* We will change this value so we need pointer to original field. */
   UINT32  *MemoryMapSize;
   UINT32  *MemoryMapDescriptorSize;
@@ -175,9 +175,9 @@ typedef struct _BootArgs {
   UINT32  *deviceTreeLength;
 
   UINT32  *csrActiveConfig;
-} BootArgs;
+} BootArguments;
 
-BootArgs *
+BootArguments *
 EFIAPI
 GetBootArgs (
   VOID *bootArgs

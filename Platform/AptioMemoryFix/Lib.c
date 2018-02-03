@@ -28,6 +28,7 @@
 
 #include "Config.h"
 #include "Lib.h"
+#include "ServiceOverrides.h"
 
 CHAR16 *mEfiMemoryTypeDesc[EfiMaxMemoryType] = {
   L"Reserved",
@@ -103,7 +104,7 @@ MAP_EFI_GUID_STR EfiGuidStrMap[] = {
   {NULL, NULL}
 };
 
-CHAR16 EfiGuidStrTmp[48];
+STATIC CHAR16 EfiGuidStrTmp[48];
 
 /** Returns GUID as string, with friendly name for known guids. */
 CHAR16 *
@@ -288,9 +289,12 @@ ShrinkMemMap (
 VOID
 EFIAPI
 PrintMemMap (
+  IN CONST CHAR16             *Name,
   IN UINTN                    MemoryMapSize,
   IN UINTN                    DescriptorSize,
-  IN EFI_MEMORY_DESCRIPTOR    *MemoryMap
+  IN EFI_MEMORY_DESCRIPTOR    *MemoryMap,
+  IN VOID                     *Shims,
+  IN EFI_PHYSICAL_ADDRESS     SysTable
   )
 {
   UINTN                   NumEntries;
@@ -300,8 +304,10 @@ PrintMemMap (
 
   Desc = MemoryMap;
   NumEntries = MemoryMapSize / DescriptorSize;
-  Print(L"MEMMAP: Size=%d, Addr=%p, DescSize=%d\n", MemoryMapSize, MemoryMap, DescriptorSize);
-  Print(L"Type      Start      End        Virtual          # Pages    Attributes\n");
+  Print (L"--- Dump Memory Map (%s) start ---\n", Name);
+  Print (L"MEMMAP: Size=%d, Addr=%p, DescSize=%d, Shims=%08lX, ST=%08lX\n",
+    MemoryMapSize, MemoryMap, DescriptorSize, (UINTN)Shims, (UINTN)SysTable);
+  Print (L"Type      Start      End        Virtual          # Pages    Attributes\n");
   for (Index = 0; Index < NumEntries; Index++) {
 
     Bytes = EFI_PAGES_TO_SIZE(Desc->NumberOfPages);
@@ -318,7 +324,9 @@ PrintMemMap (
     if ((Index + 1) % 16 == 0)
       gBS->Stall(5000000);
   }
-  //WaitForKeyPress(L"End: press a key to continue\n");
+
+  Print(L"--- Dump Memory Map (%s) end ---\n", Name);
+  gBS->Stall(5000000);
 }
 
 VOID
@@ -485,6 +493,20 @@ GetMemoryMapAlloc (
     DEBUG ((DEBUG_WARN, "Failed to obtain memory map %r\n", Status));
 
   return Status;
+}
+
+/** Helper function that calls GetMemoryMap() and returns new MapKey. */
+EFI_STATUS
+GetMemoryMapKey (
+  OUT UINTN                   *MapKey,
+  OUT EFI_MEMORY_DESCRIPTOR   **MemoryMap
+  )
+{
+  UINTN                   MemoryMapSize;
+  UINTN                   DescriptorSize;
+  UINT32                  DescriptorVersion;
+
+  return GetMemoryMapAlloc (NULL, &MemoryMapSize, MemoryMap, MapKey, &DescriptorSize, &DescriptorVersion);
 }
 
 /** Alloctes Pages from the top of mem, up to address specified in Memory. Returns allocated address in Memory. */

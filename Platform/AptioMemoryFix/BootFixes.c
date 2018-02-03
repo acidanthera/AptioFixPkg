@@ -55,6 +55,15 @@ BOOLEAN gAnalyzeMemoryMapDone = FALSE;
 UINTN   gStoredBootArgsVarSize = 0;
 CHAR8   gStoredBootArgsVar[BOOT_LINE_LENGTH] = {0};
 
+// TRUE if we are doing hibernate wake
+BOOLEAN gHibernateWake = FALSE;
+
+// TRUE if booting with a manually specified slide=X
+BOOLEAN gSlideArgPresent = FALSE;
+
+// TRUE if booting with -aptiodump
+BOOLEAN gDumpMemArgPresent = FALSE;
+
 // base kernel address and kaslr slide range
 #define BASE_KERNEL_ADDR       ((UINTN)0x100000)
 #define TOTAL_SLIDE_NUM        256
@@ -447,9 +456,11 @@ ProcessBooterImage (
     VERIFY_BOOT_ARG(Slide, Options, L"slide=");
     gSlideArgPresent |= Slide != NULL;
 
+#if APTIOFIX_ALLOW_MEMORY_DUMP_ARG == 1
     CHAR16 *Dump  = StrStr(Options, L"-aptiodump");
     VERIFY_BOOT_ARG(Dump,  Options, L"-aptiodump");
     gDumpMemArgPresent |= Dump != NULL;
+#endif
 
     Options[LastIndex] = Last;
 
@@ -476,9 +487,11 @@ ProcessBooterImage (
     VERIFY_BOOT_ARG(Slide, BootArgsVar, "slide=");
     gSlideArgPresent |= Slide != NULL;
 
+#if APTIOFIX_ALLOW_MEMORY_DUMP_ARG == 1
     CHAR8 *Dump  = AsciiStrStr(BootArgsVar, "-aptiodump");
     VERIFY_BOOT_ARG(Dump,  BootArgsVar, "-aptiodump");
     gDumpMemArgPresent |= Dump != NULL;
+#endif
 
     if (Slide)
       DEBUG ((DEBUG_VERBOSE, "Found custom slide boot-arg value\n"));
@@ -848,7 +861,7 @@ GetVariableCustomSlide (
 
 VOID
 HideSlideFromOS (
-  BootArgs   *BootArgs
+  BootArguments   *BootArgs
   )
 {
   DTEntry     DevTree;
@@ -1023,18 +1036,15 @@ ProtectCsmRegion (
 
 /** Fixes stuff when booting without relocation block. Called when boot.efi jumps to kernel. */
 UINTN
-FixBootingWithoutRelocBlock (
-  UINTN    bootArgs,
-  BOOLEAN  ModeX64
+FixBooting (
+  UINTN    BootArgs
   )
 {
-  VOID                    *pBootArgs = (VOID*)bootArgs;
-  BootArgs                *BA;
+  VOID                    *pBootArgs = (VOID*)BootArgs;
+  BootArguments           *BA;
   UINTN                   MemoryMapSize;
   EFI_MEMORY_DESCRIPTOR   *MemoryMap;
   UINTN                   DescriptorSize;
-
-  DEBUG ((DEBUG_VERBOSE, "FixBootingWithoutRelocBlock:\n"));
 
   BA = GetBootArgs(pBootArgs);
 
@@ -1061,20 +1071,19 @@ FixBootingWithoutRelocBlock (
   // Restore original kernel entry code.
   CopyMem((VOID *)(UINTN)AsmKernelEntry, (VOID *)gOrigKernelCode, gOrigKernelCodeSize);
 
-  return bootArgs;
+  return BootArgs;
 }
 
 /** Fixes stuff when waking from hibernate without relocation block. Called when boot.efi jumps to kernel. */
 UINTN
-FixHibernateWakeWithoutRelocBlock (
-  UINTN    imageHeaderPage,
-  BOOLEAN  ModeX64
+FixHibernateWake (
+  UINTN    ImageHeaderPage
   )
 {
   IOHibernateImageHeader  *ImageHeader;
   IOHibernateHandoff      *Handoff;
 
-  ImageHeader = (IOHibernateImageHeader *)(UINTN)(imageHeaderPage << EFI_PAGE_SHIFT);
+  ImageHeader = (IOHibernateImageHeader *)(UINTN)(ImageHeaderPage << EFI_PAGE_SHIFT);
 
   // Pass our relocated copy of system table
   ImageHeader->systemTableOffset = (UINT32)(UINTN)(gRelocatedSysTableRtArea - ImageHeader->runtimePages);
@@ -1126,5 +1135,5 @@ FixHibernateWakeWithoutRelocBlock (
   // Restore original kernel entry code
   CopyMem((VOID *)(UINTN)AsmKernelEntry, (VOID *)gOrigKernelCode, gOrigKernelCodeSize);
 
-  return imageHeaderPage;
+  return ImageHeaderPage;
 }

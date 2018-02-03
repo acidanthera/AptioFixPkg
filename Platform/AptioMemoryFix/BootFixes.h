@@ -24,12 +24,18 @@ extern BOOLEAN                gHibernateWake;
 extern BOOLEAN                gSlideArgPresent;
 extern BOOLEAN                gDumpMemArgPresent;
 extern EFI_GET_MEMORY_MAP     gStoredGetMemoryMap;
-extern UINTN                  gLastMemoryMapSize;
-extern EFI_MEMORY_DESCRIPTOR  *gLastMemoryMap;
 extern UINTN                  gLastDescriptorSize;
-extern UINT32                 gLastDescriptorVersion;
 extern EFI_PHYSICAL_ADDRESS   gSysTableRtArea;
 extern EFI_PHYSICAL_ADDRESS   gRelocatedSysTableRtArea;
+
+// TRUE if we are doing hibernate wake
+extern BOOLEAN gHibernateWake;
+
+// TRUE if booting with a manually specified slide=X
+extern BOOLEAN gSlideArgPresent;
+
+// TRUE if booting with -aptiodump
+extern BOOLEAN gDumpMemArgPresent;
 
 EFI_STATUS
 PrepareJumpFromKernel (
@@ -101,7 +107,7 @@ GetVariableCustomSlide (
 
 VOID
 HideSlideFromOS (
-  BootArgs   *BootArgs
+  BootArguments   *BootArgs
   );
 
 /** Protects CSM regions from the kernel and boot.efi. */
@@ -114,15 +120,13 @@ ProtectCsmRegion (
 
 /** Fixes stuff for booting without relocation block. Called when boot.efi jumps to kernel. */
 UINTN
-FixBootingWithoutRelocBlock (
-  UINTN   bootArgs,
-  BOOLEAN ModeX64
+FixBooting(
+  UINTN   BootArgs
   );
 
 /** Fixes stuff for hibernate wake booting without relocation block. Called when boot.efi jumps to kernel. */
-UINTN FixHibernateWakeWithoutRelocBlock (
-  UINTN   imageHeaderPage,
-  BOOLEAN ModeX64
+UINTN FixHibernateWake (
+  UINTN   ImageHeaderPage
   );
 
 #endif // APTIOFIX_BOOT_FIXES_H
