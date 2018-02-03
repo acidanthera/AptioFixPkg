@@ -122,13 +122,6 @@ GetMemoryMapAlloc (
   OUT UINT32                  *DescriptorVersion
   );
 
-/** Helper function that calls GetMemoryMap() and returns new MapKey. */
-EFI_STATUS
-GetMemoryMapKey (
-  OUT UINTN                   *MapKey,
-  OUT EFI_MEMORY_DESCRIPTOR   **MemoryMap
-  );
-
 /** Alloctes Pages from the top of mem, up to address specified in Memory. Returns allocated address in Memory. */
 EFI_STATUS
 EFIAPI
@@ -136,6 +129,14 @@ AllocatePagesFromTop (
   IN EFI_MEMORY_TYPE          MemoryType,
   IN UINTN                    Pages,
   IN OUT EFI_PHYSICAL_ADDRESS *Memory
+  );
+
+/** Helper function to call ExitBootServices that can handle outdated MapKey issues. */
+EFI_STATUS
+ForceExitBootServices (
+  IN EFI_EXIT_BOOT_SERVICES  ExitBs,
+  IN EFI_HANDLE              ImageHandle,
+  IN UINTN                   MapKey
   );
 
 /** Calls real gBS->AllocatePool and returns pool memory. */

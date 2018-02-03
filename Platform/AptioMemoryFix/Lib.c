@@ -495,20 +495,6 @@ GetMemoryMapAlloc (
   return Status;
 }
 
-/** Helper function that calls GetMemoryMap() and returns new MapKey. */
-EFI_STATUS
-GetMemoryMapKey (
-  OUT UINTN                   *MapKey,
-  OUT EFI_MEMORY_DESCRIPTOR   **MemoryMap
-  )
-{
-  UINTN                   MemoryMapSize;
-  UINTN                   DescriptorSize;
-  UINT32                  DescriptorVersion;
-
-  return GetMemoryMapAlloc (NULL, &MemoryMapSize, MemoryMap, MapKey, &DescriptorSize, &DescriptorVersion);
-}
-
 /** Alloctes Pages from the top of mem, up to address specified in Memory. Returns allocated address in Memory. */
 EFI_STATUS
 EFIAPI
@@ -562,6 +548,59 @@ AllocatePagesFromTop (
 
   // release mem
   DirectFreePool(MemoryMap);
+
+  return Status;
+}
+
+/** Helper function to call ExitBootServices that can handle outdated MapKey issues. */
+EFI_STATUS
+ForceExitBootServices (
+  IN EFI_EXIT_BOOT_SERVICES  ExitBs,
+  IN EFI_HANDLE              ImageHandle,
+  IN UINTN                   MapKey
+  )
+{
+  EFI_STATUS               Status;
+  EFI_MEMORY_DESCRIPTOR    *MemoryMap;
+  UINTN                    MemoryMapSize;
+  UINTN                    DescriptorSize;
+  UINT32                   DescriptorVersion;
+
+  //
+  // Firstly try the easy way
+  //
+  Status = ExitBs (ImageHandle, MapKey);
+
+  if (EFI_ERROR (Status)) {
+    //
+    // Just report error as var in nvram to be visible from macOS with "nvram -p"
+    //
+    gRT->SetVariable (L"aptiomemfix-exitbs",
+      &gAppleBootVariableGuid,
+      EFI_VARIABLE_BOOTSERVICE_ACCESS | EFI_VARIABLE_RUNTIME_ACCESS,
+      4,
+      "fail"
+      );
+
+    //
+    // It is too late to free memory map here, but it does not matter,
+    // because boot.efi has an old one and will freely use the memory.
+    //
+    Status = GetMemoryMapAlloc (NULL, &MemoryMapSize, &MemoryMap, &MapKey, &DescriptorSize, &DescriptorVersion);
+    DEBUG ((DEBUG_VERBOSE, "ExitBootServices: GetMemoryMapKey = %r\n", Status));
+    if (Status == EFI_SUCCESS) {
+      //
+      // We have the latest memory map and its key, try again!
+      //
+      Status = ExitBs (ImageHandle, MapKey);
+      DEBUG ((DEBUG_VERBOSE, "ExitBootServices: 2nd try = %r\n", Status));
+      if (EFI_ERROR (Status))
+        Print (L"AptioMemoryFix: ExitBootServices failed twice %r\n", Status);
+    } else {
+      Print (L"AptioMemoryFix: Failed to get MapKey for ExitBootServices %r\n", Status);
+      Status = EFI_INVALID_PARAMETER;
+    }
+  }
 
   return Status;
 }
