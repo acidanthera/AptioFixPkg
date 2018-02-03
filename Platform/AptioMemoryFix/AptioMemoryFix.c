@@ -353,6 +353,7 @@ OvrSetVirtualAddressMap (
   DEBUG ((DEBUG_VERBOSE, "->SetVirtualAddressMap(%d, %d, 0x%x, %p) START ...\n", MemoryMapSize, DescriptorSize, DescriptorVersion, VirtualMap));
 
   // restore origs
+  //FIXME: this crc is invalid
   gRT->Hdr.CRC32 = mOrgRTCRC32;
   gRT->SetVirtualAddressMap = gStoredSetVirtualAddressMap;
 
@@ -364,24 +365,36 @@ OvrSetVirtualAddressMap (
     PrintMemMap(MemoryMapSize, DescriptorSize, VirtualMap);
     Print(L"-------------  SetVirtualAddressMap update end  -------------\n");
     gBS->Stall(5000000);
-    // Most likely we will die here but well...
-    gStoredExitBootServices(gExitBSImageHandle, gExitBSMapKey);
+    //
+    // To print as much information as possible we delay ExitBootServices.
+    // Most likely this will fail, but let's still try!
+    //
+    gStoredExitBootServices (gExitBSImageHandle, gExitBSMapKey);
+    //TODO: fix map key on failure
   }
 #endif
 
-  // Protect RT data areas from relocation by marking then MemMapIO
-  ProtectRtMemoryFromRelocation(MemoryMapSize, DescriptorSize, DescriptorVersion, VirtualMap);
+  //
+  // Protect RT areas from relocation by marking then MemMapIO
+  //
+  ProtectRtMemoryFromRelocation (MemoryMapSize, DescriptorSize, DescriptorVersion, VirtualMap);
 
+  //
   // Remember physical sys table addr
+  //
   EfiSystemTable = (UINT32)(UINTN)gST;
 
-  // virtualize RT services with all needed fixes
-  Status = ExecSetVirtualAddressesToMemMap(MemoryMapSize, DescriptorSize, DescriptorVersion, VirtualMap);
+  //
+  // Virtualize RT services with all needed fixes
+  //
+  Status = ExecSetVirtualAddressesToMemMap (MemoryMapSize, DescriptorSize, DescriptorVersion, VirtualMap);
 
-  CopyEfiSysTableToSeparateRtDataArea(&EfiSystemTable);
+  CopyEfiSysTableToSeparateRtDataArea (&EfiSystemTable);
 
-  // For AptioFix V2 we can correct the pointers earlier
-  VirtualizeRtShimPointers(MemoryMapSize, DescriptorSize, VirtualMap);
+  //
+  // Correct shim pointers right away
+  //
+  VirtualizeRtShims (MemoryMapSize, DescriptorSize, VirtualMap);
 
   return Status;
 }
@@ -419,9 +432,11 @@ RunImageWithOverrides(
 {
   EFI_STATUS           Status;
 
-  // save current 64bit state - will be restored later in callback from kernel jump
+  //
+  // Save current 64bit state - will be restored later in callback from kernel jump
   // and relocate JumpToKernel32 code to higher mem (for copying kernel back to
   // proper place and jumping back to it)
+  //
   Status = PrepareJumpFromKernel();
   if (EFI_ERROR(Status)) {
     return Status;
@@ -433,58 +448,7 @@ RunImageWithOverrides(
     return Status;
   }
 
-#if APTIOFIX_ALLOCATE_POOL_GIVES_STABLE_ADDR == 1
-  // This somehow produces the same addresses more frequently across the reboots
-  // than AllocatePagesFromTop, and it was necessary for a memory map reuse
-  // when waking from hibernation. Allocating from pool may use random addresses,
-  // including the ones where the kernel may sit, so is very dangerous.
-  Status = gBS->AllocatePool (
-    EfiRuntimeServicesCode,
-    ((UINTN)&gRtShimsDataEnd - (UINTN)&gRtShimsDataStart),
-    &gRtShims
-    );
-#else
-  EFI_PHYSICAL_ADDRESS RtShims = BASE_4GB;
-  Status = AllocatePagesFromTop (
-    EfiRuntimeServicesCode,
-    EFI_SIZE_TO_PAGES((UINTN)&gRtShimsDataEnd - (UINTN)&gRtShimsDataStart),
-    &RtShims
-    );
-  gRtShims             = (VOID *)(UINTN)RtShims;
-#endif
-
-  if (!EFI_ERROR (Status)) {
-    gGetVariable          = (UINTN)gRT->GetVariable;
-    gGetNextVariableName  = (UINTN)gRT->GetNextVariableName;
-    gSetVariable          = (UINTN)gRT->SetVariable;
-    gGetTime              = (UINTN)gRT->GetTime;
-    gSetTime              = (UINTN)gRT->SetTime;
-    gGetWakeupTime        = (UINTN)gRT->GetWakeupTime;
-    gSetWakeupTime        = (UINTN)gRT->SetWakeupTime;
-    gGetNextHighMonoCount = (UINTN)gRT->GetNextHighMonotonicCount;
-    gResetSystem          = (UINTN)gRT->ResetSystem;
-
-    gGetVariableBoot      = (UINTN)GetVariableCustomSlide;
-
-    CopyMem (
-      gRtShims,
-      (VOID *)&gRtShimsDataStart,
-      ((UINTN)&gRtShimsDataEnd - (UINTN)&gRtShimsDataStart)
-      );
-
-    gRT->GetVariable               = (EFI_GET_VARIABLE)((UINTN)gRtShims              + ((UINTN)&RtShimGetVariable          - (UINTN)&gRtShimsDataStart));
-    gRT->GetNextVariableName       = (EFI_GET_NEXT_VARIABLE_NAME)((UINTN)gRtShims    + ((UINTN)&RtShimGetNextVariableName  - (UINTN)&gRtShimsDataStart));
-    gRT->SetVariable               = (EFI_SET_VARIABLE)((UINTN)gRtShims              + ((UINTN)&RtShimSetVariable          - (UINTN)&gRtShimsDataStart));
-    gRT->GetTime                   = (EFI_GET_TIME)((UINTN)gRtShims                  + ((UINTN)&RtShimGetTime              - (UINTN)&gRtShimsDataStart));
-    gRT->SetTime                   = (EFI_SET_TIME)((UINTN)gRtShims                  + ((UINTN)&RtShimSetTime              - (UINTN)&gRtShimsDataStart));
-    gRT->GetWakeupTime             = (EFI_GET_WAKEUP_TIME)((UINTN)gRtShims           + ((UINTN)&RtShimGetWakeupTime        - (UINTN)&gRtShimsDataStart));
-    gRT->SetWakeupTime             = (EFI_SET_WAKEUP_TIME)((UINTN)gRtShims           + ((UINTN)&RtShimSetWakeupTime        - (UINTN)&gRtShimsDataStart));
-    gRT->GetNextHighMonotonicCount = (EFI_GET_NEXT_HIGH_MONO_COUNT)((UINTN)gRtShims  + ((UINTN)&RtShimGetNextHighMonoCount - (UINTN)&gRtShimsDataStart));
-    gRT->ResetSystem               = (EFI_RESET_SYSTEM)((UINTN)gRtShims              + ((UINTN)&RtShimResetSystem          - (UINTN)&gRtShimsDataStart));
-  } else {
-    DEBUG ((DEBUG_VERBOSE, "Nulling RtShims\n"));
-    gRtShims = NULL;
-  }
+  InstallRtShims (GetVariableCustomSlide);
 
   // clear monitoring vars
   gMinAllocatedAddr = 0;
