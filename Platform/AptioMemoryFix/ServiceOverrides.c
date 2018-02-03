@@ -270,8 +270,6 @@ MOExitBootServices (
   )
 {
   EFI_STATUS               Status;
-  UINTN                    NewMapKey;
-  EFI_MEMORY_DESCRIPTOR    *MemoryMap;
   UINTN                    SlideAddr = 0;
   VOID                     *MachOImage = NULL;
   IOHibernateImageHeader   *ImageHeader = NULL;
@@ -293,45 +291,13 @@ MOExitBootServices (
     gExitBSMapKey      = MapKey; 
     Status             = EFI_SUCCESS;
   } else {
-    Status = gStoredExitBootServices(ImageHandle, MapKey);
+    Status = ForceExitBootServices (gStoredExitBootServices, ImageHandle, MapKey);
   }
 
   DEBUG ((DEBUG_VERBOSE, "ExitBootServices %r\n", Status));
 
-  if (EFI_ERROR (Status)) {
-    //
-    // Just report error as var in nvram to be visible from macOS with "nvram -p"
-    //
-    gRT->SetVariable (L"aptio-memfix-error-exitbs",
-      &gAppleBootVariableGuid,
-      EFI_VARIABLE_BOOTSERVICE_ACCESS | EFI_VARIABLE_RUNTIME_ACCESS,
-      3,
-      "Yes"
-      );
-
-    //
-    // It is too late to free memory map here, but it does not matter,
-    // because boot.efi has an old one and will freely use the memory.
-    //
-    Status = GetMemoryMapKey (&NewMapKey, &MemoryMap);
-    DEBUG ((DEBUG_VERBOSE, "ExitBootServices: GetMemoryMapKey = %r\n", Status));
-    if (Status == EFI_SUCCESS) {
-      // we have latest mem map and NewMapKey
-      // we'll try again ExitBootServices with NewMapKey
-      Status = gStoredExitBootServices (ImageHandle, NewMapKey);
-      DEBUG ((DEBUG_VERBOSE, "ExitBootServices: 2nd try = %r\n", Status));
-      if (EFI_ERROR (Status)) {
-        // Error!
-        Print(L"AptioMemoryFix: Error ExitBootServices() 2nd try = Status: %r\n", Status);
-      }
-    } else {
-      Print(L"AptioMemoryFix: Error ExitBootServices(), GetMemoryMapKey() = Status: %r\n", Status);
-      Status = EFI_INVALID_PARAMETER;
-    }
-  }
-
   if (EFI_ERROR(Status)) {
-    Print(L"... waiting 10 secs ...\n");
+    Print(L"Waiting 10 secs...\n");
     gBS->Stall(10*1000000);
     return Status;
   }
@@ -384,8 +350,7 @@ MOSetVirtualAddressMap (
     // To print as much information as possible we delay ExitBootServices.
     // Most likely this will fail, but let's still try!
     //
-    gStoredExitBootServices (gExitBSImageHandle, gExitBSMapKey);
-    //TODO: fix map key on failure
+    ForceExitBootServices (gStoredExitBootServices, gExitBSImageHandle, gExitBSMapKey);
   }
 
   //
