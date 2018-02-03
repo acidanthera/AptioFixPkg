@@ -24,7 +24,7 @@ extern BOOLEAN                gHibernateWake;
 extern BOOLEAN                gSlideArgPresent;
 extern BOOLEAN                gDumpMemArgPresent;
 extern EFI_GET_MEMORY_MAP     gStoredGetMemoryMap;
-extern UINTN                  gLastDescriptorSize;
+extern UINTN                  gMemoryMapDescriptorSize;
 extern EFI_PHYSICAL_ADDRESS   gSysTableRtArea;
 extern EFI_PHYSICAL_ADDRESS   gRelocatedSysTableRtArea;
 
