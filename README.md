@@ -18,14 +18,16 @@ Reference driver to shim AMI APTIO proprietary mouse & keyboard protocols for Fi
 Fork of the original [OsxAptioFix2](https://sourceforge.net/p/cloverefiboot/code/HEAD/tree/OsxAptioFixDrv/) driver with a cleaner (yet still terrible) codebase and improved stability and functionality.
 
 **Important Notes**:
-To debug boot.efi errors on 10.13, aside the usual verbose (-v) boot-arg, you will need a boot.efi [patch](http://www.insanelymac.com/forum/topic/331381-aptiomemoryfix/page-7#entry2572595). The patch is necessary to get sensible error messages instead of 'does printf work??'.
+To debug boot.efi errors on 10.13, aside the usual verbose (-v) boot-arg, you may need a boot.efi [patch](http://www.insanelymac.com/forum/topic/331381-aptiomemoryfix/page-7#entry2572595) or an nvram preference. Either is necessary to get sensible error messages instead of 'does printf work??', but the patch may help in case you have issues when reading nvram.
 
 Before using AptioMemoryFix please ensure that you have:
-- Most up-to-date UEFI BIOS firmware ([patch it](https://github.com/LongSoft/UEFITool/blob/master/UEFIPatch/patches.txt) to unlock 0xE2 register if you know how).
-- ACPI DMAR table dropped by your bootloader (unless you need VT-d support in macOS, which is unlikely).
+- Most up-to-date UEFI BIOS firmware (check your motherboard vendor website).
 - Fast Boot and Hardware Fast Boot disabled in BIOS if present.
-- Above 4G Decoding enabled in BIOS if present.
-- EHCI/XHCI Hand-off enabled in BIOS if boot stalls unless USB devices are disconnected.
+- Above 4G Decoding or similar enabled in BIOS if present.
+- VT-d disabled in BIOS if present (you could also drop ACPI DMAR table with a bootloader).
+- CFG Lock (MSR 0xE2 write protection) disabled in BIOS if present (consider [patching it](https://github.com/LongSoft/UEFITool/blob/master/UEFIPatch/patches.txt) otherwise if you have enough skills).
+- CSM disabled in BIOS if present (you may need to flash GOP ROM on NVIDIA 6xx/AMD 2xx or older, relevant material: [#1](https://www.win-raid.com/t892f16-AMD-and-Nvidia-GOP-update-No-requests-DIY.html), [#2](https://www.win-raid.com/t394f12-Kepler-UEFI-updater.html), [#3](http://www.insanelymac.com/forum/topic/299614-asus-eah6450-video-bios-uefi-gop-upgrade-and-gop-uefi-binary-in-efi-for-many-ati-cards/page-1#entry2042163)).
+- EHCI/XHCI Hand-off enabled in BIOS *only* if boot stalls unless USB devices are disconnected.
 - VT-x, Hyper Threading, Execute Disable Bit enabled in BIOS if present.
 
 #### Features (compared to the original)
