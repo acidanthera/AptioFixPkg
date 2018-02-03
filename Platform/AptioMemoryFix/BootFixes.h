@@ -69,13 +69,6 @@ ProtectRtMemoryFromRelocation(
   );
 
 VOID
-VirtualizeRtShimPointers (
-  UINTN                   MemoryMapSize,
-  UINTN                   DescriptorSize,
-  EFI_MEMORY_DESCRIPTOR   *MemoryMap
-  );
-
-VOID
 UnlockSlideSupportForSafeModeAndCheckSlide (
   UINT8                   *ImageBase,
   UINTN                   ImageSize

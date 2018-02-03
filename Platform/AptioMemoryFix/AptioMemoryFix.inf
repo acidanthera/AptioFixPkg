@@ -38,23 +38,25 @@
 [Sources]
   AptioMemoryFix.c
   AsmFuncs.h
-  BootFixes.c
-  BootFixes.h
   BootArgs.c
   BootArgs.h
+  BootFixes.c
+  BootFixes.h
   Config.h
-  VMem.c
-  VMem.h
-  Lib.c
-  Lib.h
-  Mach-O/UefiLoader.h
-  Mach-O/loader.h
-  Mach-O/Mach-O.h
-  Mach-O/Mach-O.c
+  CsrConfig.h
   FlatDevTree/device_tree.c
   FlatDevTree/device_tree.h
-  CsrConfig.h
   Hibernate.h
+  Lib.c
+  Lib.h
+  Mach-O/loader.h
+  Mach-O/Mach-O.c
+  Mach-O/Mach-O.h
+  Mach-O/UefiLoader.h
+  RtShims.c
+  RtShims.h
+  VMem.c
+  VMem.h
 
 [Sources.X64]
   X64/AsmFuncsX64.nasm

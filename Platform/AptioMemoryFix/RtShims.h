@@ -9,9 +9,6 @@
 #ifndef APTIOFIX_RT_SHIMS_H
 #define APTIOFIX_RT_SHIMS_H
 
-extern UINTN gRtShimsDataStart;
-extern UINTN gRtShimsDataEnd;
-
 extern UINTN gGetVariable;
 extern UINTN gGetNextVariableName;
 extern UINTN gSetVariable;
@@ -21,17 +18,7 @@ extern UINTN gGetWakeupTime;
 extern UINTN gSetWakeupTime;
 extern UINTN gGetNextHighMonoCount;
 extern UINTN gResetSystem;
-extern UINTN gGetVariableBoot;
-
-extern UINTN RtShimGetVariable;
-extern UINTN RtShimGetNextVariableName;
-extern UINTN RtShimSetVariable;
-extern UINTN RtShimGetTime;
-extern UINTN RtShimSetTime;
-extern UINTN RtShimGetWakeupTime;
-extern UINTN RtShimSetWakeupTime;
-extern UINTN RtShimGetNextHighMonoCount;
-extern UINTN RtShimResetSystem;
+extern UINTN gGetVariableOverride;
 
 extern VOID *gRtShims;
 
@@ -40,5 +27,17 @@ typedef struct {
   UINTN           *Func;
   BOOLEAN         Fixed;
 } ShimPtrs;
+
+VOID
+InstallRtShims (
+  EFI_GET_VARIABLE GetVariableOverride
+  );
+
+VOID
+VirtualizeRtShims (
+  UINTN                   MemoryMapSize,
+  UINTN                   DescriptorSize,
+  EFI_MEMORY_DESCRIPTOR   *MemoryMap
+  );
 
 #endif // APTIOFIX_RT_SHIMS_H

@@ -59,7 +59,7 @@ ASM_PFX(RtShimSetVariable):
 global ASM_PFX(RtShimGetVariable)
 ASM_PFX(RtShimGetVariable):
     ; Until boot.efi virtualizes the pointers we use a custom wrapper.
-    mov        rax, qword [ASM_PFX(gGetVariableBoot)]
+    mov        rax, qword [ASM_PFX(gGetVariableOverride)]
     test       rax, rax
     jnz        .USE_CURRENT_FUNC
     mov        rax, qword [ASM_PFX(gGetVariable)]
@@ -138,8 +138,8 @@ ASM_PFX(gGetNextHighMonoCount):   dq  0
 global ASM_PFX(gResetSystem)
 ASM_PFX(gResetSystem):            dq  0
 
-global ASM_PFX(gGetVariableBoot)
-ASM_PFX(gGetVariableBoot):        dq  0
+global ASM_PFX(gGetVariableOverride)
+ASM_PFX(gGetVariableOverride):    dq  0
 
 global ASM_PFX(gRtShimsDataEnd)
 ASM_PFX(gRtShimsDataEnd):

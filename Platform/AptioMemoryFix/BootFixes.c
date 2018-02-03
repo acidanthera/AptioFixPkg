@@ -27,9 +27,6 @@
 #include "Hibernate.h"
 #include "RtShims.h"
 
-VOID *gRtShims = NULL;
-BOOLEAN gRtShimsAddrUpdated = FALSE;
-
 // buffer and size for original kernel entry code
 UINT8 gOrigKernelCode[32];
 UINTN gOrigKernelCodeSize = 0;
@@ -47,18 +44,6 @@ EFI_PHYSICAL_ADDRESS gSysTableRtArea = 0;
 EFI_PHYSICAL_ADDRESS gRelocatedSysTableRtArea = 0;
 
 RT_RELOC_PROTECT_DATA gRelocInfoData;
-
-ShimPtrs gShimPtrArray[] = {
-  { &gGetVariable },
-  { &gSetVariable },
-  { &gGetNextVariableName },
-  { &gGetTime },
-  { &gSetTime },
-  { &gGetWakeupTime },
-  { &gSetWakeupTime },
-  { &gGetNextHighMonoCount },
-  { &gResetSystem }
-};
 
 // used for restoring csr-active-config in boot-args
 BOOLEAN gCsrActiveConfigSet = FALSE;
@@ -361,55 +346,6 @@ CopyEfiSysTableToSeparateRtDataArea (
   CopyMem(Dest, Src, Src->Hdr.HeaderSize);
 
   *EfiSystemTable = (UINT32)(UINTN)Dest;
-}
-
-VOID
-VirtualizeRtShimPointers (
-  UINTN                  MemoryMapSize,
-  UINTN                  DescriptorSize,
-  EFI_MEMORY_DESCRIPTOR  *MemoryMap
-  )
-{
-  EFI_MEMORY_DESCRIPTOR  *Desc;
-  UINTN                  Index, Index2, FixedCount = 0;
-
-  // For some reason creating an event does not work at least on APTIO IV Z77
-
-  // Are we already done?
-  if (gRtShimsAddrUpdated) {
-    return;
-  }
-
-  Desc = MemoryMap;
-
-  // Custom GetVariable wrapper is no longer allowed!
-  *(UINTN *)((UINTN)gRtShims + ((UINTN)&gGetVariableBoot - (UINTN)&gRtShimsDataStart)) = 0;
-
-  for (Index = 0; Index < ARRAY_SIZE (gShimPtrArray); ++Index) {
-    gShimPtrArray[Index].Func = (UINTN *)((UINTN)gRtShims + ((UINTN)(gShimPtrArray[Index].gFunc) - (UINTN)&gRtShimsDataStart));
-  }
-
-  for (Index = 0; Index < (MemoryMapSize / DescriptorSize); ++Index) {
-    for (Index2 = 0; Index2 < ARRAY_SIZE (gShimPtrArray); ++Index2) {
-      if (
-        !gShimPtrArray[Index2].Fixed &&
-        (*(gShimPtrArray[Index2].gFunc) >= Desc->PhysicalStart) &&
-        (*(gShimPtrArray[Index2].gFunc) < (Desc->PhysicalStart + EFI_PAGES_TO_SIZE (Desc->NumberOfPages)))
-      ) {
-        gShimPtrArray[Index2].Fixed = TRUE;
-        *(gShimPtrArray[Index2].Func) += (Desc->VirtualStart - Desc->PhysicalStart);
-        FixedCount++;
-      }
-    }
-
-    if (FixedCount == ARRAY_SIZE (gShimPtrArray)) {
-      break;
-    }
-
-    Desc = NEXT_MEMORY_DESCRIPTOR (Desc, DescriptorSize);
-  }
-
-  gRtShimsAddrUpdated = TRUE;
 }
 
 VOID
@@ -800,8 +736,9 @@ GetVariableCustomSlide (
       }
       // Otherwise pass our values
       IsCsrActiveConfig = TRUE;
-    } else if (!StrCmp (VariableName, L"boot-args")) {
+    }
 #if APTIOFIX_ALLOW_CUSTOM_ASLR_IMPLEMENTATION == 1
+    else if (!StrCmp (VariableName, L"boot-args")) {
       // We delay memory map analysis as much as we can, because boot.efi allocates
       // stuff with gBS->AllocatePool and this overlaps with the slide region (e.g. on X299).
       // The solution could be to wrap pool allocation with AllocatePagesFromTop,
@@ -812,12 +749,13 @@ GetVariableCustomSlide (
         gAnalyzeMemoryMapDone = TRUE;
         //Print(L"Slides were analyzed!\n");
       }
-#endif
+
       if (gValidSlidesNum != TOTAL_SLIDE_NUM && gValidSlidesNum > 0) {
         // Only return custom boot-args if gValidSlidesNum were determined to be less than TOTAL_SLIDE_NUM
         // And thus we have to use a custom slide implementation to boot reliably
         IsBootArgs = TRUE;
       }
+#endif
     }
   }
 
