@@ -216,19 +216,20 @@ MOGetMemoryMap (
   Status = gStoredGetMemoryMap(MemoryMapSize, MemoryMap, MapKey, DescriptorSize, DescriptorVersion);
   DEBUG ((DEBUG_VERBOSE, "GetMemoryMap: %p = %r\n", MemoryMap, Status));
   if (Status == EFI_SUCCESS) {
-    FixMemMap(*MemoryMapSize, MemoryMap, *DescriptorSize, *DescriptorVersion);
-    ShrinkMemMap(MemoryMapSize, MemoryMap, *DescriptorSize, *DescriptorVersion);
-    
+
 #if APTIOFIX_ALLOW_MEMORY_DUMP_ARG == 1
     if (gDumpMemArgPresent) {
-      Print(L"------------- GetMemoryMap update start -------------\n");
-      Print(L"RtShims: %08lX, gST: %08lX\n",
+      Print (L"------------- GetMemoryMap update start -------------\n");
+      Print (L"RtShims: %08lX, gST: %08lX\n",
         (UINTN)gRtShims, (UINTN)gSysTableRtArea);
-      PrintMemMap(*MemoryMapSize, *DescriptorSize, MemoryMap);
-      Print(L"-------------  GetMemoryMap update end  -------------\n");
-      gBS->Stall(5000000);
+      PrintMemMap (*MemoryMapSize, *DescriptorSize, MemoryMap);
+      Print (L"-------------  GetMemoryMap update end  -------------\n");
+      gBS->Stall (5000000);
     }
 #endif
+
+    FixMemMap(*MemoryMapSize, MemoryMap, *DescriptorSize, *DescriptorVersion);
+    ShrinkMemMap(MemoryMapSize, MemoryMap, *DescriptorSize, *DescriptorVersion);
 
     // remember last/final memmap
     gLastMemoryMapSize = *MemoryMapSize;
