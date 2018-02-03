@@ -228,8 +228,11 @@ MOGetMemoryMap (
     }
 #endif
 
-    FixMemMap(*MemoryMapSize, MemoryMap, *DescriptorSize, *DescriptorVersion);
-    ShrinkMemMap(MemoryMapSize, MemoryMap, *DescriptorSize, *DescriptorVersion);
+#if APTIOFIX_PROTECT_CSM_REGION == 1
+    ProtectCsmRegion (*MemoryMapSize, MemoryMap, *DescriptorSize);
+#endif
+
+    ShrinkMemMap (MemoryMapSize, MemoryMap, *DescriptorSize);
 
     // remember last/final memmap
     gLastMemoryMapSize = *MemoryMapSize;

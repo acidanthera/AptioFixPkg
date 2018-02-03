@@ -88,10 +88,12 @@ ProcessBooterImage (
 
 VOID
 DecideOnCustomSlideImplementation (
+  VOID
   );
 
 BOOLEAN
 IsSandyOrIvy (
+  VOID
   );
 
 EFI_STATUS
@@ -107,6 +109,14 @@ GetVariableCustomSlide (
 VOID
 HideSlideFromOS (
   BootArgs   *BootArgs
+  );
+
+/** Protects CSM regions from the kernel and boot.efi. */
+VOID
+ProtectCsmRegion (
+  UINTN                    MemoryMapSize,
+  EFI_MEMORY_DESCRIPTOR    *MemoryMap,
+  UINTN                    DescriptorSize
   );
 
 /** Fixes stuff for booting without relocation block. Called when boot.efi jumps to kernel. */

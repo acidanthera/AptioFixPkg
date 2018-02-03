@@ -225,83 +225,10 @@ StriStartsWithBasic(
 
 VOID
 EFIAPI
-FixMemMap (
-  IN UINTN                   MemoryMapSize,
-  IN EFI_MEMORY_DESCRIPTOR   *MemoryMap,
-  IN UINTN                   DescriptorSize,
-  IN UINT32                  DescriptorVersion
-  )
-{
-  UINTN                   NumEntries;
-  UINTN                   Index;
-  EFI_MEMORY_DESCRIPTOR   *Desc;
-  UINTN                   BlockSize;
-  UINTN                   PhysicalEnd;
-
-  DEBUG ((DEBUG_VERBOSE, "FixMemMap: Size=%d, Addr=%p, DescSize=%d\n", MemoryMapSize, MemoryMap, DescriptorSize));
-
-  Desc = MemoryMap;
-  NumEntries = MemoryMapSize / DescriptorSize;
-
-  for (Index = 0; Index < NumEntries; Index++) {
-    BlockSize = EFI_PAGES_TO_SIZE((UINTN)Desc->NumberOfPages);
-    PhysicalEnd = Desc->PhysicalStart + BlockSize;
-
-#if APTIOFIX_UNMARKED_OVERLAPPING_REGION_FIX == 1
-    //
-    // Fix by Slice - fixes sleep/wake on GB boards.
-    // Appears that some motherboards have a conventional memory region, when it is actually
-    // used in runtime and causes sleep issues & memory corruption.
-    //
-    if (Desc->PhysicalStart < 0xa0000 && PhysicalEnd >= 0x9e000 && 
-      (Desc->Type == EfiConventionalMemory || Desc->Type == EfiBootServicesData || Desc->Type == EfiBootServicesCode)) {
-      Desc->Type = EfiACPIMemoryNVS;
-      Desc->Attribute = 0;
-    }
-#endif
-
-    //
-    // Also do some checking
-    //
-    if ((Desc->Attribute & EFI_MEMORY_RUNTIME) != 0) {
-      //
-      // block with RT flag.
-      // if it is not RT or MMIO, then report to log
-      //
-      if (Desc->Type != EfiRuntimeServicesCode &&
-        Desc->Type != EfiRuntimeServicesData &&
-        Desc->Type != EfiMemoryMappedIO &&
-        Desc->Type != EfiMemoryMappedIOPortSpace
-        )
-      {
-        DEBUG ((DEBUG_VERBOSE, " %s with RT flag: %lx (0x%x) - ???\n", mEfiMemoryTypeDesc[Desc->Type], Desc->PhysicalStart, Desc->NumberOfPages));
-      }
-    } else {
-      //
-      // block without RT flag.
-      // if it is RT or MMIO, then report to log
-      //
-      if (Desc->Type == EfiRuntimeServicesCode ||
-        Desc->Type == EfiRuntimeServicesData ||
-        Desc->Type == EfiMemoryMappedIO ||
-        Desc->Type == EfiMemoryMappedIOPortSpace
-        )
-      {
-        DEBUG ((DEBUG_VERBOSE, " %s without RT flag: %lx (0x%x) - ???\n", mEfiMemoryTypeDesc[Desc->Type], Desc->PhysicalStart, Desc->NumberOfPages));
-      }
-    }
-
-    Desc = NEXT_MEMORY_DESCRIPTOR(Desc, DescriptorSize);
-  }
-}
-
-VOID
-EFIAPI
 ShrinkMemMap (
   IN UINTN                    *MemoryMapSize,
   IN EFI_MEMORY_DESCRIPTOR    *MemoryMap,
-  IN UINTN                    DescriptorSize,
-  IN UINT32                   DescriptorVersion
+  IN UINTN                    DescriptorSize
   )
 {
   UINTN                   SizeFromDescToEnd;
