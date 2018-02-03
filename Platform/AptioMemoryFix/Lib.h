@@ -14,10 +14,6 @@ extern CHAR16 *mEfiMemoryTypeDesc[EfiMaxMemoryType];
 extern CHAR16 *mEfiAllocateTypeDesc[MaxAllocateType];
 extern CHAR16 *mEfiLocateSearchType[];
 
-extern EFI_ALLOCATE_POOL  gStoredAllocatePool;
-extern EFI_FREE_POOL      gStoredFreePool;
-extern EFI_GET_MEMORY_MAP gStoredGetMemoryMap;
-
 /** MemMap reversed scan */
 #define PREV_MEMORY_DESCRIPTOR(MemoryDescriptor, Size) \
   ((EFI_MEMORY_DESCRIPTOR *)((UINT8 *)(MemoryDescriptor) - (Size)))
@@ -86,9 +82,12 @@ ShrinkMemMap (
 VOID
 EFIAPI
 PrintMemMap (
+  IN CONST CHAR16             *Name,
   IN UINTN                    MemoryMapSize,
   IN UINTN                    DescriptorSize,
-  IN EFI_MEMORY_DESCRIPTOR    *MemoryMap
+  IN EFI_MEMORY_DESCRIPTOR    *MemoryMap,
+  IN VOID                     *Shims,
+  IN EFI_PHYSICAL_ADDRESS     SysTable
   );
 
 /** Prints some values from Sys table and Runt. services. */
@@ -121,6 +120,13 @@ GetMemoryMapAlloc (
   OUT UINTN                   *MapKey,
   OUT UINTN                   *DescriptorSize,
   OUT UINT32                  *DescriptorVersion
+  );
+
+/** Helper function that calls GetMemoryMap() and returns new MapKey. */
+EFI_STATUS
+GetMemoryMapKey (
+  OUT UINTN                   *MapKey,
+  OUT EFI_MEMORY_DESCRIPTOR   **MemoryMap
   );
 
 /** Alloctes Pages from the top of mem, up to address specified in Memory. Returns allocated address in Memory. */

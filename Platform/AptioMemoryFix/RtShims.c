@@ -95,18 +95,41 @@ VOID InstallRtShims (
       );
 
     gRT->GetVariable               = (EFI_GET_VARIABLE)((UINTN)gRtShims              + ((UINTN)&RtShimGetVariable          - (UINTN)&gRtShimsDataStart));
-    gRT->GetNextVariableName       = (EFI_GET_NEXT_VARIABLE_NAME)((UINTN)gRtShims    + ((UINTN)&RtShimGetNextVariableName  - (UINTN)&gRtShimsDataStart));
     gRT->SetVariable               = (EFI_SET_VARIABLE)((UINTN)gRtShims              + ((UINTN)&RtShimSetVariable          - (UINTN)&gRtShimsDataStart));
+    gRT->GetNextVariableName       = (EFI_GET_NEXT_VARIABLE_NAME)((UINTN)gRtShims    + ((UINTN)&RtShimGetNextVariableName  - (UINTN)&gRtShimsDataStart));
     gRT->GetTime                   = (EFI_GET_TIME)((UINTN)gRtShims                  + ((UINTN)&RtShimGetTime              - (UINTN)&gRtShimsDataStart));
     gRT->SetTime                   = (EFI_SET_TIME)((UINTN)gRtShims                  + ((UINTN)&RtShimSetTime              - (UINTN)&gRtShimsDataStart));
     gRT->GetWakeupTime             = (EFI_GET_WAKEUP_TIME)((UINTN)gRtShims           + ((UINTN)&RtShimGetWakeupTime        - (UINTN)&gRtShimsDataStart));
     gRT->SetWakeupTime             = (EFI_SET_WAKEUP_TIME)((UINTN)gRtShims           + ((UINTN)&RtShimSetWakeupTime        - (UINTN)&gRtShimsDataStart));
     gRT->GetNextHighMonotonicCount = (EFI_GET_NEXT_HIGH_MONO_COUNT)((UINTN)gRtShims  + ((UINTN)&RtShimGetNextHighMonoCount - (UINTN)&gRtShimsDataStart));
     gRT->ResetSystem               = (EFI_RESET_SYSTEM)((UINTN)gRtShims              + ((UINTN)&RtShimResetSystem          - (UINTN)&gRtShimsDataStart));
+
+    gRT->Hdr.CRC32 = 0;
+    gBS->CalculateCrc32(gRT, gRT->Hdr.HeaderSize, &gRT->Hdr.CRC32);
   } else {
     DEBUG ((DEBUG_VERBOSE, "Nulling RtShims\n"));
     gRtShims = NULL;
   }
+}
+
+
+VOID
+UninstallRtShims (
+  VOID
+  )
+{
+  gRT->GetVariable               = (EFI_GET_VARIABLE)gGetVariable;
+  gRT->GetNextVariableName       = (EFI_GET_NEXT_VARIABLE_NAME)gGetNextVariableName;
+  gRT->SetVariable               = (EFI_SET_VARIABLE)gSetVariable;
+  gRT->GetTime                   = (EFI_GET_TIME)gGetTime;
+  gRT->SetTime                   = (EFI_SET_TIME)gSetTime;
+  gRT->GetWakeupTime             = (EFI_GET_WAKEUP_TIME)gGetWakeupTime;
+  gRT->SetWakeupTime             = (EFI_SET_WAKEUP_TIME)gSetWakeupTime;
+  gRT->GetNextHighMonotonicCount = (EFI_GET_NEXT_HIGH_MONO_COUNT)gGetNextHighMonoCount;
+  gRT->ResetSystem               = (EFI_RESET_SYSTEM)gResetSystem;
+
+  gRT->Hdr.CRC32 = 0;
+  gBS->CalculateCrc32(gRT, gRT->Hdr.HeaderSize, &gRT->Hdr.CRC32);
 }
 
 VOID

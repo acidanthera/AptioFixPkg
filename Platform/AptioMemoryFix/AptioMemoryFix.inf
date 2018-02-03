@@ -55,6 +55,8 @@
   Mach-O/UefiLoader.h
   RtShims.c
   RtShims.h
+  ServiceOverrides.c
+  ServiceOverrides.h
   VMem.c
   VMem.h
 

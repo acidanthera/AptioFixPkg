@@ -14,16 +14,16 @@
 #include "BootArgs.h"
 #include "Lib.h"
 
-STATIC BootArgs mBootArgs;
+STATIC BootArguments mBootArgs;
 
-BootArgs *
+BootArguments *
 EFIAPI
 GetBootArgs (
-  VOID *bootArgs
+  VOID *BootArgs
   )
 {
-  BootArgs1  *BA1 = bootArgs;
-  BootArgs2  *BA2 = bootArgs;
+  BootArgs1  *BA1 = BootArgs;
+  BootArgs2  *BA2 = BootArgs;
 
   ZeroMem(&mBootArgs, sizeof(mBootArgs));
 

@@ -295,9 +295,9 @@ VmAllocateMemoryPool (
   VmMemoryPoolFreePages = 0x200; // 2 MB should be enough
   Addr = BASE_4GB; // max address
 
-  Status = AllocatePagesFromTop(EfiBootServicesData, VmMemoryPoolFreePages, &Addr);
+  Status = AllocatePagesFromTop (EfiBootServicesData, VmMemoryPoolFreePages, &Addr);
   if (Status != EFI_SUCCESS) {
-    Print(L"VmAllocateMemoryPool: AllocatePagesFromTop(EfiBootServicesData) = %r\n", Status);
+    Print (L"AptioMemoryFix: VmAllocateMemoryPool allocation failure %r\n", Status);
   } else {
     VmMemoryPool = (UINT8*)Addr;
     DEBUG ((DEBUG_VERBOSE, "VmMemoryPool = %lx - %lx\n", VmMemoryPool, VmMemoryPool + EFI_PAGES_TO_SIZE(VmMemoryPoolFreePages) - 1));
