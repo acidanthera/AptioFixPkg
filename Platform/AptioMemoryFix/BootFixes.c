@@ -673,7 +673,7 @@ DecideOnCustomSlideImplementation (
     UINTN                  DescEndAddr;
     UINTN                  AvailableSize;
 
-    GetSlideRangeForValue((UINT8)Slide, &StartAddr, &EndAddr);
+    GetSlideRangeForValue ((UINT8)Slide, &StartAddr, &EndAddr);
 
     AvailableSize = 0;
 
@@ -714,7 +714,7 @@ DecideOnCustomSlideImplementation (
         }
       }
 
-      Desc = NEXT_MEMORY_DESCRIPTOR(Desc, DescriptorSize);
+      Desc = NEXT_MEMORY_DESCRIPTOR (Desc, DescriptorSize);
     }
 
     if ((StartAddr + AvailableSize) != EndAddr) {
@@ -728,16 +728,39 @@ DecideOnCustomSlideImplementation (
       DEBUG ((DEBUG_VERBOSE, "Slide %03d at %08x:%08x should be ok.\n", (UINT32)Slide, (UINT32)StartAddr, (UINT32)EndAddr));
       gValidSlides[gValidSlidesNum++] = (UINT8)Slide;
     } else {
-      Print(L"Slide %03d at %08x:%08x cannot be used!\n", (UINT32)Slide, (UINT32)StartAddr, (UINT32)EndAddr);
+      DEBUG ((DEBUG_VERBOSE, "Slide %03d at %08x:%08x cannot be used!\n", (UINT32)Slide, (UINT32)StartAddr, (UINT32)EndAddr));
     }
   }
 
   gBS->FreePages ((EFI_PHYSICAL_ADDRESS)MemoryMap, AllocatedMapPages);
 
   if (gValidSlidesNum != TOTAL_SLIDE_NUM) {
-    Print(L"Only %d/%d slide values are available for usage! Booting may fail!\n", gValidSlidesNum, TOTAL_SLIDE_NUM);
     if (gValidSlidesNum == 0) {
-      Print(L"No slide values are available for usage! You should use custom slide.\n");
+      Print (L"No slide values are available for usage! You should use custom slide.\n");
+    } else {
+      //
+      // Pretty-print valid slides as ranges.
+      // For example, 1, 2, 3, 4, 5 will becomes 1-5.
+      //
+      Print (L"Only %d/%d slide values are available for usage! Booting may fail!\n", gValidSlidesNum, TOTAL_SLIDE_NUM);
+      NumEntries = 0;
+      for (Index = 0; Index <= gValidSlidesNum; Index++) {
+        if (Index == 0) {
+          Print (L"Valid slides: %d", gValidSlides[Index]);
+        } else if (Index == gValidSlidesNum || gValidSlides[Index - 1] + 1 != gValidSlides[Index]) {
+          if (NumEntries == 1)
+            Print (L", %d", gValidSlides[Index-1]);
+          else if (NumEntries > 1)
+            Print (L"-%d", gValidSlides[Index-1]);
+          if (Index == gValidSlidesNum)
+            Print (L"\n");
+          else
+            Print (L", %d", gValidSlides[Index]);
+          NumEntries = 0;
+        } else {
+          NumEntries++;
+        }
+      }
     }
   }
 }
