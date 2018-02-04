@@ -458,7 +458,7 @@ GetMemoryMapAlloc (
     if (AllocatedTopPages) {
       *MemoryMap         = (EFI_MEMORY_DESCRIPTOR *)BASE_4GB;
       *AllocatedTopPages = EFI_SIZE_TO_PAGES(*MemoryMapSize);
-      Status = AllocatePagesFromTop (EfiBootServicesData, *AllocatedTopPages, (EFI_PHYSICAL_ADDRESS *)*MemoryMap);
+      Status = AllocatePagesFromTop (EfiBootServicesData, *AllocatedTopPages, (EFI_PHYSICAL_ADDRESS *)MemoryMap);
       if (EFI_ERROR (Status)) {
         DEBUG ((DEBUG_WARN, "Temp memory map allocation from top failure %r\n", Status));
         *MemoryMap = NULL;
