@@ -297,7 +297,7 @@ VmAllocateMemoryPool (
 
   Status = AllocatePagesFromTop (EfiBootServicesData, VmMemoryPoolFreePages, &Addr);
   if (Status != EFI_SUCCESS) {
-    Print (L"AptioMemoryFix: VmAllocateMemoryPool allocation failure %r\n", Status);
+    PrintScreen (L"AMF: vm memory pool allocation failure - %r\n", Status);
   } else {
     VmMemoryPool = (UINT8*)Addr;
     DEBUG ((DEBUG_VERBOSE, "VmMemoryPool = %lx - %lx\n", VmMemoryPool, VmMemoryPool + EFI_PAGES_TO_SIZE(VmMemoryPoolFreePages) - 1));

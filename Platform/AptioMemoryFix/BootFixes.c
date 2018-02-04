@@ -119,7 +119,7 @@ PrepareJumpFromKernel (
   HigherMem = BASE_4GB;
   Status = AllocatePagesFromTop(EfiBootServicesCode, 1, &HigherMem);
   if (Status != EFI_SUCCESS) {
-    Print(L"AptioMemoryFix: PrepareJumpFromKernel(): can not allocate mem for JumpToKernel (0x%x pages on mem top): %r\n",
+    PrintScreen (L"AMF: Failed to allocate JumpToKernel memory (0x%X pages on mem top) - %r\n",
       1, Status);
     return Status;
   }
@@ -131,8 +131,8 @@ PrepareJumpFromKernel (
   JumpToKernel64Addr = HigherMem + ( (UINT8*)(UINTN)&JumpToKernel64 - (UINT8*)(UINTN)&JumpToKernel );
 
   Size = (UINT8*)&JumpToKernelEnd - (UINT8*)&JumpToKernel;
-  if (Size > EFI_PAGES_TO_SIZE(1)) {
-    Print(L"Size of JumpToKernel32 code is too big\n");
+  if (Size > EFI_PAGES_TO_SIZE (1)) {
+    PrintScreen (L"AMF: JumpToKernel32 size is too big - %ld\n", Size);
     return EFI_BUFFER_TOO_SMALL;
   }
 
@@ -153,7 +153,7 @@ PrepareJumpFromKernel (
   gSysTableRtArea = BASE_4GB;
   Status = AllocatePagesFromTop(EfiRuntimeServicesData, 1, &gSysTableRtArea);
   if (Status != EFI_SUCCESS) {
-    Print(L"AptioMemoryFix: PrepareJumpFromKernel(): can not allocate mem for RT area for EFI system table: %r\n",
+    PrintScreen (L"AMF: Failed to allocate RT memory for system table - %r\n",
       1, Status);
     return Status;
   }
@@ -573,7 +573,7 @@ GenerateRandomSlideValue (
     Slide = (Clock & 0xFF) ^ ((Clock >> 8) & 0xFF);
   } while (Slide == 0);
 
-  //Print(L"Generated slide index %d value %d\n", Slide, gValidSlides[Slide % gValidSlidesNum]);
+  //PrintScreen (L"Generated slide index %d value %d\n", Slide, gValidSlides[Slide % gValidSlidesNum]);
 
   //FIXME: This is bad due to uneven distribution, but let's use it for now.
   return gValidSlides[Slide % gValidSlidesNum];
@@ -605,6 +605,7 @@ DecideOnCustomSlideImplementation (
     );
 
   if (Status != EFI_SUCCESS) {
+    PrintScreen (L"AMF: Failed to obtain memory map for KASLR - %r\n", Status);
     return;
   }
 
@@ -685,26 +686,26 @@ DecideOnCustomSlideImplementation (
 
   if (gValidSlidesNum != TOTAL_SLIDE_NUM) {
     if (gValidSlidesNum == 0) {
-      Print (L"No slide values are available for usage! You should use custom slide.\n");
+      PrintScreen (L"AMF: No slide values are usable! Use custom slide!\n");
     } else {
       //
       // Pretty-print valid slides as ranges.
       // For example, 1, 2, 3, 4, 5 will becomes 1-5.
       //
-      Print (L"Only %d/%d slide values are available for usage! Booting may fail!\n", gValidSlidesNum, TOTAL_SLIDE_NUM);
+      PrintScreen (L"AMF: Only %d/%d slide values are usable! Booting may fail!\n", gValidSlidesNum, TOTAL_SLIDE_NUM);
       NumEntries = 0;
       for (Index = 0; Index <= gValidSlidesNum; Index++) {
         if (Index == 0) {
-          Print (L"Valid slides: %d", gValidSlides[Index]);
+          PrintScreen (L"Valid slides: %d", gValidSlides[Index]);
         } else if (Index == gValidSlidesNum || gValidSlides[Index - 1] + 1 != gValidSlides[Index]) {
           if (NumEntries == 1)
-            Print (L", %d", gValidSlides[Index-1]);
+            PrintScreen (L", %d", gValidSlides[Index-1]);
           else if (NumEntries > 1)
-            Print (L"-%d", gValidSlides[Index-1]);
+            PrintScreen (L"-%d", gValidSlides[Index-1]);
           if (Index == gValidSlidesNum)
-            Print (L"\n");
+            PrintScreen (L"\n");
           else
-            Print (L", %d", gValidSlides[Index]);
+            PrintScreen (L", %d", gValidSlides[Index]);
           NumEntries = 0;
         } else {
           NumEntries++;
@@ -757,10 +758,11 @@ GetVariableCustomSlide (
       // The solution could be to wrap pool allocation with AllocatePagesFromTop,
       // and keep track of all the allocated pointers to later be able to free them.
       // Some stubs are already present (see AllocPool, FreePool overrides)
+
       if (!gSlideArgPresent && !gAnalyzeMemoryMapDone) {
         DecideOnCustomSlideImplementation();
         gAnalyzeMemoryMapDone = TRUE;
-        //Print(L"Slides were analyzed!\n");
+        //PrintScreen (L"Slides were analyzed!\n");
       }
 
       if (gValidSlidesNum != TOTAL_SLIDE_NUM && gValidSlidesNum > 0) {
