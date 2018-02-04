@@ -231,7 +231,7 @@ DetectBooterStartImage (
     Status = gRT->GetVariable (L"boot-switch-vars", &gAppleBootVariableGuid, NULL, &ValueSize, NULL);
     gHibernateWake = Status == EFI_BUFFER_TOO_SMALL;
 
-    Print (L"\nAptioMemoryFix(R%d): Starting %s%s\n",
+    PrintScreen (L"\nAptioMemoryFix(R%d): Starting %s%s\n",
       mAptioMemoryFixProtocol.Revision,
       FilePathText,
       gHibernateWake ? L" (hibernate wake)" : L"");

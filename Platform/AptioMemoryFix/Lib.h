@@ -139,6 +139,13 @@ ForceExitBootServices (
   IN UINTN                   MapKey
   );
 
+/** Prints via gST->ConOut without any allocations. */
+VOID
+PrintScreen (
+  IN  CONST CHAR16   *Format,
+  ...
+  );
+
 /** Calls real gBS->AllocatePool and returns pool memory. */
 VOID *
 DirectAllocatePool (

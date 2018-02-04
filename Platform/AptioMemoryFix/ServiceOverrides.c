@@ -278,7 +278,7 @@ MOExitBootServices (
   // We need hibernate image address for wake
   //
   if (gHibernateWake && gHibernateImageAddress == 0) {
-    Print (L"AptioMemoryFix: Failed to find hibernate image address!\n");
+    PrintScreen (L"AMF: Failed to find hibernate image address\n");
     gBS->Stall (5000000);
     return EFI_INVALID_PARAMETER;
   }
@@ -296,11 +296,8 @@ MOExitBootServices (
 
   DEBUG ((DEBUG_VERBOSE, "ExitBootServices %r\n", Status));
 
-  if (EFI_ERROR(Status)) {
-    Print(L"Waiting 10 secs...\n");
-    gBS->Stall(10*1000000);
+  if (EFI_ERROR(Status))
     return Status;
-  }
 
   if (!gHibernateWake) {
     DEBUG ((DEBUG_VERBOSE, "ExitBootServices: gMinAllocatedAddr: %lx, gMaxAllocatedAddr: %lx\n", gMinAllocatedAddr, gMaxAllocatedAddr));

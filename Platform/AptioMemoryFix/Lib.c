@@ -304,15 +304,15 @@ PrintMemMap (
 
   Desc = MemoryMap;
   NumEntries = MemoryMapSize / DescriptorSize;
-  Print (L"--- Dump Memory Map (%s) start ---\n", Name);
-  Print (L"MEMMAP: Size=%d, Addr=%p, DescSize=%d, Shims=%08lX, ST=%08lX\n",
+  PrintScreen (L"--- Dump Memory Map (%s) start ---\n", Name);
+  PrintScreen (L"MEMMAP: Size=%d, Addr=%p, DescSize=%d, Shims=%08lX, ST=%08lX\n",
     MemoryMapSize, MemoryMap, DescriptorSize, (UINTN)Shims, (UINTN)SysTable);
-  Print (L"Type      Start      End        Virtual          # Pages    Attributes\n");
+  PrintScreen (L"Type      Start      End        Virtual          # Pages    Attributes\n");
   for (Index = 0; Index < NumEntries; Index++) {
 
     Bytes = EFI_PAGES_TO_SIZE(Desc->NumberOfPages);
 
-    Print(L"%-9s %010lX %010lX %016lX %010lX %016lX\n",
+    PrintScreen (L"%-9s %010lX %010lX %016lX %010lX %016lX\n",
       mEfiMemoryTypeDesc[Desc->Type],
       Desc->PhysicalStart,
       Desc->PhysicalStart + Bytes - 1,
@@ -325,8 +325,8 @@ PrintMemMap (
       gBS->Stall(5000000);
   }
 
-  Print(L"--- Dump Memory Map (%s) end ---\n", Name);
-  gBS->Stall(5000000);
+  PrintScreen (L"--- Dump Memory Map (%s) end ---\n", Name);
+  gBS->Stall (5000000);
 }
 
 VOID
@@ -360,7 +360,7 @@ WaitForKeyPress (
   UINTN           Index;
   EFI_INPUT_KEY   Key;
 
-  Print(L"%a", Message);
+  PrintScreen (L"%a", Message);
   do {
     Status = gST->ConIn->ReadKeyStroke (gST->ConIn, &Key);
   } while(Status == EFI_SUCCESS);
@@ -450,14 +450,18 @@ GetMemoryMapAlloc (
   }
 
   do {
+    //
     // This is done because extra allocations may increase memory map size.
+    //
     *MemoryMapSize   += 256;
 
+    //
     // Requested to allocate from top via pages.
     // This may be needed, because the pool memory may collide with the kernel.
+    //
     if (AllocatedTopPages) {
       *MemoryMap         = (EFI_MEMORY_DESCRIPTOR *)BASE_4GB;
-      *AllocatedTopPages = EFI_SIZE_TO_PAGES(*MemoryMapSize);
+      *AllocatedTopPages = EFI_SIZE_TO_PAGES (*MemoryMapSize);
       Status = AllocatePagesFromTop (EfiBootServicesData, *AllocatedTopPages, (EFI_PHYSICAL_ADDRESS *)MemoryMap);
       if (EFI_ERROR (Status)) {
         DEBUG ((DEBUG_WARN, "Temp memory map allocation from top failure %r\n", Status));
@@ -513,15 +517,15 @@ AllocatePagesFromTop (
   EFI_MEMORY_DESCRIPTOR   *MemoryMapEnd;
   EFI_MEMORY_DESCRIPTOR   *Desc;
 
-  Status = GetMemoryMapAlloc(NULL, &MemoryMapSize, &MemoryMap, &MapKey, &DescriptorSize, &DescriptorVersion);
+  Status = GetMemoryMapAlloc (NULL, &MemoryMapSize, &MemoryMap, &MapKey, &DescriptorSize, &DescriptorVersion);
   if (EFI_ERROR(Status)) {
     return Status;
   }
 
   Status = EFI_NOT_FOUND;
 
-  MemoryMapEnd = NEXT_MEMORY_DESCRIPTOR(MemoryMap, MemoryMapSize);
-  Desc = PREV_MEMORY_DESCRIPTOR(MemoryMapEnd, DescriptorSize);
+  MemoryMapEnd = NEXT_MEMORY_DESCRIPTOR (MemoryMap, MemoryMapSize);
+  Desc = PREV_MEMORY_DESCRIPTOR (MemoryMapEnd, DescriptorSize);
   for ( ; Desc >= MemoryMap; Desc = PREV_MEMORY_DESCRIPTOR(Desc, DescriptorSize)) {
 
     if (Desc->Type == EfiConventionalMemory &&                          // free mem
@@ -595,14 +599,52 @@ ForceExitBootServices (
       Status = ExitBs (ImageHandle, MapKey);
       DEBUG ((DEBUG_VERBOSE, "ExitBootServices: 2nd try = %r\n", Status));
       if (EFI_ERROR (Status))
-        Print (L"AptioMemoryFix: ExitBootServices failed twice %r\n", Status);
+        PrintScreen (L"AMF: ExitBootServices failed twice - %r\n", Status);
     } else {
-      Print (L"AptioMemoryFix: Failed to get MapKey for ExitBootServices %r\n", Status);
+      PrintScreen (L"AMF: Failed to get MapKey for ExitBootServices - %r\n", Status);
       Status = EFI_INVALID_PARAMETER;
+    }
+
+    if (EFI_ERROR (Status)) {
+      PrintScreen (L"Waiting 10 secs...\n");
+      gBS->Stall(10*1000000);
     }
   }
 
   return Status;
+}
+
+/** Prints via gST->ConOut without any allocations. */
+VOID
+PrintScreen (
+  IN  CONST CHAR16   *Format,
+  ...
+  )
+{
+  CHAR16 Buffer[1024];
+  VA_LIST Marker;
+
+  //
+  // Extensive use of any onscreen printing (including gST->ConOut) is dangerous on many APTIO V,
+  // boards at least starting with Z170. Tested on ASUS Z170M-PLUS, PRIME Z270-P, H110-PLUS.
+  // It is unclear why it works on some motherboards, found that GA H170M-HD3 is fine.
+  // For example, memory map printing (-v -aptiodump) on these boards will result in a reboot
+  // when calling gRT->SetVariable right before the Desktop shows. This is not a protection
+  // issue, since patching XNU to map with RWX does not change anything.
+  // The issue does not reproduce without -v, and a delayed call to ExitBootServices does not
+  // affect it anyhow (we do it to print from SetVirtualAddressMap).
+  // Invoking ConOut->ClearScreen or ConOut->ResetDevice does not affect the issue.
+  // Installed GPU is not relevant. Tested GPUs were AMD 5670, NVIDIA 980, AMD 560.
+  // Using StdErr instead of ConOut also does not affect the issue.
+  // The only thing we could consider doing here is the print location (file or nvram).
+  //
+
+  VA_START (Marker, Format);
+  UnicodeVSPrint (Buffer, sizeof (Buffer), Format, Marker);
+  VA_END (Marker);
+
+  if (gST->ConOut)
+    gST->ConOut->OutputString (gST->ConOut, Buffer);
 }
 
 /** Calls real gBS->AllocatePool and returns pool memory. */
