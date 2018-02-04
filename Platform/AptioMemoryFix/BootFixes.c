@@ -1025,7 +1025,7 @@ ProtectCsmRegion (
     BlockSize = EFI_PAGES_TO_SIZE ((UINTN)Desc->NumberOfPages);
     PhysicalEnd = Desc->PhysicalStart + BlockSize;
 
-    if (Desc->PhysicalStart < 0xA0000 && PhysicalEnd >= 0x9E000 && Desc->Type == EfiBootServicesData) {
+    if (PhysicalEnd >= 0x9E000 && PhysicalEnd < 0xA0000 && Desc->Type == EfiBootServicesData) {
       Desc->Type = EfiACPIMemoryNVS;
       break;
     }
