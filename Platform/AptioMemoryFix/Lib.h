@@ -141,6 +141,7 @@ ForceExitBootServices (
 
 /** Prints via gST->ConOut without any allocations. */
 VOID
+EFIAPI
 PrintScreen (
   IN  CONST CHAR16   *Format,
   ...
