@@ -72,7 +72,8 @@ VOID InstallRtShims (
   Status = AllocatePagesFromTop (
     EfiRuntimeServicesCode,
     EFI_SIZE_TO_PAGES ((UINTN)&gRtShimsDataEnd - (UINTN)&gRtShimsDataStart),
-    &RtShims
+    &RtShims,
+    FALSE
     );
   gRtShims             = (VOID *)(UINTN)RtShims;
 #endif
