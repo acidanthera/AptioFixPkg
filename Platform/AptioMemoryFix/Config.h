@@ -71,4 +71,15 @@
 #define APTIOFIX_ALLOW_MEMORY_DUMP_ARG 0
 #endif
 
+/** Due to os crashes caused by using AllocatePool on several Skylake APTIO V boards we embed
+ *  a custom allocator, that avoids the use of boot services allocator by preallocating a memory pool
+ *  (currently 512 MB) and spreading it as requested throughout the boot process.
+ *  Another benefit is that this allocator will allocate from top and avoid conflicts with custom
+ *  ASLR implementation (important for X99/X299 boards).
+ *  On allocation failure the original allocator will be used.
+ */
+#ifndef APTIOFIX_ALLOCATOR_POOL_SIZE
+#define APTIOFIX_ALLOCATOR_POOL_SIZE 0x20000000
+#endif
+
 #endif // APTIOFIX_HACK_CONFIG_H

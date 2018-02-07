@@ -753,21 +753,21 @@ GetVariableCustomSlide (
     }
 #if APTIOFIX_ALLOW_CUSTOM_ASLR_IMPLEMENTATION == 1
     else if (!StrCmp (VariableName, L"boot-args")) {
-      // We delay memory map analysis as much as we can, because boot.efi allocates
-      // stuff with gBS->AllocatePool and this overlaps with the slide region (e.g. on X299).
-      // The solution could be to wrap pool allocation with AllocatePagesFromTop,
-      // and keep track of all the allocated pointers to later be able to free them.
-      // Some stubs are already present (see AllocPool, FreePool overrides)
-
+      //
+      // We delay memory map analysis as much as we can, in case boot.efi or anything else allocate
+      // stuff with gBS->AllocatePool and this is not caught by our gBS->AllocatePool override.
+      // This is a problem when an allocated region overlaps with the slide region (e.g. on X299).
+      //
       if (!gSlideArgPresent && !gAnalyzeMemoryMapDone) {
         DecideOnCustomSlideImplementation();
         gAnalyzeMemoryMapDone = TRUE;
-        //PrintScreen (L"Slides were analyzed!\n");
       }
 
       if (gValidSlidesNum != TOTAL_SLIDE_NUM && gValidSlidesNum > 0) {
+        //
         // Only return custom boot-args if gValidSlidesNum were determined to be less than TOTAL_SLIDE_NUM
-        // And thus we have to use a custom slide implementation to boot reliably
+        // And thus we have to use a custom slide implementation to boot reliably.
+        //
         IsBootArgs = TRUE;
       }
 #endif

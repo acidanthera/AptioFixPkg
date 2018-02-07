@@ -59,6 +59,8 @@
   ServiceOverrides.h
   VMem.c
   VMem.h
+  UmmMalloc/UmmMalloc.h
+  UmmMalloc/UmmMalloc.c
 
 [Sources.X64]
   X64/AsmFuncsX64.nasm

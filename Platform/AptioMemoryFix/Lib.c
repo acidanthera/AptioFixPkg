@@ -431,12 +431,10 @@ GetMemoryMapAlloc (
   )
 {
   EFI_STATUS               Status;
-  EFI_GET_MEMORY_MAP       GetMemoryMapFunction;
 
-  GetMemoryMapFunction = gStoredGetMemoryMap ? gStoredGetMemoryMap : gBS->GetMemoryMap;
   *MemoryMapSize       = 0;
   *MemoryMap           = NULL;
-  Status = GetMemoryMapFunction (
+  Status = OrgGetMemoryMap (
     MemoryMapSize,
     *MemoryMap,
     MapKey,
@@ -476,7 +474,7 @@ GetMemoryMapAlloc (
       }
     }
 
-    Status = GetMemoryMapFunction (
+    Status = OrgGetMemoryMap (
       MemoryMapSize,
       *MemoryMap,
       MapKey,
@@ -625,30 +623,19 @@ PrintScreen (
   CHAR16 Buffer[1024];
   VA_LIST Marker;
 
-  //
-  // Extensive use of any onscreen printing (including gST->ConOut) is dangerous on many APTIO V,
-  // boards at least starting with Z170. Tested on ASUS Z170M-PLUS, PRIME Z270-P, H110-PLUS.
-  // It is unclear why it works on some motherboards, found that GA H170M-HD3 is fine.
-  // For example, memory map printing (-v -aptiodump) on these boards will result in a reboot
-  // when calling gRT->SetVariable right before the Desktop shows. This is not a protection
-  // issue, since patching XNU to map with RWX does not change anything.
-  // The issue does not reproduce without -v, and a delayed call to ExitBootServices does not
-  // affect it anyhow (we do it to print from SetVirtualAddressMap).
-  // Invoking ConOut->ClearScreen or ConOut->ResetDevice does not affect the issue.
-  // Installed GPU is not relevant. Tested GPUs were AMD 5670, NVIDIA 980, AMD 560.
-  // Using StdErr instead of ConOut also does not affect the issue.
-  // The only thing we could consider doing here is the print location (file or nvram).
-  //
-
   VA_START (Marker, Format);
   UnicodeVSPrint (Buffer, sizeof (Buffer), Format, Marker);
   VA_END (Marker);
 
+  //
+  // It is safe to call gST->ConOut->OutputString, because gBS->AllocatePool
+  // is overridden by our own implementation with a custom allocator.
+  //
   if (gST->ConOut)
     gST->ConOut->OutputString (gST->ConOut, Buffer);
 }
 
-/** Calls real gBS->AllocatePool and returns pool memory. */
+/** Allocate without any pool allocations from the top of memory. */
 VOID *
 DirectAllocatePool (
   UINTN     Size
@@ -656,26 +643,26 @@ DirectAllocatePool (
 {
   EFI_STATUS         Status;
   VOID               *Buffer;
-  EFI_ALLOCATE_POOL  Allocator;
 
-  Allocator = gStoredAllocatePool ? gStoredAllocatePool : gBS->AllocatePool;
-
-  Status = Allocator(EfiBootServicesData, Size, &Buffer);
-  if (Status == EFI_SUCCESS)
+  //
+  // It is safe to call gBS->AllocatePool, because it is overridden
+  // by our own implementation with a custom allocator.
+  // This is left in case we decide to enforce the use of a custom allocator
+  // for our own needs. For example, one could do the following for debug reasons:
+  // DisableDynamicPoolAllocs(); gBS->AllocatePool(...); EnableDynamicPoolAllocs();
+  //
+  Status = gBS->AllocatePool (EfiBootServicesData, Size, &Buffer);
+  if (!EFI_ERROR (Status))
     return Buffer;
 
   return NULL;
 }
 
-/** Calls real gBS->FreePool and frees pool memory. */
+/** Free memory allocated by DirectAllocatePool. You are allowed to free AllocatePool memory as well. */
 VOID
 DirectFreePool (
   VOID      *Buffer
   )
 {
-  EFI_FREE_POOL Deallocator;
-
-  Deallocator = gStoredFreePool ? gStoredFreePool : gBS->FreePool;
-
-  Deallocator(Buffer);
+  gBS->FreePool (Buffer);
 }

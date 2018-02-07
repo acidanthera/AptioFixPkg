@@ -139,7 +139,7 @@ ForceExitBootServices (
   IN UINTN                   MapKey
   );
 
-/** Prints via gST->ConOut without any allocations. */
+/** Prints via gST->ConOut without any pool allocations. */
 VOID
 EFIAPI
 PrintScreen (
@@ -147,13 +147,13 @@ PrintScreen (
   ...
   );
 
-/** Calls real gBS->AllocatePool and returns pool memory. */
+/** Allocate without any pool allocations from the top of memory. */
 VOID *
 DirectAllocatePool (
   UINTN     Size
   );
 
-/** Calls real gBS->FreePool and frees pool memory. */
+/** Free memory allocated by DirectAllocatePool. You are allowed to free AllocatePool memory as well. */
 VOID
 DirectFreePool (
   VOID      *Buffer

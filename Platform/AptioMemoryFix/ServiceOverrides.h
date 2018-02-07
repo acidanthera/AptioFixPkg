@@ -10,13 +10,16 @@
 #ifndef APTIOFIX_SERVICE_OVERRIDES_H
 #define APTIOFIX_SERVICE_OVERRIDES_H
 
+//
 // Minimum and maximum addresses allocated by AlocatePages
+//
 extern EFI_PHYSICAL_ADDRESS        gMinAllocatedAddr;
 extern EFI_PHYSICAL_ADDRESS        gMaxAllocatedAddr;
 
-extern EFI_ALLOCATE_POOL  gStoredAllocatePool;
-extern EFI_FREE_POOL      gStoredFreePool;
-extern EFI_GET_MEMORY_MAP gStoredGetMemoryMap;
+//
+// Last descriptor size obtained from GetMemoryMap
+//
+extern UINTN                       gMemoryMapDescriptorSize;
 
 VOID
 InstallBsOverrides (
@@ -72,6 +75,16 @@ MOFreePool (
 EFI_STATUS
 EFIAPI
 MOGetMemoryMap (
+  IN OUT UINTN                  *MemoryMapSize,
+  IN OUT EFI_MEMORY_DESCRIPTOR  *MemoryMap,
+  OUT UINTN                     *MapKey,
+  OUT UINTN                     *DescriptorSize,
+  OUT UINT32                    *DescriptorVersion
+  );
+
+EFI_STATUS
+EFIAPI
+OrgGetMemoryMap (
   IN OUT UINTN                  *MemoryMapSize,
   IN OUT EFI_MEMORY_DESCRIPTOR  *MemoryMap,
   OUT UINTN                     *MapKey,

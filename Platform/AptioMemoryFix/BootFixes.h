@@ -20,12 +20,7 @@ typedef struct {
 } RT_RELOC_PROTECT_DATA;
 
 extern EFI_PHYSICAL_ADDRESS   gSysTableRtArea;
-extern BOOLEAN                gHibernateWake;
-extern BOOLEAN                gSlideArgPresent;
-extern BOOLEAN                gDumpMemArgPresent;
-extern EFI_GET_MEMORY_MAP     gStoredGetMemoryMap;
-extern UINTN                  gMemoryMapDescriptorSize;
-extern EFI_PHYSICAL_ADDRESS   gSysTableRtArea;
+
 extern EFI_PHYSICAL_ADDRESS   gRelocatedSysTableRtArea;
 
 // TRUE if we are doing hibernate wake
