@@ -76,7 +76,7 @@ InstallBsOverrides (
   // See UninstallBsOverrides for more details.
   //
   if (!UmmInitialized ()) {
-    Status = AllocatePagesFromTop (EfiBootServicesData, PageNum, &UmmHeap);
+    Status = AllocatePagesFromTop (EfiBootServicesData, PageNum, &UmmHeap, TRUE);
     if (!EFI_ERROR (Status)) {
       gBS->SetMem ((VOID *)UmmHeap, APTIOFIX_ALLOCATOR_POOL_SIZE, 0);
       UmmSetHeap ((VOID *)UmmHeap);
@@ -89,10 +89,16 @@ InstallBsOverrides (
     } else {
       //
       // This is undesired, but technically not fatal if AllocatePool is not faulty
-      // or we are lucky using. Just a warning is enough.
-      // A second attempt to install it if it happens won't hurt either.
+      // or we are lucky using it. The main reason behind allocating a custom pool
+      // only if it does not overlap with the kernel area is to workaround X99 issues,
+      // where a large chunk (~1.5 GB) of 32-bit memory is not present in the memory
+      // map, and the only free addresses are very close to the kernel area.
+      // Allocating a large pool will heavily reduce the amount of free slides, and
+      // may even prevent the system from booting.
+      // Luckily X99 does not seem to be affected by the pool allocation memory
+      // corruptions, so we can just let it slip...
       //
-      PrintScreen (L"AMF: Failed to install UmmMalloc - %r\n", Status);
+      PrintScreen (L"AMF: Not using custom memory pool - %r\n", Status);
     }
   }
 

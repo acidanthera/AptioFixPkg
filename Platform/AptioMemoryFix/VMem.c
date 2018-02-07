@@ -295,7 +295,7 @@ VmAllocateMemoryPool (
   VmMemoryPoolFreePages = 0x200; // 2 MB should be enough
   Addr = BASE_4GB; // max address
 
-  Status = AllocatePagesFromTop (EfiBootServicesData, VmMemoryPoolFreePages, &Addr);
+  Status = AllocatePagesFromTop (EfiBootServicesData, VmMemoryPoolFreePages, &Addr, FALSE);
   if (Status != EFI_SUCCESS) {
     PrintScreen (L"AMF: vm memory pool allocation failure - %r\n", Status);
   } else {

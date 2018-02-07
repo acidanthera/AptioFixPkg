@@ -122,13 +122,22 @@ GetMemoryMapAlloc (
   OUT UINT32                  *DescriptorVersion
   );
 
-/** Alloctes Pages from the top of mem, up to address specified in Memory. Returns allocated address in Memory. */
+/** Alloctes pages from the top of mem, up to address specified in Memory. Returns allocated address in Memory. */
 EFI_STATUS
 EFIAPI
 AllocatePagesFromTop (
   IN EFI_MEMORY_TYPE          MemoryType,
   IN UINTN                    Pages,
-  IN OUT EFI_PHYSICAL_ADDRESS *Memory
+  IN OUT EFI_PHYSICAL_ADDRESS *Memory,
+  IN BOOLEAN                  CheckRange
+  );
+
+/** Checks whether the area overlaps with a possible kernel image area
+ TODO: move to a separate CustomSlide file... */
+BOOLEAN
+OverlapsWithSlide (
+  EFI_PHYSICAL_ADDRESS   Address,
+  UINTN                  Size
   );
 
 /** Helper function to call ExitBootServices that can handle outdated MapKey issues. */

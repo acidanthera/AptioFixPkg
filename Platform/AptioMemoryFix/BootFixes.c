@@ -118,7 +118,7 @@ PrepareJumpFromKernel (
   // Must be 32-bit to access via a relative jump
   //
   HigherMem = BASE_4GB;
-  Status = AllocatePagesFromTop(EfiBootServicesCode, 1, &HigherMem);
+  Status = AllocatePagesFromTop(EfiBootServicesCode, 1, &HigherMem, FALSE);
   if (Status != EFI_SUCCESS) {
     PrintScreen (L"AMF: Failed to allocate JumpToKernel memory (0x%X pages on mem top) - %r\n",
       1, Status);
@@ -155,7 +155,7 @@ PrepareJumpFromKernel (
   // This one also has to be 32-bit due to XNU BootArgs structure
   //
   gSysTableRtArea = BASE_4GB;
-  Status = AllocatePagesFromTop(EfiRuntimeServicesData, 1, &gSysTableRtArea);
+  Status = AllocatePagesFromTop(EfiRuntimeServicesData, 1, &gSysTableRtArea, FALSE);
   if (Status != EFI_SUCCESS) {
     PrintScreen (L"AMF: Failed to allocate RT memory for system table - %r\n",
       1, Status);
@@ -542,7 +542,7 @@ GetSlideRangeForValue (
 {
   BOOLEAN SandyOrIvy;
 
-  SandyOrIvy = IsSandyOrIvy();
+  SandyOrIvy = IsSandyOrIvy ();
 
   *StartAddr = (UINTN)Slide * 0x200000 + BASE_KERNEL_ADDR;
 
@@ -551,6 +551,37 @@ GetSlideRangeForValue (
     *StartAddr += 0x10200000;
 
   *EndAddr   = *StartAddr + APTIOFIX_SPECULATED_KERNEL_SIZE;
+}
+
+BOOLEAN
+OverlapsWithSlide (
+  EFI_PHYSICAL_ADDRESS   Address,
+  UINTN                  Size
+  )
+{
+  BOOLEAN               SandyOrIvy;
+  EFI_PHYSICAL_ADDRESS  Start;
+  EFI_PHYSICAL_ADDRESS  End;
+  UINTN                 Slide = 0xFF;
+
+  SandyOrIvy = IsSandyOrIvy ();
+
+  if (SandyOrIvy)
+    Slide = 0x7F;
+
+  Start = BASE_KERNEL_ADDR;
+  End   = Start + Slide * 0x200000 + APTIOFIX_SPECULATED_KERNEL_SIZE;
+
+  if (End >= Address && Start <= Address + Size) {
+    return TRUE;
+  } else if (SandyOrIvy) {
+    Start = 0x80 * 0x200000 + BASE_KERNEL_ADDR + 0x10200000;
+    End   = Start + Slide * 0x200000 + APTIOFIX_SPECULATED_KERNEL_SIZE;
+    if (End >= Address && Start <= Address + Size)
+      return TRUE;
+  }
+
+  return FALSE;
 }
 
 UINT8

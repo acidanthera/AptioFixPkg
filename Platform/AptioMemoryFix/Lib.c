@@ -460,7 +460,12 @@ GetMemoryMapAlloc (
     if (AllocatedTopPages) {
       *MemoryMap         = (EFI_MEMORY_DESCRIPTOR *)BASE_4GB;
       *AllocatedTopPages = EFI_SIZE_TO_PAGES (*MemoryMapSize);
-      Status = AllocatePagesFromTop (EfiBootServicesData, *AllocatedTopPages, (EFI_PHYSICAL_ADDRESS *)MemoryMap);
+      Status = AllocatePagesFromTop (
+        EfiBootServicesData,
+        *AllocatedTopPages,
+        (EFI_PHYSICAL_ADDRESS *)MemoryMap,
+        FALSE
+        );
       if (EFI_ERROR (Status)) {
         DEBUG ((DEBUG_WARN, "Temp memory map allocation from top failure %r\n", Status));
         *MemoryMap = NULL;
@@ -503,7 +508,8 @@ EFIAPI
 AllocatePagesFromTop (
   IN EFI_MEMORY_TYPE           MemoryType,
   IN UINTN                     Pages,
-  IN OUT EFI_PHYSICAL_ADDRESS  *Memory
+  IN OUT EFI_PHYSICAL_ADDRESS  *Memory,
+  IN BOOLEAN                   CheckRange
   )
 {
   EFI_STATUS              Status;
@@ -516,40 +522,51 @@ AllocatePagesFromTop (
   EFI_MEMORY_DESCRIPTOR   *Desc;
 
   Status = GetMemoryMapAlloc (NULL, &MemoryMapSize, &MemoryMap, &MapKey, &DescriptorSize, &DescriptorVersion);
-  if (EFI_ERROR(Status)) {
+  if (EFI_ERROR (Status))
     return Status;
-  }
 
   Status = EFI_NOT_FOUND;
 
   MemoryMapEnd = NEXT_MEMORY_DESCRIPTOR (MemoryMap, MemoryMapSize);
   Desc = PREV_MEMORY_DESCRIPTOR (MemoryMapEnd, DescriptorSize);
-  for ( ; Desc >= MemoryMap; Desc = PREV_MEMORY_DESCRIPTOR(Desc, DescriptorSize)) {
 
-    if (Desc->Type == EfiConventionalMemory &&                          // free mem
-      Pages <= Desc->NumberOfPages &&                                 // contains enough space
-      Desc->PhysicalStart + EFI_PAGES_TO_SIZE(Pages) <= *Memory) {    // contains space below specified Memory
-      // free block found
-      if (Desc->PhysicalStart + EFI_PAGES_TO_SIZE((UINTN)Desc->NumberOfPages) <= *Memory) {
-        // the whole block is under Memory - allocate from the top of the block
-        *Memory = Desc->PhysicalStart + EFI_PAGES_TO_SIZE((UINTN)Desc->NumberOfPages - Pages);
-        //DEBUG ((DEBUG_VERBOSE, "found the whole block under top mem, allocating at %lx\n", *Memory));
+  for ( ; Desc >= MemoryMap; Desc = PREV_MEMORY_DESCRIPTOR (Desc, DescriptorSize)) {
+    //
+    // We are looking for some free memory descriptor that contains enough space below the specified memory
+    // 
+    if (Desc->Type == EfiConventionalMemory && Pages <= Desc->NumberOfPages &&
+      Desc->PhysicalStart + EFI_PAGES_TO_SIZE (Pages) <= *Memory) {
+      //
+      // Free block found
+      //
+      if (Desc->PhysicalStart + EFI_PAGES_TO_SIZE ((UINTN)Desc->NumberOfPages) <= *Memory) {
+        //
+        // The whole block is under Memory - allocate from the top of the block
+        //
+        *Memory = Desc->PhysicalStart + EFI_PAGES_TO_SIZE ((UINTN)Desc->NumberOfPages - Pages);
       } else {
-        // the block contains enough pages under Memory, but spans above it - allocate below Memory.
-        *Memory = *Memory - EFI_PAGES_TO_SIZE(Pages);
-        //DEBUG ((DEBUG_VERBOSE, "found the whole block under top mem, allocating at %lx\n", *Memory));
+        //
+        // The block contains enough pages under Memory, but spans above it - allocate below Memory
+        //
+        *Memory = *Memory - EFI_PAGES_TO_SIZE (Pages);
       }
-      Status = gBS->AllocatePages(AllocateAddress,
-                    MemoryType,
-                    Pages,
-                    Memory);
-      //DEBUG ((DEBUG_VERBOSE, "Alloc Pages=%x, Addr=%lx, Status=%r\n", Pages, *Memory, Status));
+      //
+      // Ensure that the found block does not overlap with the kernel area
+      //
+      if (CheckRange && OverlapsWithSlide (*Memory, EFI_PAGES_TO_SIZE (Pages)))
+        continue;
+
+      Status = gBS->AllocatePages (
+        AllocateAddress,
+        MemoryType,
+        Pages,
+        Memory
+        );
       break;
     }
   }
 
-  // release mem
-  DirectFreePool(MemoryMap);
+  DirectFreePool (MemoryMap);
 
   return Status;
 }

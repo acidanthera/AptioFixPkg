@@ -68,7 +68,7 @@
  *  Enable for development and testing purposes.
  */
 #ifndef APTIOFIX_ALLOW_MEMORY_DUMP_ARG
-#define APTIOFIX_ALLOW_MEMORY_DUMP_ARG 0
+#define APTIOFIX_ALLOW_MEMORY_DUMP_ARG 1
 #endif
 
 /** Due to os crashes caused by using AllocatePool on several Skylake APTIO V boards we embed
