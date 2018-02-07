@@ -101,7 +101,7 @@ PrepareJumpFromKernel (
   UINTN                   Size;
 
   //
-  // chek if already prepared
+  // Chek if already prepared
   //
   if (JumpToKernel32Addr != 0) {
     DEBUG ((DEBUG_VERBOSE, "PrepareJumpFromKernel() - already prepared\n"));
@@ -109,12 +109,13 @@ PrepareJumpFromKernel (
   }
 
   //
-  // save current 64bit state - will be restored later in callback from kernel jump
+  // Save current 64bit state - will be restored later in callback from kernel jump
   //
   AsmPrepareJumpFromKernel();
 
   //
-  // allocate higher memory for JumpToKernel code
+  // Allocate higher memory for JumpToKernel code
+  // Must be 32-bit to access via a relative jump
   //
   HigherMem = BASE_4GB;
   Status = AllocatePagesFromTop(EfiBootServicesCode, 1, &HigherMem);
@@ -125,7 +126,7 @@ PrepareJumpFromKernel (
   }
 
   //
-  // and relocate it to higher mem
+  // And relocate it to higher mem
   //
   JumpToKernel32Addr = HigherMem + ( (UINT8*)(UINTN)&JumpToKernel32 - (UINT8*)(UINTN)&JumpToKernel );
   JumpToKernel64Addr = HigherMem + ( (UINT8*)(UINTN)&JumpToKernel64 - (UINT8*)(UINTN)&JumpToKernel );
@@ -149,7 +150,10 @@ PrepareJumpFromKernel (
   DEBUG ((DEBUG_VERBOSE, "PrepareJumpFromKernel(): JumpToKernel relocated from %p, to %x, size = %x\n",
     &JumpToKernel, HigherMem, Size));
 
+  //
   // Allocate 1 RT data page for copy of EFI system table for kernel
+  // This one also has to be 32-bit due to XNU BootArgs structure
+  //
   gSysTableRtArea = BASE_4GB;
   Status = AllocatePagesFromTop(EfiRuntimeServicesData, 1, &gSysTableRtArea);
   if (Status != EFI_SUCCESS) {
