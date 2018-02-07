@@ -21,48 +21,90 @@
 #include "Lib.h"
 #include "RtShims.h"
 #include "ServiceOverrides.h"
+#include "UmmMalloc/UmmMalloc.h"
 
+//
 // Placeholders for storing original Boot and RT Services functions
-EFI_ALLOCATE_PAGES          gStoredAllocatePages        = NULL;
-EFI_ALLOCATE_POOL           gStoredAllocatePool         = NULL;
-EFI_FREE_POOL               gStoredFreePool             = NULL;
-EFI_GET_MEMORY_MAP          gStoredGetMemoryMap         = NULL;
-EFI_EXIT_BOOT_SERVICES      gStoredExitBootServices     = NULL;
-EFI_HANDLE_PROTOCOL         gStoredHandleProtocol       = NULL;
-EFI_SET_VIRTUAL_ADDRESS_MAP gStoredSetVirtualAddressMap = NULL;
-UINT32                      mRtPreOverridesCRC32 = 0;
+//
+STATIC EFI_ALLOCATE_PAGES          mStoredAllocatePages;
+STATIC EFI_ALLOCATE_POOL           mStoredAllocatePool;
+STATIC EFI_FREE_POOL               mStoredFreePool;
+STATIC EFI_GET_MEMORY_MAP          mStoredGetMemoryMap;
+STATIC EFI_EXIT_BOOT_SERVICES      mStoredExitBootServices;
+STATIC EFI_HANDLE_PROTOCOL         mStoredHandleProtocol;
+STATIC EFI_SET_VIRTUAL_ADDRESS_MAP mStoredSetVirtualAddressMap;
 
-EFI_PHYSICAL_ADDRESS        gMinAllocatedAddr = 0;
-EFI_PHYSICAL_ADDRESS        gMaxAllocatedAddr = 0;
+//
+// Original runtime services hash we restore on uninstallation
+//
+STATIC UINT32               mRtPreOverridesCRC32;
 
+//
 // Location of memory allocated by boot.efi for hibernate image
-EFI_PHYSICAL_ADDRESS        gHibernateImageAddress = 0;
+//
+STATIC EFI_PHYSICAL_ADDRESS mHibernateImageAddress;
 
+//
+// Saved exit boot services arguments
+//
+STATIC EFI_HANDLE           mExitBSImageHandle;
+STATIC UINTN                mExitBSMapKey;
+
+//
+// Minimum and maximum addresses allocated by AlocatePages
+//
+EFI_PHYSICAL_ADDRESS        gMinAllocatedAddr;
+EFI_PHYSICAL_ADDRESS        gMaxAllocatedAddr;
+
+//
 // Last descriptor size obtained from GetMemoryMap
+//
 UINTN                       gMemoryMapDescriptorSize = sizeof(EFI_MEMORY_DESCRIPTOR);
-
-// saved exit boot services arguments
-EFI_HANDLE                  gExitBSImageHandle = 0;
-UINTN                       gExitBSMapKey       = 0; 
 
 VOID
 InstallBsOverrides (
   VOID
   )
 {
-  gStoredAllocatePages    = gBS->AllocatePages;
-  //gStoredAllocatePool     = gBS->AllocatePool;
-  //gStoredFreePool         = gBS->FreePool;
-  gStoredGetMemoryMap     = gBS->GetMemoryMap;
-  gStoredExitBootServices = gBS->ExitBootServices;
-  gStoredHandleProtocol   = gBS->HandleProtocol;
+  EFI_STATUS               Status;
+  EFI_PHYSICAL_ADDRESS     UmmHeap = BASE_4GB;
+  UINTN                    PageNum = EFI_SIZE_TO_PAGES (APTIOFIX_ALLOCATOR_POOL_SIZE);
 
-  gBS->AllocatePages    = MOAllocatePages;
-  //gBS->AllocatePool     = MOAllocatePool;
-  //gBS->FreePool         = MOFreePool;
-  gBS->GetMemoryMap     = MOGetMemoryMap;
-  gBS->ExitBootServices = MOExitBootServices;
-  gBS->HandleProtocol   = MOHandleProtocol;
+  //
+  // We do not uninstall our custom allocator to avoid memory corruption issues
+  // when shimming AMI code. This check ensures that we do not install it twice.
+  // See UninstallBsOverrides for more details.
+  //
+  if (!UmmInitialized ()) {
+    Status = AllocatePagesFromTop (EfiBootServicesData, PageNum, &UmmHeap);
+    if (!EFI_ERROR (Status)) {
+      gBS->SetMem ((VOID *)UmmHeap, APTIOFIX_ALLOCATOR_POOL_SIZE, 0);
+      UmmSetHeap ((VOID *)UmmHeap);
+
+      mStoredAllocatePool   = gBS->AllocatePool;
+      mStoredFreePool       = gBS->FreePool;
+
+      gBS->AllocatePool     = MOAllocatePool;
+      gBS->FreePool         = MOFreePool;
+    } else {
+      //
+      // This is undesired, but technically not fatal if AllocatePool is not faulty
+      // or we are lucky using. Just a warning is enough.
+      // A second attempt to install it if it happens won't hurt either.
+      //
+      PrintScreen (L"AMF: Failed to install UmmMalloc - %r\n", Status);
+    }
+  }
+
+  mStoredAllocatePages    = gBS->AllocatePages;
+  mStoredGetMemoryMap     = gBS->GetMemoryMap;
+  mStoredExitBootServices = gBS->ExitBootServices;
+  mStoredHandleProtocol   = gBS->HandleProtocol;
+
+  gBS->AllocatePages      = MOAllocatePages;
+  gBS->GetMemoryMap       = MOGetMemoryMap;
+  gBS->ExitBootServices   = MOExitBootServices;
+  gBS->HandleProtocol     = MOHandleProtocol;
 
   gBS->Hdr.CRC32 = 0;
   gBS->CalculateCrc32 (gBS, gBS->Hdr.HeaderSize, &gBS->Hdr.CRC32);
@@ -73,12 +115,18 @@ UninstallBsOverrides (
   VOID
   )
 {
-  gBS->AllocatePages    = gStoredAllocatePages;
-  //gBS->AllocatePool     = gStoredAllocatePool;
-  //gBS->FreePool         = gStoredFreePool;
-  gBS->GetMemoryMap     = gStoredGetMemoryMap;
-  gBS->ExitBootServices = gStoredExitBootServices;
-  gBS->HandleProtocol   = gStoredHandleProtocol;
+  //
+  // AllocatePool and FreePool restoration is intentionally not present!
+  // Uninstalling a custom allocator is unsafe if anything tries to free
+  // an allocated pointer afterwards. While this should not be the case for
+  // our code, there are no guarantees for AMI, which we have to shim.
+  // See MOAllocatePool itself for bug details.
+  //
+
+  gBS->AllocatePages    = mStoredAllocatePages;
+  gBS->GetMemoryMap     = mStoredGetMemoryMap;
+  gBS->ExitBootServices = mStoredExitBootServices;
+  gBS->HandleProtocol   = mStoredHandleProtocol;
 
   gBS->Hdr.CRC32 = 0;
   gBS->CalculateCrc32 (gBS, gBS->Hdr.HeaderSize, &gBS->Hdr.CRC32);
@@ -91,7 +139,7 @@ InstallRtOverrides (
 {
   mRtPreOverridesCRC32 = gRT->Hdr.CRC32;
 
-  gStoredSetVirtualAddressMap = gRT->SetVirtualAddressMap;
+  mStoredSetVirtualAddressMap = gRT->SetVirtualAddressMap;
 
   gRT->SetVirtualAddressMap = MOSetVirtualAddressMap;
 
@@ -104,7 +152,7 @@ UninstallRtOverrides (
   VOID
   )
 {
-  gRT->SetVirtualAddressMap = gStoredSetVirtualAddressMap;
+  gRT->SetVirtualAddressMap = mStoredSetVirtualAddressMap;
 
   gRT->Hdr.CRC32 = mRtPreOverridesCRC32;
 }
@@ -126,7 +174,7 @@ MOHandleProtocol (
   EFI_STATUS                    Status;
   EFI_GRAPHICS_OUTPUT_PROTOCOL  *GraphicsOutput;
 
-  Status = gStoredHandleProtocol (Handle, Protocol, Interface);
+  Status = mStoredHandleProtocol (Handle, Protocol, Interface);
 
   if (EFI_ERROR (Status) && CompareGuid (Protocol, &gEfiGraphicsOutputProtocolGuid)) {
     //
@@ -171,28 +219,29 @@ MOAllocatePages (
     if (UpperAddr > gMaxAllocatedAddr)
       gMaxAllocatedAddr = UpperAddr;
 
-    Status = gStoredAllocatePages (Type, MemoryType, NumberOfPages, Memory);
+    Status = mStoredAllocatePages (Type, MemoryType, NumberOfPages, Memory);
   } else if (gHibernateWake && Type == AllocateAnyPages && MemoryType == EfiLoaderData) {
     //
     // Called from boot.efi during hibernate wake,
     // first such allocation is for hibernate image
     //
-    Status = gStoredAllocatePages (Type, MemoryType, NumberOfPages, Memory);
-    if (gHibernateImageAddress == 0 && Status == EFI_SUCCESS) {
-      gHibernateImageAddress = *Memory;
+    Status = mStoredAllocatePages (Type, MemoryType, NumberOfPages, Memory);
+    if (mHibernateImageAddress == 0 && Status == EFI_SUCCESS) {
+      mHibernateImageAddress = *Memory;
     }
   } else {
     //
     // Generic page allocation
     //
-    Status = gStoredAllocatePages (Type, MemoryType, NumberOfPages, Memory);
+    Status = mStoredAllocatePages (Type, MemoryType, NumberOfPages, Memory);
   }
 
   return Status;
 }
 
 /** gBS->AllocatePool override:
- * Returns pages from top addresses for boot.efi in order to avoid collisions with kernel boot image.
+ * Allows us to use a custom allocator that uses a preallocated memory pool
+ * for certain types of memory. See details in PrintScreen function.
  */
 EFI_STATUS
 EFIAPI
@@ -202,15 +251,56 @@ MOAllocatePool (
   OUT VOID                 **Buffer
   )
 {
-  //TODO: You may try implementing AllocatePagesFromTop wrapper here
-  // for APTIOFIX_ALLOW_CUSTOM_ASLR_IMPLEMENTATION support to workaround boot.efi
-  // allocations in the kernel image area. MOFreePool and MOAllocatePages with AllocateAnyPages
-  // will also need to be changed. Some static array tracking the pointers & sizes may do?
-  return gStoredAllocatePool (Type, Size, Buffer);
+  //
+  // Extensive use of gBS->AllocatePool is dangerous on many Skylake APTIO V boards or newer.
+  // It results in an OS reboot when calling gRT->SetVariable right before the Desktop shows.
+  // This is not a memory protection issue, since patching XNU to map RT pages with RWX changes
+  // nothing. It is also irrelevant to our RtShims, AMI internal memory is corrupted.
+  // Our GetMemoryMap wrapper that does memory shrinking ir not relevant as well.
+  //
+  // Tested on ASUS H110-PLUS, B150M-C, Z170I PRO GAMING, Z170M-PLUS, PRIME Z270-P.
+  // Installed GPU irrelevant. Tested: AMD 5670, AMD 560, NVIDIA 980, INEL 520.
+  // Not all the boards are affected, for example, GA H170M-HD3 *appears* to be fine.
+  // Binary diffing confirmed that CoreDxe from GA H170M-HD3 is functionally equal to the one
+  // found on ASUS aside slightly different addresses. Most likely GA is also affected,
+  // but just lucky.
+  //
+  // To trigger the bug it is not necessary to print anything, for example, replacing PrintScreen
+  // function with 2 gBS->AllocatePool calls with 184320 and 127968 sizes followed by 2 
+  // gBS->FreePool calls resulted in exactly the same reboot when booting with -v -aptiodump.
+  // Sizes were chosen to imitate the sizes AMI proprietary PrintLine function allocates.
+  //
+  // Since gST->ConOut->OutputString (as well as any underlying implementations) relies on
+  // gBS->AllocatePool, we had to override gBS->AllocatePool ourselves and force the use
+  // of a custom allocator when doing any prints.
+  //
+  // The same is done for all boot.efi allocations (and obviously our DirectAllocatePool).
+  // It is still a matter of luck whether this works or not.
+  // It is known that there exists in-os memory corruption with ASUS TUF X299 MARK 1
+  // when using external USB 3.0 HDDs, which is not reproducible with Clover Legacy Boot.
+  // It may be just anoter example of this issue, especially since X299 allocator
+  // allocates from the lower addresses unlike the desktop boards.
+  //
+  // I wish luck to anyone who tries to further track this down.
+  //
+
+  if (Type == EfiBootServicesData) {
+    *Buffer = UmmMalloc (Size);
+    if (*Buffer)
+      return EFI_SUCCESS;
+
+    //
+    // Normally it should never fail with a reasonable chunk of memory set in Config.h.
+    // Tests on 10.13.3 show that the total allocated memory is around 300 MBs.
+    // However, if it does (for any reason), let's try to fallback.
+    //
+  }
+
+  return mStoredAllocatePool (Type, Size, Buffer);
 }
 
 /** gBS->FreePool override:
- * Returns pages from top addresses for boot.efi in order to avoid collisions with kernel boot image.
+ * Allows us to use a custom allocator for certain types of memory.
  */
 EFI_STATUS
 EFIAPI
@@ -218,7 +308,13 @@ MOFreePool (
   IN VOID                 *Buffer
   )
 {
-  return gStoredFreePool (Buffer);
+  //
+  // By default it will return FALSE if Buffer was not allocated by us.
+  //
+  if (UmmFree (Buffer))
+    return EFI_SUCCESS;
+
+  return mStoredFreePool (Buffer);
 }
 
 /** gBS->GetMemoryMap override:
@@ -236,7 +332,7 @@ MOGetMemoryMap (
 {
   EFI_STATUS            Status;
 
-  Status = gStoredGetMemoryMap (MemoryMapSize, MemoryMap, MapKey, DescriptorSize, DescriptorVersion);
+  Status = mStoredGetMemoryMap (MemoryMapSize, MemoryMap, MapKey, DescriptorSize, DescriptorVersion);
   DEBUG ((DEBUG_VERBOSE, "GetMemoryMap: %p = %r\n", MemoryMap, Status));
 
   if (Status == EFI_SUCCESS) {
@@ -259,6 +355,25 @@ MOGetMemoryMap (
   return Status;
 }
 
+EFI_STATUS
+EFIAPI
+OrgGetMemoryMap (
+  IN OUT UINTN                  *MemoryMapSize,
+  IN OUT EFI_MEMORY_DESCRIPTOR  *MemoryMap,
+  OUT UINTN                     *MapKey,
+  OUT UINTN                     *DescriptorSize,
+  OUT UINT32                    *DescriptorVersion
+  )
+{
+  return (mStoredGetMemoryMap ? mStoredGetMemoryMap : gBS->GetMemoryMap) (
+    MemoryMapSize,
+    MemoryMap,
+    MapKey,
+    DescriptorSize,
+    DescriptorVersion
+    );
+}
+
 /** gBS->ExitBootServices override:
  * Patches kernel entry point with jump to our KernelEntryPatchJumpBack().
  */
@@ -277,7 +392,7 @@ MOExitBootServices (
   //
   // We need hibernate image address for wake
   //
-  if (gHibernateWake && gHibernateImageAddress == 0) {
+  if (gHibernateWake && mHibernateImageAddress == 0) {
     PrintScreen (L"AMF: Failed to find hibernate image address\n");
     gBS->Stall (5000000);
     return EFI_INVALID_PARAMETER;
@@ -287,16 +402,16 @@ MOExitBootServices (
   // We can just return EFI_SUCCESS and continue using Print for debug
   //
   if (gDumpMemArgPresent) {
-    gExitBSImageHandle = ImageHandle;
-    gExitBSMapKey      = MapKey; 
+    mExitBSImageHandle = ImageHandle;
+    mExitBSMapKey      = MapKey; 
     Status             = EFI_SUCCESS;
   } else {
-    Status = ForceExitBootServices (gStoredExitBootServices, ImageHandle, MapKey);
+    Status = ForceExitBootServices (mStoredExitBootServices, ImageHandle, MapKey);
   }
 
   DEBUG ((DEBUG_VERBOSE, "ExitBootServices %r\n", Status));
 
-  if (EFI_ERROR(Status))
+  if (EFI_ERROR (Status))
     return Status;
 
   if (!gHibernateWake) {
@@ -310,7 +425,7 @@ MOExitBootServices (
     // At this stage HIB section is not yet copied from sleep image to it's
     // proper memory destination. so we'll patch entry point in sleep image.
     //
-    ImageHeader = (IOHibernateImageHeader *)(UINTN)gHibernateImageAddress;
+    ImageHeader = (IOHibernateImageHeader *)(UINTN)mHibernateImageAddress;
     KernelEntryPatchJump (
       ((UINT32)(UINTN)&(ImageHeader->fileExtentMap[0])) + ImageHeader->fileExtentMapSize + ImageHeader->restore1CodeOffset
       );
@@ -347,7 +462,7 @@ MOSetVirtualAddressMap (
     // To print as much information as possible we delay ExitBootServices.
     // Most likely this will fail, but let's still try!
     //
-    ForceExitBootServices (gStoredExitBootServices, gExitBSImageHandle, gExitBSMapKey);
+    ForceExitBootServices (mStoredExitBootServices, mExitBSImageHandle, mExitBSMapKey);
   }
 
   //
