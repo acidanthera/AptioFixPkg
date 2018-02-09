@@ -172,7 +172,24 @@ DetectBooterStartImage (
   DEBUG ((DEBUG_VERBOSE, "ImageBase: %p - %lx (%lx)\n", Image->ImageBase, (UINT64)Image->ImageBase + Image->ImageSize, Image->ImageSize));
   DEBUG ((DEBUG_VERBOSE, "FilePath: %s\n", FilePathText ? FilePathText : L"(Unknown)"));
 
-  if (FilePathText && StrStriBasic (FilePathText, L"boot.efi")) {
+  if (
+    FilePathText &&
+    (
+      StrStriBasic (FilePathText, L"boot.efi") ||
+      StrStriBasic (FilePathText, L"bootbase.efi")
+    ) &&
+    //
+    // To double sure current loaded image is Darwin booter even they are named as boot(base).efi.
+    // Or maybe theres better way to invalidate boot.efi such as looking for installed protocol, etc.
+    //
+    (
+      FindMem (
+        (VOID *)((UINTN)Image->ImageBase),
+        Image->ImageSize,
+        "Mac OS X ",
+        9
+      ) > 0)
+  ) {
     //
     // Chainloading boot.efi is currently unsupported (TODO: explore this).
     // The code below informs the bootloader about requested recovery mode.

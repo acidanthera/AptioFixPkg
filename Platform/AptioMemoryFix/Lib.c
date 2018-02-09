@@ -683,3 +683,25 @@ DirectFreePool (
 {
   gBS->FreePool (Buffer);
 }
+
+/** Find matching pattern in memory. Return (-1) if nothing found. */
+INT32
+FindMem (
+  IN VOID     *Source,
+  IN UINT32   SourceSize,
+  IN VOID     *Search,
+  IN UINT32   SearchSize
+) {
+  UINT8   *SourcePtr;
+  UINT32  Offset;
+
+  SourcePtr = Source;
+  SourceSize -= SearchSize;
+  for (Offset = 0; Offset < SourceSize; Offset++, SourcePtr++) {
+    if (CompareMem (SourcePtr, Search, SearchSize) == 0) {
+      return (INT32)Offset;
+    }
+  }
+
+  return -1;
+}
