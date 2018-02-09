@@ -16,7 +16,7 @@
 
 STATIC BootArguments mBootArgs;
 
-BootArguments *
+struct BootArguments *
 EFIAPI
 GetBootArgs (
   VOID *BootArgs
@@ -50,8 +50,9 @@ GetBootArgs (
     mBootArgs.deviceTreeP = &BA2->deviceTreeP;
     mBootArgs.deviceTreeLength = &BA2->deviceTreeLength;
 
-    if (BA2->flags & kBootArgsFlagCSRActiveConfig)
+    if (BA2->flags & kBootArgsFlagCSRActiveConfig) {
       mBootArgs.csrActiveConfig = &BA2->csrActiveConfig;
+    }
   }
 
   return &mBootArgs;
@@ -119,24 +120,29 @@ RemoveArgumentFromCommandLine (
   do {
     Match = AsciiStrStr (CommandLine, Argument);
     if (Match && (Match == CommandLine || *(Match - 1) == ' ')) {
-      while (*Match != ' ' && *Match != '\0')
+      while (*Match != ' ' && *Match != '\0') {
         *Match++ = ' ';
+      }
     }
   } while (Match != NULL);
 
   // Write zeroes to reduce data leak
   CHAR8 *Updated = CommandLine;
 
-  while (CommandLine[0] == ' ')
+  while (CommandLine[0] == ' ') {
     CommandLine++;
+  }
 
   while (CommandLine[0] != '\0') {
-    while (CommandLine[0] == ' ' && CommandLine[1] == ' ')
+    while (CommandLine[0] == ' ' && CommandLine[1] == ' ') {
       CommandLine++;
+    }
 
     *Updated++ = *CommandLine++;
   }
 
-  while (Updated != CommandLine)
+  while (Updated != CommandLine) {
     *Updated++ = '\0';
+  }
 }
+

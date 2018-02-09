@@ -27,6 +27,7 @@
 #include "Lib.h"
 #include "Hibernate.h"
 #include "RtShims.h"
+#include "CustomSlide.h"
 #include "ServiceOverrides.h"
 
 //

@@ -26,9 +26,6 @@ extern EFI_PHYSICAL_ADDRESS   gRelocatedSysTableRtArea;
 // TRUE if we are doing hibernate wake
 extern BOOLEAN gHibernateWake;
 
-// TRUE if booting with a manually specified slide=X
-extern BOOLEAN gSlideArgPresent;
-
 // TRUE if booting with -aptiodump
 extern BOOLEAN gDumpMemArgPresent;
 
@@ -70,39 +67,8 @@ ProtectRtMemoryFromRelocation(
   );
 
 VOID
-UnlockSlideSupportForSafeModeAndCheckSlide (
-  UINT8                   *ImageBase,
-  UINTN                   ImageSize
-  );
-
-VOID
 ProcessBooterImage (
   EFI_HANDLE              ImageHandle
-  );
-
-VOID
-DecideOnCustomSlideImplementation (
-  VOID
-  );
-
-BOOLEAN
-IsSandyOrIvy (
-  VOID
-  );
-
-EFI_STATUS
-EFIAPI
-GetVariableCustomSlide (
-  CHAR16                  *VariableName,
-  EFI_GUID                *VendorGuid,
-  UINT32                  *Attributes,
-  UINTN                   *DataSize,
-  VOID                    *Data
-  );
-
-VOID
-HideSlideFromOS (
-  BootArguments   *BootArgs
   );
 
 /** Protects CSM regions from the kernel and boot.efi. */
