@@ -28,6 +28,7 @@
 
 #include "Config.h"
 #include "Lib.h"
+#include "CustomSlide.h"
 #include "ServiceOverrides.h"
 
 CHAR16 *mEfiMemoryTypeDesc[EfiMaxMemoryType] = {

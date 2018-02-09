@@ -291,7 +291,7 @@ MOAllocatePool (
   //
 
   if (Type == EfiBootServicesData) {
-    *Buffer = UmmMalloc (Size);
+    *Buffer = UmmMalloc ((UINT32)Size);
     if (*Buffer)
       return EFI_SUCCESS;
 

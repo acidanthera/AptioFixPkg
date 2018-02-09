@@ -132,14 +132,6 @@ AllocatePagesFromTop (
   IN BOOLEAN                  CheckRange
   );
 
-/** Checks whether the area overlaps with a possible kernel image area
- TODO: move to a separate CustomSlide file... */
-BOOLEAN
-OverlapsWithSlide (
-  EFI_PHYSICAL_ADDRESS   Address,
-  UINTN                  Size
-  );
-
 /** Helper function to call ExitBootServices that can handle outdated MapKey issues. */
 EFI_STATUS
 ForceExitBootServices (

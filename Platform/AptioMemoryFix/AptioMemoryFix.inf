@@ -44,6 +44,8 @@
   BootFixes.h
   Config.h
   CsrConfig.h
+  CustomSlide.c
+  CustomSlide.h
   FlatDevTree/device_tree.c
   FlatDevTree/device_tree.h
   Hibernate.h
@@ -61,6 +63,8 @@
   VMem.h
   UmmMalloc/UmmMalloc.h
   UmmMalloc/UmmMalloc.c
+  Utils.c
+  Utils.h
 
 [Sources.X64]
   X64/AsmFuncsX64.nasm
