@@ -168,4 +168,13 @@ DirectFreePool (
   VOID      *Buffer
   );
 
+/** Find matching pattern in memory. Return (-1) if nothing found. */
+INT32
+FindMem (
+  IN VOID     *Source,
+  IN UINT32   SourceSize,
+  IN VOID     *Search,
+  IN UINT32   SearchSize
+);
+
 #endif // APTIOFIX_LIB_H
