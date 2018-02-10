@@ -16,14 +16,4 @@ IsSandyOrIvy (
     VOID
 );
 
-/**
- * Just prints a one-byte string byte by byte using DEBUG macro.
- * @return VOID
- */
-VOID
-PrintSample2(
-    UINT8 *sample,
-    UINTN size
-);
-
 #endif // APTIOFIX_UTILS_H
