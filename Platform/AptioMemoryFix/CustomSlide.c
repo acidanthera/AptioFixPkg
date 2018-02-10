@@ -45,12 +45,16 @@ BOOLEAN gDumpMemArgPresent = FALSE;
 STATIC UINT8   gValidSlides[TOTAL_SLIDE_NUM] = {0};
 STATIC UINT32  gValidSlidesNum = TOTAL_SLIDE_NUM;
 
+extern EFI_LOADED_IMAGE_PROTOCOL   *gLoadedImage;
+
 VOID
 UnlockSlideSupportForSafeModeAndCheckSlide (
-    UINT8 *ImageBase,
-    UINTN ImageSize
+    VOID
 )
 {
+  UINT8 *ImageBase = (UINT8 *)gLoadedImage->ImageBase;
+  UINTN ImageSize  = gLoadedImage->ImageSize;
+
   // boot.efi performs the following check:
   // if (State & (BOOT_MODE_SAFE | BOOT_MODE_ASLR)) == (BOOT_MODE_SAFE | BOOT_MODE_ASLR)) {
   //   * Disable KASLR *
@@ -518,21 +522,18 @@ HideSlideFromOS (
 
 VOID
 ProcessBooterImageForCustomSlide (
-    EFI_LOADED_IMAGE_PROTOCOL *LoadedImage
+    VOID
 )
 {
   EFI_STATUS Status;
 #if APTIOFIX_ALLOW_ASLR_IN_SAFE_MODE == 1
-  UnlockSlideSupportForSafeModeAndCheckSlide (
-      (UINT8 *)LoadedImage->ImageBase,
-      LoadedImage->ImageSize
-  );
+  UnlockSlideSupportForSafeModeAndCheckSlide ();
 #endif
 
-  if (LoadedImage->LoadOptions && LoadedImage->LoadOptionsSize > sizeof(CHAR16)) {
+  if (gLoadedImage->LoadOptions && gLoadedImage->LoadOptionsSize > sizeof(CHAR16)) {
     // Just in case we do not have 0-termination
-    CHAR16 *Options = (CHAR16 *)LoadedImage->LoadOptions;
-    UINTN LastIndex = LoadedImage->LoadOptionsSize/sizeof(CHAR16)-1;
+    CHAR16 *Options = (CHAR16 *)gLoadedImage->LoadOptions;
+    UINTN LastIndex = gLoadedImage->LoadOptionsSize/sizeof(CHAR16)-1;
     CHAR16 Last = Options[LastIndex];
     Options[LastIndex] = '\0';
 

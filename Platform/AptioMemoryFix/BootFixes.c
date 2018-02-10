@@ -45,6 +45,8 @@ EFI_PHYSICAL_ADDRESS gRelocatedSysTableRtArea = 0;
 // TRUE if we are doing hibernate wake
 BOOLEAN gHibernateWake = FALSE;
 
+extern EFI_LOADED_IMAGE_PROTOCOL   *gLoadedImage;
+
 //
 // Kernel entry patching
 //
@@ -327,17 +329,13 @@ ProcessBooterImage (
   EFI_HANDLE      ImageHandle
   )
 {
-  EFI_STATUS Status;
-  EFI_LOADED_IMAGE_PROTOCOL *LoadedImage;
-
-  Status = gBS->HandleProtocol(ImageHandle, &gEfiLoadedImageProtocolGuid, (VOID **)&LoadedImage);
-  if (EFI_ERROR(Status) || LoadedImage->ImageSize < 0x1000) {
-    DEBUG ((DEBUG_VERBOSE, "Failed to find sane loaded image protocol %r\n", Status));
+  if (gLoadedImage && gLoadedImage->ImageSize < 0x1000) {
+    DEBUG ((DEBUG_VERBOSE, "BootFixes: Failed to find sane loaded image protocol\n"));
     return;
   }
 
   // Process image for custom slide
-  ProcessBooterImageForCustomSlide(LoadedImage);
+  ProcessBooterImageForCustomSlide();
   // Add more fixes here...
 }
 
