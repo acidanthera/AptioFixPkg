@@ -127,7 +127,7 @@ RemoveArgumentFromCommandLine (
   } while (Match != NULL);
 
   // Write zeroes to reduce data leak
-  CHAR8 *Updated = CommandLine;
+  volatile CHAR8 *Updated = CommandLine;
 
   while (CommandLine[0] == ' ') {
     CommandLine++;
