@@ -325,39 +325,53 @@ CopyEfiSysTableToSeparateRtDataArea (
   *EfiSystemTable = (UINT32)(UINTN)Dest;
 }
 
+//
+// Private macros related to ReadBooterArguments() only
+//
+#define AMF_READ_ARG16(Name, Var)            \
+  do {                                       \
+    CHAR16 *Str;                             \
+    Str = StrStr(Options, (Name));           \
+    VERIFY_BOOT_ARG(Str, Options, (Name));   \
+    (Var) |= (Str != NULL);                  \
+  } while(0)
+
+#define AMF_READ_ARG8(Name, Var)                \
+  do {                                          \
+    CHAR8 *Str;                                 \
+    Str = AsciiStrStr(BootArgsVar, (Name));     \
+    VERIFY_BOOT_ARG(Str, BootArgsVar, (Name));  \
+    (Var) |= (Str != NULL);                     \
+  } while(0)
+
 VOID
 ReadBooterArguments (
     CHAR16 *Options,
     UINTN OptionsSize
 )
 {
+  CHAR8 BootArgsVar[BOOT_LINE_LENGTH];
   EFI_STATUS Status;
+  UINTN BootArgsVarLen;
 
-  // Just in case we do not have 0-termination
-  UINTN LastIndex = OptionsSize - 1;
-  CHAR16 Last = Options[LastIndex];
-  Options[LastIndex] = '\0';
+  if (Options && OptionsSize > 0) {
+    UINTN LastIndex;
+    CHAR16 Last;
+    // Just in case we do not have 0-termination
+    LastIndex = OptionsSize - 1;
+    Last = Options[LastIndex];
+    Options[LastIndex] = '\0';
 
-  {
-    CHAR16 *Slide = StrStr(Options, L"slide=");
-    VERIFY_BOOT_ARG(Slide, Options, L"slide=");
-    gSlideArgPresent |= Slide != NULL;
+    AMF_READ_ARG16(L"slide=", gSlideArgPresent);
 
 #if APTIOFIX_ALLOW_MEMORY_DUMP_ARG == 1
-    CHAR16 *Dump  = StrStr(Options, L"-aptiodump");
-    VERIFY_BOOT_ARG(Dump,  Options, L"-aptiodump");
-    gDumpMemArgPresent |= Dump != NULL;
+    AMF_READ_ARG16(L"-aptiodump", gDumpMemArgPresent);
 #endif
 
     Options[LastIndex] = Last;
-
-    if (Slide) {
-      DEBUG((DEBUG_VERBOSE, "Found custom slide param\n"));
-    }
   }
 
-  CHAR8 BootArgsVar[BOOT_LINE_LENGTH];
-  UINTN BootArgsVarLen = BOOT_LINE_LENGTH;
+  BootArgsVarLen = BOOT_LINE_LENGTH;
 
   // Important to avoid triggering boot-args wrapper too early
   Status = ((EFI_GET_VARIABLE)gGetVariable)(
@@ -371,22 +385,16 @@ ReadBooterArguments (
     // Just in case we do not have 0-termination
     BootArgsVar[BootArgsVarLen-1] = '\0';
 
-    CHAR8 *Slide = AsciiStrStr(BootArgsVar, "slide=");
-    VERIFY_BOOT_ARG(Slide, BootArgsVar, "slide=");
-    gSlideArgPresent |= Slide != NULL;
+    AMF_READ_ARG8("slide=", gSlideArgPresent);
 
 #if APTIOFIX_ALLOW_MEMORY_DUMP_ARG == 1
-    CHAR8 *Dump  = AsciiStrStr(BootArgsVar, "-aptiodump");
-    VERIFY_BOOT_ARG(Dump,  BootArgsVar, "-aptiodump");
-    gDumpMemArgPresent |= Dump != NULL;
+    AMF_READ_ARG8("-aptiodump", gDumpMemArgPresent);
 #endif
-
-    if (Slide) {
-      DEBUG((DEBUG_VERBOSE, "Found custom slide boot-arg value\n"));
-    }
   }
 }
 
+#undef AMF_READ_ARG8
+#undef AMF_READ_ARG16
 
 VOID
 RestoreRelocInfoProtectMemTypes (
