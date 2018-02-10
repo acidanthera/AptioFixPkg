@@ -47,6 +47,9 @@ STATIC UINTN            mBootNestedCount = 0;
 //
 STATIC EFI_IMAGE_START  mStartImage = NULL;
 
+// Image protocol we get while DetectBooterStartImage() invocation
+EFI_LOADED_IMAGE_PROTOCOL   *gLoadedImage = NULL;
+
 /** Callback called when boot.efi jumps to kernel. */
 UINTN
 EFIAPI
@@ -152,7 +155,6 @@ DetectBooterStartImage (
   )
 {
   EFI_STATUS                  Status;
-  EFI_LOADED_IMAGE_PROTOCOL   *Image        = NULL;
   CHAR16                      *FilePathText = NULL;
   VOID                        *Value        = NULL;
   UINTN                       ValueSize     = 0;
@@ -162,15 +164,19 @@ DetectBooterStartImage (
   //
   // Find out image name from EfiLoadedImageProtocol
   //
-  Status = gBS->HandleProtocol (ImageHandle, &gEfiLoadedImageProtocolGuid, (VOID **)&Image);
+  Status = gBS->HandleProtocol (ImageHandle, &gEfiLoadedImageProtocolGuid, (VOID **)&gLoadedImage);
 
   if (EFI_ERROR (Status)) {
     DEBUG ((DEBUG_WARN, "StartImage: OpenProtocol(gEfiLoadedImageProtocolGuid) = %r\n", Status));
     return EFI_INVALID_PARAMETER;
   }
 
-  FilePathText = FileDevicePathToText (Image->FilePath);
-  DEBUG ((DEBUG_VERBOSE, "ImageBase: %p - %lx (%lx)\n", Image->ImageBase, (UINT64)Image->ImageBase + Image->ImageSize, Image->ImageSize));
+  FilePathText = FileDevicePathToText (gLoadedImage->FilePath);
+  DEBUG ((DEBUG_VERBOSE, "ImageBase: %p - %lx (%lx)\n",
+      gLoadedImage->ImageBase,
+      (UINT64)gLoadedImage->ImageBase + gLoadedImage->ImageSize,
+      gLoadedImage->ImageSize
+    ));
   DEBUG ((DEBUG_VERBOSE, "FilePath: %s\n", FilePathText ? FilePathText : L"(Unknown)"));
 
   if (FilePathText && StrStriBasic (FilePathText, L"boot.efi")) {
@@ -242,7 +248,7 @@ DetectBooterStartImage (
     //
     // Run boot.efi with our overrides
     //
-    Status = RunImageWithOverrides (ImageHandle, Image, ExitDataSize, ExitData);
+    Status = RunImageWithOverrides (ImageHandle, gLoadedImage, ExitDataSize, ExitData);
   } else {
     //
     // Call the original function to do the job for any other booter

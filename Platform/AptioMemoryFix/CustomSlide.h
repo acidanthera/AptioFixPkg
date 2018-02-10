@@ -16,7 +16,7 @@ struct BootArguments;
  */
 VOID
 ProcessBooterImageForCustomSlide (
-    EFI_LOADED_IMAGE_PROTOCOL *LoadedImage
+    VOID
 );
 
 /**
@@ -36,8 +36,7 @@ FixBootingForCustomSlide(
  */
 VOID
 UnlockSlideSupportForSafeModeAndCheckSlide (
-    UINT8                   *ImageBase,
-    UINTN                   ImageSize
+    VOID
 );
 
 /**
