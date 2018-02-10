@@ -36,7 +36,8 @@ FixBootingForCustomSlide(
  */
 VOID
 UnlockSlideSupportForSafeModeAndCheckSlide (
-    VOID
+    UINT8 *ImageBase,
+    UINTN ImageSize
 );
 
 /**

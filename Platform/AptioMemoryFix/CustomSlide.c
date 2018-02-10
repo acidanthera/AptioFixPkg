@@ -27,15 +27,9 @@ STATIC BOOLEAN gAnalyzeMemoryMapDone = FALSE;
 STATIC UINTN   gStoredBootArgsVarSize = 0;
 STATIC CHAR8   gStoredBootArgsVar[BOOT_LINE_LENGTH] = {0};
 
-// TRUE if booting with a manually specified slide=X
-STATIC BOOLEAN gSlideArgPresent = FALSE;
-
 // used for restoring csr-active-config in boot-args
 STATIC BOOLEAN gCsrActiveConfigSet = FALSE;
 STATIC UINT32  gCsrActiveConfig = 0;
-
-// TRUE if booting with -aptiodump
-BOOLEAN gDumpMemArgPresent = FALSE;
 
 // base kernel address and kaslr slide range
 #define BASE_KERNEL_ADDR       ((UINTN)0x100000)
@@ -45,16 +39,14 @@ BOOLEAN gDumpMemArgPresent = FALSE;
 STATIC UINT8   gValidSlides[TOTAL_SLIDE_NUM] = {0};
 STATIC UINT32  gValidSlidesNum = TOTAL_SLIDE_NUM;
 
-extern EFI_LOADED_IMAGE_PROTOCOL   *gLoadedImage;
+extern BOOLEAN gSlideArgPresent;
 
 VOID
 UnlockSlideSupportForSafeModeAndCheckSlide (
-    VOID
+    UINT8 *ImageBase,
+    UINTN ImageSize
 )
 {
-  UINT8 *ImageBase = (UINT8 *)gLoadedImage->ImageBase;
-  UINTN ImageSize  = gLoadedImage->ImageSize;
-
   // boot.efi performs the following check:
   // if (State & (BOOT_MODE_SAFE | BOOT_MODE_ASLR)) == (BOOT_MODE_SAFE | BOOT_MODE_ASLR)) {
   //   * Disable KASLR *
@@ -518,71 +510,6 @@ HideSlideFromOS (
   gStoredBootArgsVarSize = 0;
   SetMem(gValidSlides, sizeof(gValidSlides), 0);
   SetMem(gStoredBootArgsVar, sizeof(gStoredBootArgsVar), 0);
-}
-
-VOID
-ProcessBooterImageForCustomSlide (
-    VOID
-)
-{
-  EFI_STATUS Status;
-#if APTIOFIX_ALLOW_ASLR_IN_SAFE_MODE == 1
-  UnlockSlideSupportForSafeModeAndCheckSlide ();
-#endif
-
-  if (gLoadedImage->LoadOptions && gLoadedImage->LoadOptionsSize > sizeof(CHAR16)) {
-    // Just in case we do not have 0-termination
-    CHAR16 *Options = (CHAR16 *)gLoadedImage->LoadOptions;
-    UINTN LastIndex = gLoadedImage->LoadOptionsSize/sizeof(CHAR16)-1;
-    CHAR16 Last = Options[LastIndex];
-    Options[LastIndex] = '\0';
-
-    CHAR16 *Slide = StrStr(Options, L"slide=");
-    VERIFY_BOOT_ARG(Slide, Options, L"slide=");
-    gSlideArgPresent |= Slide != NULL;
-
-#if APTIOFIX_ALLOW_MEMORY_DUMP_ARG == 1
-    CHAR16 *Dump  = StrStr(Options, L"-aptiodump");
-    VERIFY_BOOT_ARG(Dump,  Options, L"-aptiodump");
-    gDumpMemArgPresent |= Dump != NULL;
-#endif
-
-    Options[LastIndex] = Last;
-
-    if (Slide) {
-      DEBUG((DEBUG_VERBOSE, "Found custom slide param\n"));
-    }
-  }
-
-  CHAR8 BootArgsVar[BOOT_LINE_LENGTH];
-  UINTN BootArgsVarLen = BOOT_LINE_LENGTH;
-
-  // Important to avoid triggering boot-args wrapper too early
-  Status = ((EFI_GET_VARIABLE)gGetVariable)(
-      L"boot-args",
-      &gAppleBootVariableGuid,
-      NULL, &BootArgsVarLen,
-      &BootArgsVar[0]
-  );
-
-  if (!EFI_ERROR(Status) && BootArgsVarLen > 0) {
-    // Just in case we do not have 0-termination
-    BootArgsVar[BootArgsVarLen-1] = '\0';
-
-    CHAR8 *Slide = AsciiStrStr(BootArgsVar, "slide=");
-    VERIFY_BOOT_ARG(Slide, BootArgsVar, "slide=");
-    gSlideArgPresent |= Slide != NULL;
-
-#if APTIOFIX_ALLOW_MEMORY_DUMP_ARG == 1
-    CHAR8 *Dump  = AsciiStrStr(BootArgsVar, "-aptiodump");
-    VERIFY_BOOT_ARG(Dump,  BootArgsVar, "-aptiodump");
-    gDumpMemArgPresent |= Dump != NULL;
-#endif
-
-    if (Slide) {
-      DEBUG((DEBUG_VERBOSE, "Found custom slide boot-arg value\n"));
-    }
-  }
 }
 
 VOID
