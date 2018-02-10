@@ -41,15 +41,3 @@ IsSandyOrIvy (
   return gSandyOrIvy;
 }
 
-VOID
-PrintSample2(
-    UINT8 *sample,
-    UINTN size
-)
-{
-  UINTN i;
-  for (i = 0; i < size; i++) {
-    DEBUG ((DEBUG_VERBOSE, " %02x", *sample));
-    sample++;
-  }
-}

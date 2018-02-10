@@ -162,10 +162,6 @@ KernelEntryPatchJump (
   // Copy EntryPatchCode code to kernel entry address
   CopyMem((VOID *)(UINTN)KernelEntry, (VOID *)&EntryPatchCode, gOrigKernelCodeSize);
 
-  DEBUG ((DEBUG_VERBOSE, "Entry point %x is now: ", KernelEntry));
-  PrintSample2((UINT8 *)(UINTN) KernelEntry, 12);
-  DEBUG ((DEBUG_VERBOSE, "\n"));
-
   // pass KernelEntry to assembler funcs
   // this is not needed really, since asm code will determine
   // kernel entry address from the stack
