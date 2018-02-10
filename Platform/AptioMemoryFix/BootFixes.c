@@ -536,7 +536,7 @@ FixBooting (
   )
 {
   VOID                    *pBootArgs = (VOID*)BootArgs;
-  struct BootArguments    *BA;
+  AMF_BOOT_ARGUMENTS      *BA;
   UINTN                   MemoryMapSize;
   EFI_MEMORY_DESCRIPTOR   *MemoryMap;
   UINTN                   DescriptorSize;

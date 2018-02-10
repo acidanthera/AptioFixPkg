@@ -14,9 +14,9 @@
 #include "BootArgs.h"
 #include "Lib.h"
 
-STATIC BootArguments mBootArgs;
+STATIC AMF_BOOT_ARGUMENTS mBootArgs;
 
-struct BootArguments *
+AMF_BOOT_ARGUMENTS *
 EFIAPI
 GetBootArgs (
   VOID *BootArgs
