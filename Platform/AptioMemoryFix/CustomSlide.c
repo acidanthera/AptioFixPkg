@@ -507,8 +507,8 @@ HideSlideFromOS (
   // Third, clean the boot args just in case
   gValidSlidesNum = 0;
   gStoredBootArgsVarSize = 0;
-  SetMem(gValidSlides, sizeof(gValidSlides), 0);
-  SetMem(gStoredBootArgsVar, sizeof(gStoredBootArgsVar), 0);
+  ZeroMem(gValidSlides, sizeof(gValidSlides));
+  ZeroMem(gStoredBootArgsVar, sizeof(gStoredBootArgsVar));
 }
 
 VOID
