@@ -6,18 +6,7 @@
 #ifndef APTIOFIX_CUSTOM_SLIDE_H
 #define APTIOFIX_CUSTOM_SLIDE_H
 
-// Forward declarations
-struct BootArguments;
-
-/**
- * Applies custom 'slide' value fix.
- * @param LoadedImage
- * @return VOID
- */
-VOID
-ProcessBooterImageForCustomSlide (
-    VOID
-);
+#include "BootArgs.h"
 
 /**
  * Fixes boot-args, ex., removes 'slide' arg.
@@ -25,7 +14,7 @@ ProcessBooterImageForCustomSlide (
  */
 VOID
 FixBootingForCustomSlide(
-    struct BootArguments *BA
+    AMF_BOOT_ARGUMENTS *BA
 );
 
 /**
@@ -61,7 +50,7 @@ GetVariableCustomSlide (
  */
 VOID
 HideSlideFromOS (
-    struct BootArguments   *BootArgs
+    AMF_BOOT_ARGUMENTS   *BootArgs
 );
 
 /**

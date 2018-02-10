@@ -12,7 +12,6 @@
 #include <Protocol/LoadedImage.h>
 
 #include "Config.h"
-#include "BootArgs.h"
 #include "CustomSlide.h"
 #include "Utils.h"
 #include "BootArgs.h"
@@ -482,7 +481,7 @@ GetVariableCustomSlide (
 
 VOID
 HideSlideFromOS (
-    struct BootArguments   *BootArgs
+    AMF_BOOT_ARGUMENTS *BootArgs
 )
 {
   DTEntry     DevTree;
@@ -514,7 +513,7 @@ HideSlideFromOS (
 
 VOID
 FixBootingForCustomSlide(
-    struct BootArguments *BA
+    AMF_BOOT_ARGUMENTS *BA
 )
 {
   // Restore csr-active-config to a value it was before our slide=X alteration.
