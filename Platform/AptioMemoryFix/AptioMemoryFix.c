@@ -124,9 +124,8 @@ RunImageWithOverrides(
   //
   // Read options
   //
-  if (Image->LoadOptions && Image->LoadOptionsSize > sizeof(CHAR16)) {
-    ReadBooterArguments((CHAR16*)Image->LoadOptions, Image->LoadOptionsSize/sizeof(CHAR16));
-  }
+  ReadBooterArguments((CHAR16*)Image->LoadOptions, Image->LoadOptionsSize/sizeof(CHAR16));
+
   //
   // Run image
   //
