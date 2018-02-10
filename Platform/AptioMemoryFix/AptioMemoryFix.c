@@ -47,9 +47,6 @@ STATIC UINTN            mBootNestedCount = 0;
 //
 STATIC EFI_IMAGE_START  mStartImage = NULL;
 
-// Image protocol we get while DetectBooterStartImage() invocation
-EFI_LOADED_IMAGE_PROTOCOL   *gLoadedImage = NULL;
-
 /** Callback called when boot.efi jumps to kernel. */
 UINTN
 EFIAPI
@@ -120,11 +117,16 @@ RunImageWithOverrides(
   Image->SystemTable = (EFI_SYSTEM_TABLE *)(UINTN)gSysTableRtArea;
   DEBUG ((DEBUG_VERBOSE, "StartImage: new sys table: %p\n", Image->SystemTable));
 
-  //
-  // Apply the necessary patches if any
-  //
-  ProcessBooterImage (ImageHandle);
+#if APTIOFIX_ALLOW_ASLR_IN_SAFE_MODE == 1
+  UnlockSlideSupportForSafeModeAndCheckSlide ((UINT8 *)Image->ImageBase, Image->ImageSize);
+#endif
 
+  //
+  // Read options
+  //
+  if (Image->LoadOptions && Image->LoadOptionsSize > sizeof(CHAR16)) {
+    ReadBooterArguments((CHAR16*)Image->LoadOptions, Image->LoadOptionsSize/sizeof(CHAR16));
+  }
   //
   // Run image
   //
@@ -157,6 +159,7 @@ DetectBooterStartImage (
   EFI_STATUS                  Status;
   CHAR16                      *FilePathText = NULL;
   VOID                        *Value        = NULL;
+  EFI_LOADED_IMAGE_PROTOCOL   *LoadedImage = NULL;
   UINTN                       ValueSize     = 0;
 
   DEBUG ((DEBUG_VERBOSE, "StartImage (%lx)\n", ImageHandle));
@@ -164,18 +167,18 @@ DetectBooterStartImage (
   //
   // Find out image name from EfiLoadedImageProtocol
   //
-  Status = gBS->HandleProtocol (ImageHandle, &gEfiLoadedImageProtocolGuid, (VOID **)&gLoadedImage);
+  Status = gBS->HandleProtocol (ImageHandle, &gEfiLoadedImageProtocolGuid, (VOID **)&LoadedImage);
 
   if (EFI_ERROR (Status)) {
     DEBUG ((DEBUG_WARN, "StartImage: OpenProtocol(gEfiLoadedImageProtocolGuid) = %r\n", Status));
     return EFI_INVALID_PARAMETER;
   }
 
-  FilePathText = FileDevicePathToText (gLoadedImage->FilePath);
+  FilePathText = FileDevicePathToText (LoadedImage->FilePath);
   DEBUG ((DEBUG_VERBOSE, "ImageBase: %p - %lx (%lx)\n",
-      gLoadedImage->ImageBase,
-      (UINT64)gLoadedImage->ImageBase + gLoadedImage->ImageSize,
-      gLoadedImage->ImageSize
+      LoadedImage->ImageBase,
+      (UINT64)LoadedImage->ImageBase + LoadedImage->ImageSize,
+      LoadedImage->ImageSize
     ));
   DEBUG ((DEBUG_VERBOSE, "FilePath: %s\n", FilePathText ? FilePathText : L"(Unknown)"));
 
@@ -248,7 +251,7 @@ DetectBooterStartImage (
     //
     // Run boot.efi with our overrides
     //
-    Status = RunImageWithOverrides (ImageHandle, gLoadedImage, ExitDataSize, ExitData);
+    Status = RunImageWithOverrides (ImageHandle, LoadedImage, ExitDataSize, ExitData);
   } else {
     //
     // Call the original function to do the job for any other booter

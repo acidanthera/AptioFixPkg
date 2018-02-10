@@ -23,6 +23,8 @@
 #include "Hibernate.h"
 #include "CustomSlide.h"
 #include "Utils.h"
+#include "RtShims.h"
+
 
 // buffer and size for original kernel entry code
 STATIC UINT8 gOrigKernelCode[32];
@@ -45,7 +47,10 @@ EFI_PHYSICAL_ADDRESS gRelocatedSysTableRtArea = 0;
 // TRUE if we are doing hibernate wake
 BOOLEAN gHibernateWake = FALSE;
 
-extern EFI_LOADED_IMAGE_PROTOCOL   *gLoadedImage;
+// TRUE if booting with -aptiodump
+BOOLEAN gDumpMemArgPresent = FALSE;
+// TRUE if booting with a manually specified slide=X
+BOOLEAN gSlideArgPresent = FALSE;
 
 //
 // Kernel entry patching
@@ -321,19 +326,67 @@ CopyEfiSysTableToSeparateRtDataArea (
 }
 
 VOID
-ProcessBooterImage (
-  EFI_HANDLE      ImageHandle
-  )
+ReadBooterArguments (
+    CHAR16 *Options,
+    UINTN OptionsSize
+)
 {
-  if (gLoadedImage && gLoadedImage->ImageSize < 0x1000) {
-    DEBUG ((DEBUG_VERBOSE, "BootFixes: Failed to find sane loaded image protocol\n"));
-    return;
+  EFI_STATUS Status;
+
+  // Just in case we do not have 0-termination
+  UINTN LastIndex = OptionsSize - 1;
+  CHAR16 Last = Options[LastIndex];
+  Options[LastIndex] = '\0';
+
+  {
+    CHAR16 *Slide = StrStr(Options, L"slide=");
+    VERIFY_BOOT_ARG(Slide, Options, L"slide=");
+    gSlideArgPresent |= Slide != NULL;
+
+#if APTIOFIX_ALLOW_MEMORY_DUMP_ARG == 1
+    CHAR16 *Dump  = StrStr(Options, L"-aptiodump");
+    VERIFY_BOOT_ARG(Dump,  Options, L"-aptiodump");
+    gDumpMemArgPresent |= Dump != NULL;
+#endif
+
+    Options[LastIndex] = Last;
+
+    if (Slide) {
+      DEBUG((DEBUG_VERBOSE, "Found custom slide param\n"));
+    }
   }
 
-  // Process image for custom slide
-  ProcessBooterImageForCustomSlide();
-  // Add more fixes here...
+  CHAR8 BootArgsVar[BOOT_LINE_LENGTH];
+  UINTN BootArgsVarLen = BOOT_LINE_LENGTH;
+
+  // Important to avoid triggering boot-args wrapper too early
+  Status = ((EFI_GET_VARIABLE)gGetVariable)(
+      L"boot-args",
+      &gAppleBootVariableGuid,
+      NULL, &BootArgsVarLen,
+      &BootArgsVar[0]
+  );
+
+  if (!EFI_ERROR(Status) && BootArgsVarLen > 0) {
+    // Just in case we do not have 0-termination
+    BootArgsVar[BootArgsVarLen-1] = '\0';
+
+    CHAR8 *Slide = AsciiStrStr(BootArgsVar, "slide=");
+    VERIFY_BOOT_ARG(Slide, BootArgsVar, "slide=");
+    gSlideArgPresent |= Slide != NULL;
+
+#if APTIOFIX_ALLOW_MEMORY_DUMP_ARG == 1
+    CHAR8 *Dump  = AsciiStrStr(BootArgsVar, "-aptiodump");
+    VERIFY_BOOT_ARG(Dump,  BootArgsVar, "-aptiodump");
+    gDumpMemArgPresent |= Dump != NULL;
+#endif
+
+    if (Slide) {
+      DEBUG((DEBUG_VERBOSE, "Found custom slide boot-arg value\n"));
+    }
+  }
 }
+
 
 VOID
 RestoreRelocInfoProtectMemTypes (

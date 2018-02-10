@@ -67,8 +67,9 @@ ProtectRtMemoryFromRelocation(
   );
 
 VOID
-ProcessBooterImage (
-  EFI_HANDLE              ImageHandle
+ReadBooterArguments (
+    CHAR16 *Options,
+    UINTN OptionsSize
   );
 
 /** Protects CSM regions from the kernel and boot.efi. */
