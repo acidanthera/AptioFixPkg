@@ -23,14 +23,17 @@ IsSandyOrIvy (
   equal or greater than ((StrLen (Source) + 1) * sizeof (CHAR8)) in bytes.
   The caller is responsible that Source and Destination don't overlap.
   If Destination is NULL, or if Source is NULL, then NULL is returned.
+  If DestinationSize is zero, it's a no-op and Destination returned.
   @param  Source        A pointer to a Null-terminated Unicode string.
   @param  Destination   A pointer to a Null-terminated ASCII string.
+  @param  DestinationSize  A size of Destination string, including null-terminating char.
   @return Destination.
 **/
 CHAR8 *
 ConvertUnicodeStrToAsciiStr (
     IN CONST CHAR16  *Source,
-    OUT CHAR8        *Destination
+    OUT CHAR8        *Destination,
+    IN CONST UINTN   DestinationSize
 );
 
 #endif // APTIOFIX_UTILS_H

@@ -343,7 +343,7 @@ ReadBooterArguments (
     Last = Options[LastIndex];
     Options[LastIndex] = '\0';
 
-    ConvertUnicodeStrToAsciiStr(Options, BootArgsVar);
+    ConvertUnicodeStrToAsciiStr(Options, BootArgsVar, BOOT_LINE_LENGTH);
 
     gSlideArgPresent |= (GET_BOOT_ARG(BootArgsVar, "slide=") != NULL);
 
