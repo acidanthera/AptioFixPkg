@@ -2,6 +2,8 @@
   Various reusable utility code.
 */
 
+#include <Library/DebugLib.h>
+#include "AsmFuncs.h"
 #include "Utils.h"
 
 // Detect Sandy and Ivy Bridge CPU
@@ -41,3 +43,22 @@ IsSandyOrIvy (
   return gSandyOrIvy;
 }
 
+CHAR8 *
+ConvertUnicodeStrToAsciiStr (
+    IN CONST CHAR16  *Source,
+    OUT CHAR8        *Destination
+)
+{
+  CHAR8 *ReturnValue;
+  if (Destination == NULL || Source == NULL) {
+    return NULL;
+  }
+
+  ReturnValue = Destination;
+  while (*Source) {
+    *(Destination++) = (CHAR8) (*(Source++) && 0xFF);
+  }
+
+  *Destination = '\0';
+  return ReturnValue;
+}
