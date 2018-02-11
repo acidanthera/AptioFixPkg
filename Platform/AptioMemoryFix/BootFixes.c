@@ -325,25 +325,6 @@ CopyEfiSysTableToSeparateRtDataArea (
   *EfiSystemTable = (UINT32)(UINTN)Dest;
 }
 
-//
-// Private macros related to ReadBooterArguments() only
-//
-#define AMF_READ_ARG16(Name, Var)            \
-  do {                                       \
-    CHAR16 *Str;                             \
-    Str = StrStr(Options, (Name));           \
-    VERIFY_BOOT_ARG(Str, Options, (Name));   \
-    (Var) |= (Str != NULL);                  \
-  } while(0)
-
-#define AMF_READ_ARG8(Name, Var)                \
-  do {                                          \
-    CHAR8 *Str;                                 \
-    Str = AsciiStrStr(BootArgsVar, (Name));     \
-    VERIFY_BOOT_ARG(Str, BootArgsVar, (Name));  \
-    (Var) |= (Str != NULL);                     \
-  } while(0)
-
 VOID
 ReadBooterArguments (
     CHAR16 *Options,
@@ -362,10 +343,12 @@ ReadBooterArguments (
     Last = Options[LastIndex];
     Options[LastIndex] = '\0';
 
-    AMF_READ_ARG16(L"slide=", gSlideArgPresent);
+    ConvertUnicodeStrToAsciiStr(Options, BootArgsVar);
+
+    gSlideArgPresent |= (GET_BOOT_ARG(BootArgsVar, "slide=") != NULL);
 
 #if APTIOFIX_ALLOW_MEMORY_DUMP_ARG == 1
-    AMF_READ_ARG16(L"-aptiodump", gDumpMemArgPresent);
+    gDumpMemArgPresent |= (GET_BOOT_ARG(BootArgsVar, "-aptiodump") != NULL);
 #endif
 
     Options[LastIndex] = Last;
@@ -385,16 +368,13 @@ ReadBooterArguments (
     // Just in case we do not have 0-termination
     BootArgsVar[BootArgsVarLen-1] = '\0';
 
-    AMF_READ_ARG8("slide=", gSlideArgPresent);
+    gSlideArgPresent |= (GET_BOOT_ARG(BootArgsVar, "slide=") != NULL);
 
 #if APTIOFIX_ALLOW_MEMORY_DUMP_ARG == 1
-    AMF_READ_ARG8("-aptiodump", gDumpMemArgPresent);
+    gDumpMemArgPresent |= (GET_BOOT_ARG(BootArgsVar, "-aptiodump") != NULL);
 #endif
   }
 }
-
-#undef AMF_READ_ARG8
-#undef AMF_READ_ARG16
 
 VOID
 RestoreRelocInfoProtectMemTypes (

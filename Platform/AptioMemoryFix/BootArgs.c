@@ -109,6 +109,31 @@ BootArgsFind (
   return ptr;
 }
 
+CONST CHAR8 *
+GetArgumentFromCommandLine (
+    IN CONST CHAR8 *CommandLine,
+    IN CONST CHAR8 *Argument,
+    IN CONST UINTN ArgumentLength
+)
+{
+  CHAR8 *Str;
+  Str = AsciiStrStr(CommandLine, Argument);
+
+  //
+  // Invalidate found boot arg if:
+  // - it is neither the beginning of Cmd, nor has space prefix            -> boot arg is a suffix of another arg
+  // - it has neither space suffix, nor \0 suffix, and does not end with = -> boot arg is a prefix of another arg
+  //
+  if (!Str ||
+      (Str != CommandLine && *(Str - 1) != ' ') ||
+      (Str[ArgumentLength] != ' ' && Str[ArgumentLength] != '\0' &&
+         Str[ArgumentLength - 1] != '=')
+    ) {
+      return NULL;
+  }
+  return Str;
+}
+
 VOID
 RemoveArgumentFromCommandLine (
   CHAR8        *CommandLine,
