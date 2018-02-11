@@ -41,7 +41,7 @@ STATIC UINT32  gValidSlidesNum = TOTAL_SLIDE_NUM;
 extern BOOLEAN gSlideArgPresent;
 
 VOID
-UnlockSlideSupportForSafeModeAndCheckSlide (
+UnlockSlideSupportForSafeMode (
     UINT8 *ImageBase,
     UINTN ImageSize
 )

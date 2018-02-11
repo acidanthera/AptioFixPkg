@@ -46,7 +46,8 @@ IsSandyOrIvy (
 CHAR8 *
 ConvertUnicodeStrToAsciiStr (
     IN CONST CHAR16  *Source,
-    OUT CHAR8        *Destination
+    OUT CHAR8        *Destination,
+    IN CONST UINTN   DestinationSize
 )
 {
   CHAR8 *ReturnValue;
@@ -54,8 +55,12 @@ ConvertUnicodeStrToAsciiStr (
     return NULL;
   }
 
+  if (DestinationSize == 0) {
+    return Destination;
+  }
+
   ReturnValue = Destination;
-  while (*Source) {
+  while (*Source && ((UINTN)(Destination - ReturnValue) < DestinationSize - 1)) {
     *(Destination++) = (CHAR8) (*(Source++) && 0xFF);
   }
 

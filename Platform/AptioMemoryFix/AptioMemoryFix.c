@@ -118,7 +118,7 @@ RunImageWithOverrides(
   DEBUG ((DEBUG_VERBOSE, "StartImage: new sys table: %p\n", Image->SystemTable));
 
 #if APTIOFIX_ALLOW_ASLR_IN_SAFE_MODE == 1
-  UnlockSlideSupportForSafeModeAndCheckSlide ((UINT8 *)Image->ImageBase, Image->ImageSize);
+  UnlockSlideSupportForSafeMode ((UINT8 *)Image->ImageBase, Image->ImageSize);
 #endif
 
   //
