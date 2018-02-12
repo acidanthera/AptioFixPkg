@@ -121,3 +121,29 @@ RemoveArgumentFromCommandLine (
 
   ZeroMem (Updated, CommandLine - Updated);
 }
+
+BOOLEAN
+AppendArgumentToCommandLine (
+  IN OUT CHAR8        *CommandLine,
+  IN     CONST CHAR8  *Argument,
+  IN     CONST UINTN  ArgumentLength
+  )
+{
+  UINTN Len = AsciiStrLen (CommandLine);
+
+  //
+  // Account for extra space.
+  //
+  if (Len + (Len > 0 ? 1 : 0) + ArgumentLength >= BOOT_LINE_LENGTH) {
+    DEBUG ((DEBUG_WARN, "boot-args are invalid, ignoring\n"));
+    return FALSE;
+  }
+
+  if (Len > 0) {
+    CommandLine   += Len;
+    *CommandLine++ = ' ';
+  }
+
+  AsciiStrnCpyS (CommandLine, ArgumentLength + 1, Argument, ArgumentLength + 1);
+  return TRUE;
+}

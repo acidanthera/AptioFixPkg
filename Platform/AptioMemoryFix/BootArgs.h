@@ -197,7 +197,11 @@ RemoveArgumentFromCommandLine (
   IN     CONST CHAR8  *Argument
   );
 
-/** A convenient macro for GetArgumentFromCommandLine(). NOTE: must use string literals only here as Arg. */
-#define GET_BOOT_ARG(Cmd, Arg) GetArgumentFromCommandLine ((Cmd), (Arg), LITERAL_STRLEN ((Arg)))
+BOOLEAN
+AppendArgumentToCommandLine (
+  IN OUT CHAR8        *CommandLine,
+  IN     CONST CHAR8  *Argument,
+  IN     CONST UINTN  ArgumentLength
+  );
 
 #endif // APTIOFIX_BOOT_ARGS_H

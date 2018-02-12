@@ -10,6 +10,7 @@
 #include <Library/UefiLib.h>
 #include <Library/BaseMemoryLib.h>
 #include <Library/DebugLib.h>
+#include <Library/PrintLib.h>
 #include <Library/RngLib.h>
 #include <Library/UefiBootServicesTableLib.h>
 
@@ -252,16 +253,16 @@ DecideOnCustomSlideImplementation (
 
           if (Desc->PhysicalStart < StartAddr) {
             //
-            // The region starts before the slide region.  Subtract the memory
-            // that is located before the slide region.
+            // The region starts before the slide region.
+            // Subtract the memory that is located before the slide region.
             //
             AvailableSize -= (StartAddr - Desc->PhysicalStart);
           }
 
           if (DescEndAddr > EndAddr) {
             //
-            // The region ends after the slide region.  Subtract the memory
-            // that is located after the slide region.
+            // The region ends after the slide region.
+            // Subtract the memory that is located after the slide region.
             //
             AvailableSize -= (DescEndAddr - EndAddr);
           }
@@ -319,6 +320,111 @@ DecideOnCustomSlideImplementation (
       }
     }
   }
+}
+
+STATIC
+EFI_STATUS
+GetVariableCsrActiveConfig (
+  IN     CHAR16    *VariableName,
+  IN     EFI_GUID  *VendorGuid,
+  OUT    UINT32    *Attributes OPTIONAL,
+  IN OUT UINTN     *DataSize,
+  OUT    VOID      *Data
+  )
+{
+  EFI_STATUS  Status;
+  UINT32      *Config;
+
+  //
+  // If we were asked for the size, just return it right away.
+  //
+  if (!Data || *DataSize < sizeof(UINT32)) {
+    *DataSize = sizeof(UINT32);
+    return EFI_BUFFER_TOO_SMALL;
+  }
+
+  Config = (UINT32 *)Data;
+
+  //
+  // Otherwise call the original function.
+  //
+  Status = OrgGetVariable (VariableName, VendorGuid, Attributes, DataSize, Data);
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_WARN, "GetVariable csr-active-config returned %r\n", Status));
+
+    *Config = 0;
+    Status = EFI_SUCCESS;
+    if (Attributes) {
+      *Attributes =
+        EFI_VARIABLE_BOOTSERVICE_ACCESS |
+        EFI_VARIABLE_RUNTIME_ACCESS |
+        EFI_VARIABLE_NON_VOLATILE;
+    }
+  }
+
+  //
+  // We must unrestrict NVRAM from SIP or slide=X will not be supported.
+  //
+  mCsrActiveConfig     = *Config;
+  mCsrActiveConfigSet  = TRUE;
+  *Config |= CSR_ALLOW_UNRESTRICTED_NVRAM;
+
+  return Status;
+}
+
+STATIC
+EFI_STATUS
+GetVariableBootArgs (
+  IN     CHAR16    *VariableName,
+  IN     EFI_GUID  *VendorGuid,
+  OUT    UINT32    *Attributes OPTIONAL,
+  IN OUT UINTN     *DataSize,
+  OUT    VOID      *Data
+  )
+{
+  EFI_STATUS  Status;
+  UINTN       StoredBootArgsSize = BOOT_LINE_LENGTH;
+  UINT8       Slide;
+  CHAR8       SlideArgument[10];
+  CONST UINTN SlideArgumentLength = ARRAY_SIZE (SlideArgument)-1;
+
+  if (!mStoredBootArgsVarSet) {
+    Slide  = GenerateRandomSlideValue ();
+    Status = OrgGetVariable (VariableName, VendorGuid, Attributes, &StoredBootArgsSize, mStoredBootArgsVar);
+
+    //
+    // Note, the point is to always pass 3 characters to avoid side attacks on value length.
+    //
+    AsciiSPrint (SlideArgument, ARRAY_SIZE (SlideArgument), "slide=%-03d", Slide);
+
+    if (!AppendArgumentToCommandLine (mStoredBootArgsVar, SlideArgument, SlideArgumentLength)) {
+      //
+      // Broken boot-args, try to overwrite.
+      //
+      AsciiStrnCpyS (mStoredBootArgsVar, SlideArgumentLength + 1, SlideArgument, SlideArgumentLength + 1);;
+    }
+
+    mStoredBootArgsVarSize = AsciiStrLen (mStoredBootArgsVar) + 1;
+    mStoredBootArgsVarSet = TRUE;
+  }
+
+  if (Attributes) {
+    *Attributes =
+      EFI_VARIABLE_BOOTSERVICE_ACCESS |
+      EFI_VARIABLE_RUNTIME_ACCESS |
+      EFI_VARIABLE_NON_VOLATILE;
+  }
+
+  if (*DataSize >= mStoredBootArgsVarSize && Data) {
+    AsciiStrnCpyS (Data, *DataSize, mStoredBootArgsVar, mStoredBootArgsVarSize);
+    Status = EFI_SUCCESS;
+  } else {
+    Status = EFI_BUFFER_TOO_SMALL;
+  }
+
+  *DataSize = mStoredBootArgsVarSize;
+
+  return Status;
 }
 
 VOID
@@ -430,52 +536,39 @@ OverlapsWithSlide (
 EFI_STATUS
 EFIAPI
 GetVariableCustomSlide (
-  CHAR16                  *VariableName,
-  EFI_GUID                *VendorGuid,
-  UINT32                  *Attributes,
-  UINTN                   *DataSize,
-  VOID                    *Data
+  IN     CHAR16    *VariableName,
+  IN     EFI_GUID  *VendorGuid,
+  OUT    UINT32    *Attributes OPTIONAL,
+  IN OUT UINTN     *DataSize,
+  OUT    VOID      *Data
   )
 {
-  EFI_STATUS       Status;
-
-  //
-  // We override csr-active-config with CSR_ALLOW_UNRESTRICTED_NVRAM bit set
-  // to allow one to pass a custom slide value even when SIP is on.
-  // This original value of csr-active-config is returned to OS at XNU boot.
-  // This allows SIP to be fully enabled in the operating system.
-  //
-  BOOLEAN          IsCsrActiveConfig = FALSE;
-
-  //
-  // When we cannot allow some KASLR values due to used address we generate
-  // a random slide value among the valid options, which we we pass via boot-args.
-  // See DecideOnCustomSlideImplementation for more details.
-  //
-  BOOLEAN          IsBootArgs = FALSE;
-
-  //
-  // Basic checks
-  //
   if (VariableName && VendorGuid && DataSize &&
     !CompareMem (VendorGuid, &gAppleBootVariableGuid, sizeof(EFI_GUID))) {
+    //
+    // We override csr-active-config with CSR_ALLOW_UNRESTRICTED_NVRAM bit set
+    // to allow one to pass a custom slide value even when SIP is on.
+    // This original value of csr-active-config is returned to OS at XNU boot.
+    // This allows SIP to be fully enabled in the operating system.
+    //
     if (!StrCmp (VariableName, L"csr-active-config")) {
-      //
-      // If we wered asked for the size, just give it
-      //
-      if (!Data) {
-        *DataSize = 4;
-        return EFI_BUFFER_TOO_SMALL;
-      }
-      //
-      // Otherwise pass our values
-      //
-      IsCsrActiveConfig = TRUE;
+      return GetVariableCsrActiveConfig (
+        VariableName,
+        VendorGuid,
+        Attributes,
+        DataSize,
+        Data
+        );
     }
 #if APTIOFIX_ALLOW_CUSTOM_ASLR_IMPLEMENTATION == 1
+    //
+    // When we cannot allow some KASLR values due to used address we generate
+    // a random slide value among the valid options, which we we pass via boot-args.
+    // See DecideOnCustomSlideImplementation for more details.
+    //
     else if (!StrCmp (VariableName, L"boot-args")) {
       //
-      // We delay memory map analysis as much as we can, in case boot.efi or anything else allocate
+      // We delay memory map analysis as much as we can, in case boot.efi or anything else allocates
       // stuff with gBS->AllocatePool and this is not caught by our gBS->AllocatePool override.
       // This is a problem when an allocated region overlaps with the slide region (e.g. on X299).
       //
@@ -483,107 +576,24 @@ GetVariableCustomSlide (
         DecideOnCustomSlideImplementation ();
         mAnalyzeMemoryMapDone = TRUE;
       }
-
+      //
+      // Only return custom boot-args if mValidSlidesNum were determined to be less than TOTAL_SLIDE_NUM
+      // And thus we have to use a custom slide implementation to boot reliably.
+      //
       if (mValidSlidesNum != TOTAL_SLIDE_NUM && mValidSlidesNum > 0) {
-        //
-        // Only return custom boot-args if mValidSlidesNum were determined to be less than TOTAL_SLIDE_NUM
-        // And thus we have to use a custom slide implementation to boot reliably.
-        //
-        IsBootArgs = TRUE;
+        return GetVariableBootArgs (
+          VariableName,
+          VendorGuid,
+          Attributes,
+          DataSize,
+          Data
+          );
       }
     }
 #endif
   }
 
-  if (IsCsrActiveConfig) {
-    Status = OrgGetVariable (VariableName, VendorGuid, Attributes, DataSize, Data);
-    UINT32 *Config = (UINT32 *)Data;
-    if (EFI_ERROR (Status)) {
-      DEBUG ((DEBUG_WARN, "GetVariable csr-active-config returned %r\n", Status));
-      *Config = 0;
-      Status = EFI_SUCCESS;
-      if (Attributes) {
-        *Attributes =
-          EFI_VARIABLE_BOOTSERVICE_ACCESS |
-          EFI_VARIABLE_RUNTIME_ACCESS |
-          EFI_VARIABLE_NON_VOLATILE;
-      }
-    }
-    //
-    // We must unrestrict NVRAM from SIP or slide=X will not be supported.
-    //
-    mCsrActiveConfig     = *Config;
-    mCsrActiveConfigSet  = TRUE;
-    *Config |= CSR_ALLOW_UNRESTRICTED_NVRAM;
-  } else if (IsBootArgs) {
-    if (!mStoredBootArgsVarSet) {
-      UINTN StoredBootArgsSize = BOOT_LINE_LENGTH;
-      UINT8 Slide = GenerateRandomSlideValue ();
-      Status = OrgGetVariable (VariableName, VendorGuid, Attributes, &StoredBootArgsSize, mStoredBootArgsVar);
-
-      CHAR8 *AppendPtr = mStoredBootArgsVar;
-      if (EFI_ERROR (Status)) {
-        DEBUG ((DEBUG_WARN, "boot-args returned %r error\n", Status));
-      } else {
-        UINTN Len = AsciiStrLen (mStoredBootArgsVar);
-        if (Len + LITERAL_STRLEN (" slide=123") >= BOOT_LINE_LENGTH) {
-          DEBUG ((DEBUG_WARN, "boot-args are invalid, ignoring\n"));
-        } else {
-          AppendPtr    += Len;
-          *AppendPtr++ = ' ';
-        }
-      }
-
-      CONST UINTN SlideStrLen = LITERAL_STRLEN ("slide=");
-      AsciiStrnCpyS (AppendPtr, SlideStrLen + 1, "slide=", SlideStrLen + 1);
-      UINT8 First  = Slide / 100;
-      UINT8 Second = (Slide % 100) / 10;
-      UINT8 Third  = Slide % 10;
-
-      if (Slide < 100) {
-        if (Slide >= 10) {
-          First  = Second;
-          Second = Third;
-          Third  = DEC_SPACE;
-        } else {
-          First  = Third;
-          Second = DEC_SPACE;
-          Third  = DEC_SPACE;
-        }
-      }
-
-      //
-      // Note, the point is to always pass 3 characters to avoid side attacks on value length.
-      //
-      AppendPtr[SlideStrLen + 0] = DEC_TO_ASCII (First);
-      AppendPtr[SlideStrLen + 1] = DEC_TO_ASCII (Second);
-      AppendPtr[SlideStrLen + 2] = DEC_TO_ASCII (Third);
-      AppendPtr[SlideStrLen + 3] = '\0';
-
-      mStoredBootArgsVarSize = AsciiStrLen (mStoredBootArgsVar) + 1;
-      mStoredBootArgsVarSet = TRUE;
-    }
-
-    if (Attributes) {
-      *Attributes =
-        EFI_VARIABLE_BOOTSERVICE_ACCESS |
-        EFI_VARIABLE_RUNTIME_ACCESS |
-        EFI_VARIABLE_NON_VOLATILE;
-    }
-
-    if (*DataSize >= mStoredBootArgsVarSize && Data) {
-      AsciiStrnCpyS (Data, *DataSize, mStoredBootArgsVar, mStoredBootArgsVarSize);
-      Status = EFI_SUCCESS;
-    } else {
-      Status = EFI_BUFFER_TOO_SMALL;
-    }
-
-    *DataSize = mStoredBootArgsVarSize;
-  } else {
-    Status = OrgGetVariable (VariableName, VendorGuid, Attributes, DataSize, Data);
-  }
-
-  return Status;
+  return OrgGetVariable (VariableName, VendorGuid, Attributes, DataSize, Data);
 }
 
 VOID

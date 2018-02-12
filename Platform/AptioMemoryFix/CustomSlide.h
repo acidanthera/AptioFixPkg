@@ -57,11 +57,11 @@ UnlockSlideSupportForSafeMode (
 EFI_STATUS
 EFIAPI
 GetVariableCustomSlide (
-  CHAR16    *VariableName,
-  EFI_GUID  *VendorGuid,
-  UINT32    *Attributes,
-  UINTN     *DataSize,
-  VOID      *Data
+  IN     CHAR16    *VariableName,
+  IN     EFI_GUID  *VendorGuid,
+  OUT    UINT32    *Attributes OPTIONAL,
+  IN OUT UINTN     *DataSize,
+  OUT    VOID      *Data
   );
 
 /**

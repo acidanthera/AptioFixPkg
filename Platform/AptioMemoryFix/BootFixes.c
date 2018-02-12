@@ -167,10 +167,14 @@ ReadBooterArguments (
 
     ConvertUnicodeStrToAsciiStr (Options, BootArgsVar, BOOT_LINE_LENGTH);
 
-    gSlideArgPresent |= (GET_BOOT_ARG (BootArgsVar, "slide=") != NULL);
+    if (GetArgumentFromCommandLine (BootArgsVar, "slide=", LITERAL_STRLEN ("slide="))) {
+      gSlideArgPresent = TRUE;
+    }
 
 #if APTIOFIX_ALLOW_MEMORY_DUMP_ARG == 1
-    gDumpMemArgPresent |= (GET_BOOT_ARG (BootArgsVar, "-aptiodump") != NULL);
+    if (GetArgumentFromCommandLine (BootArgsVar, "-aptiodump", LITERAL_STRLEN ("-aptiodump"))) {
+      gDumpMemArgPresent = TRUE;
+    }
 #endif
 
     //
@@ -195,10 +199,14 @@ ReadBooterArguments (
     //
     BootArgsVar[BootArgsVarLen-1] = '\0';
 
-    gSlideArgPresent |= (GET_BOOT_ARG (BootArgsVar, "slide=") != NULL);
+    if (GetArgumentFromCommandLine (BootArgsVar, "slide=", LITERAL_STRLEN ("slide="))) {
+      gSlideArgPresent = TRUE;
+    }
 
 #if APTIOFIX_ALLOW_MEMORY_DUMP_ARG == 1
-    gDumpMemArgPresent |= (GET_BOOT_ARG (BootArgsVar, "-aptiodump") != NULL);
+    if (GetArgumentFromCommandLine (BootArgsVar, "-aptiodump", LITERAL_STRLEN ("-aptiodump"))) {
+      gDumpMemArgPresent = TRUE;
+    }
 #endif
   }
 }
