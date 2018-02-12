@@ -88,7 +88,7 @@ updaterepo "https://github.com/CupertinoNet/CupertinoModulePkg" CupertinoModuleP
 updaterepo "https://github.com/CupertinoNet/EfiMiscPkg" EfiMiscPkg || exit 1
 updaterepo "https://github.com/CupertinoNet/EfiPkg" EfiPkg || exit 1
 
-if [ -f AptioFixPkg ]; then
+if [ ! -d AptioFixPkg ]; then
   ln -s .. AptioFixPkg || exit 1
 fi
 
