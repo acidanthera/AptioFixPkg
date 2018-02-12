@@ -29,6 +29,10 @@ extern BOOLEAN gHibernateWake;
 // TRUE if booting with -aptiodump
 extern BOOLEAN gDumpMemArgPresent;
 
+// TRUE if booting with a manually specified slide=X
+extern BOOLEAN gSlideArgPresent;
+
+
 EFI_STATUS
 PrepareJumpFromKernel (
   VOID
@@ -68,8 +72,8 @@ ProtectRtMemoryFromRelocation(
 
 VOID
 ReadBooterArguments (
-    CHAR16 *Options,
-    UINTN OptionsSize
+  CHAR16 *Options,
+  UINTN   OptionsSize
   );
 
 /** Protects CSM regions from the kernel and boot.efi. */
@@ -82,7 +86,7 @@ ProtectCsmRegion (
 
 /** Fixes stuff for booting without relocation block. Called when boot.efi jumps to kernel. */
 UINTN
-FixBooting(
+FixBooting (
   UINTN   BootArgs
   );
 

@@ -9,6 +9,8 @@
 #ifndef APTIOFIX_BOOT_ARGS_H
 #define APTIOFIX_BOOT_ARGS_H
 
+#include "Utils.h"
+
 /*
  * Video information...
  */
@@ -177,34 +179,26 @@ typedef struct {
   UINT32  *csrActiveConfig;
 } AMF_BOOT_ARGUMENTS;
 
-AMF_BOOT_ARGUMENTS*
+AMF_BOOT_ARGUMENTS *
 EFIAPI
 GetBootArgs (
-  VOID *bootArgs
+  IN VOID  *BootArgs
   );
-
-VOID *
-EFIAPI
-BootArgsFind (
-  IN EFI_PHYSICAL_ADDRESS Start
-  );
-
 
 CONST CHAR8 *
 GetArgumentFromCommandLine (
-  IN CONST CHAR8 *CommandLine,
-  IN CONST CHAR8 *Argument,
-  IN CONST UINTN ArgumentLength
-);
+  IN CONST CHAR8  *CommandLine,
+  IN CONST CHAR8  *Argument,
+  IN CONST UINTN  ArgumentLength
+  );
 
 VOID
 RemoveArgumentFromCommandLine (
-  CHAR8        *CommandLine,
-  CONST CHAR8  *Argument
+  IN OUT CHAR8        *CommandLine,
+  IN     CONST CHAR8  *Argument
   );
 
-#define LITERAL_STRLEN(x) (ARRAY_SIZE(x)-1)
 /** A convenient macro for GetArgumentFromCommandLine(). NOTE: must use string literals only here as Arg. */
-#define GET_BOOT_ARG(Cmd, Arg) GetArgumentFromCommandLine((Cmd), (Arg), LITERAL_STRLEN((Arg)))
+#define GET_BOOT_ARG(Cmd, Arg) GetArgumentFromCommandLine ((Cmd), (Arg), LITERAL_STRLEN ((Arg)))
 
 #endif // APTIOFIX_BOOT_ARGS_H

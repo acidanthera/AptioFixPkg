@@ -1,17 +1,24 @@
 /**
-  Header file for Utils.c
- */
+
+  Various reusable utility code.
+
+  by joedm & vit9696
+
+**/
+
 #ifndef APTIOFIX_UTILS_H
 #define APTIOFIX_UTILS_H
 
 /**
- * Detects CPU family and returns TRUE if CPU family is SandyBridge or IvyBridge. Otherwise returns FALSE.
- * @return TRUE or FALSE
- */
-BOOLEAN
-IsSandyOrIvy (
-    VOID
-);
+  Returns the actual length of a string literal (ASCII or Unicode)
+**/
+#define LITERAL_STRLEN (x) (ARRAY_SIZE (x)-1)
+
+/**
+  Quick and dirty dec digit printer
+**/
+#define DEC_TO_ASCII (Val) ("0123456789      "[(Val) & 0xF])
+#define DEC_SPACE 0xF
 
 /**
   Convert a Null-terminated Unicode string to a Null-terminated
@@ -31,9 +38,9 @@ IsSandyOrIvy (
 **/
 CHAR8 *
 ConvertUnicodeStrToAsciiStr (
-    IN CONST CHAR16  *Source,
-    OUT CHAR8        *Destination,
-    IN CONST UINTN   DestinationSize
-);
+  IN CONST CHAR16  *Source,
+  OUT CHAR8        *Destination,
+  IN CONST UINTN   DestinationSize
+  );
 
 #endif // APTIOFIX_UTILS_H
