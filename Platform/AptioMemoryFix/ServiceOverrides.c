@@ -15,12 +15,12 @@
 #include <Library/UefiRuntimeServicesTableLib.h>
 
 #include "Config.h"
+#include "ServiceOverrides.h"
 #include "BootArgs.h"
 #include "BootFixes.h"
 #include "Hibernate.h"
-#include "Lib.h"
+#include "MemoryMap.h"
 #include "RtShims.h"
-#include "ServiceOverrides.h"
 #include "UmmMalloc/UmmMalloc.h"
 
 //
@@ -189,7 +189,7 @@ MOHandleProtocol (
     Status = gBS->LocateProtocol (&gEfiGraphicsOutputProtocolGuid, NULL, (VOID**)&GraphicsOutput);
     if (Status == EFI_SUCCESS) {
       *Interface = GraphicsOutput;
-      DEBUG ((DEBUG_VERBOSE, "HandleProtocol(%p, %s, %p) = %r (from other handle)\n", Handle, GuidStr(Protocol), *Interface, Status));
+      DEBUG ((DEBUG_VERBOSE, "HandleProtocol(%p, %g, %p) = %r (from other handle)\n", Handle, Protocol, *Interface, Status));
     }
   }
 
@@ -280,7 +280,7 @@ MOAllocatePool (
   // gBS->AllocatePool, we had to override gBS->AllocatePool ourselves and force the use
   // of a custom allocator when doing any prints.
   //
-  // The same is done for all boot.efi allocations (and obviously our DirectAllocatePool).
+  // The same is done for all boot.efi allocations (and obviously our AllocatePool).
   // It is still a matter of luck whether this works or not.
   // It is known that there exists in-os memory corruption with ASUS TUF X299 MARK 1
   // when using external USB 3.0 HDDs, which is not reproducible with Clover Legacy Boot.
@@ -291,7 +291,7 @@ MOAllocatePool (
   //
 
   if (Type == EfiBootServicesData) {
-    *Buffer = UmmMalloc (Size);
+    *Buffer = UmmMalloc ((UINT32)Size);
     if (*Buffer)
       return EFI_SUCCESS;
 
@@ -440,6 +440,64 @@ MOExitBootServices (
   return Status;
 }
 
+/** Helper function to call ExitBootServices that can handle outdated MapKey issues. */
+EFI_STATUS
+ForceExitBootServices (
+  IN EFI_EXIT_BOOT_SERVICES  ExitBs,
+  IN EFI_HANDLE              ImageHandle,
+  IN UINTN                   MapKey
+  )
+{
+  EFI_STATUS               Status;
+  EFI_MEMORY_DESCRIPTOR    *MemoryMap;
+  UINTN                    MemoryMapSize;
+  UINTN                    DescriptorSize;
+  UINT32                   DescriptorVersion;
+
+  //
+  // Firstly try the easy way
+  //
+  Status = ExitBs (ImageHandle, MapKey);
+
+  if (EFI_ERROR (Status)) {
+    //
+    // Just report error as var in nvram to be visible from macOS with "nvram -p"
+    //
+    gRT->SetVariable (L"aptiomemfix-exitbs",
+      &gAppleBootVariableGuid,
+      EFI_VARIABLE_BOOTSERVICE_ACCESS | EFI_VARIABLE_RUNTIME_ACCESS,
+      4,
+      "fail"
+      );
+
+    //
+    // It is too late to free memory map here, but it does not matter,
+    // because boot.efi has an old one and will freely use the memory.
+    //
+    Status = GetMemoryMapAlloc (NULL, &MemoryMapSize, &MemoryMap, &MapKey, &DescriptorSize, &DescriptorVersion);
+    DEBUG ((DEBUG_VERBOSE, "ExitBootServices: GetMemoryMapKey = %r\n", Status));
+    if (Status == EFI_SUCCESS) {
+      //
+      // We have the latest memory map and its key, try again!
+      //
+      Status = ExitBs (ImageHandle, MapKey);
+      DEBUG ((DEBUG_VERBOSE, "ExitBootServices: 2nd try = %r\n", Status));
+      if (EFI_ERROR (Status))
+        PrintScreen (L"AMF: ExitBootServices failed twice - %r\n", Status);
+    } else {
+      PrintScreen (L"AMF: Failed to get MapKey for ExitBootServices - %r\n", Status);
+      Status = EFI_INVALID_PARAMETER;
+    }
+
+    if (EFI_ERROR (Status)) {
+      PrintScreen (L"Waiting 10 secs...\n");
+      gBS->Stall(10*1000000);
+    }
+  }
+
+  return Status;
+}
+
 /** gRT->SetVirtualAddressMap override:
  * Fixes virtualizing of RT services.
  */
@@ -474,7 +532,7 @@ MOSetVirtualAddressMap (
   //
   // Protect RT areas from relocation by marking then MemMapIO
   //
-  ProtectRtMemoryFromRelocation (MemoryMapSize, DescriptorSize, DescriptorVersion, VirtualMap);
+  ProtectRtMemoryFromRelocation (MemoryMapSize, DescriptorSize, DescriptorVersion, VirtualMap, gSysTableRtArea);
 
   //
   // Remember physical sys table addr

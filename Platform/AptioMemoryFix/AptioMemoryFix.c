@@ -24,9 +24,9 @@
 #include "BootFixes.h"
 #include "AsmFuncs.h"
 #include "VMem.h"
-#include "Lib.h"
 #include "Hibernate.h"
 #include "RtShims.h"
+#include "CustomSlide.h"
 #include "ServiceOverrides.h"
 
 //
@@ -116,10 +116,14 @@ RunImageWithOverrides(
   Image->SystemTable = (EFI_SYSTEM_TABLE *)(UINTN)gSysTableRtArea;
   DEBUG ((DEBUG_VERBOSE, "StartImage: new sys table: %p\n", Image->SystemTable));
 
+#if APTIOFIX_ALLOW_ASLR_IN_SAFE_MODE == 1
+  UnlockSlideSupportForSafeMode ((UINT8 *)Image->ImageBase, Image->ImageSize);
+#endif
+
   //
-  // Apply the necessary patches if any
+  // Read options
   //
-  ProcessBooterImage (ImageHandle);
+  ReadBooterArguments((CHAR16*)Image->LoadOptions, Image->LoadOptionsSize/sizeof(CHAR16));
 
   //
   // Run image
@@ -151,9 +155,9 @@ DetectBooterStartImage (
   )
 {
   EFI_STATUS                  Status;
-  EFI_LOADED_IMAGE_PROTOCOL   *Image        = NULL;
   CHAR16                      *FilePathText = NULL;
   VOID                        *Value        = NULL;
+  EFI_LOADED_IMAGE_PROTOCOL   *LoadedImage = NULL;
   UINTN                       ValueSize     = 0;
 
   DEBUG ((DEBUG_VERBOSE, "StartImage (%lx)\n", ImageHandle));
@@ -161,15 +165,19 @@ DetectBooterStartImage (
   //
   // Find out image name from EfiLoadedImageProtocol
   //
-  Status = gBS->HandleProtocol (ImageHandle, &gEfiLoadedImageProtocolGuid, (VOID **)&Image);
+  Status = gBS->HandleProtocol (ImageHandle, &gEfiLoadedImageProtocolGuid, (VOID **)&LoadedImage);
 
   if (EFI_ERROR (Status)) {
     DEBUG ((DEBUG_WARN, "StartImage: OpenProtocol(gEfiLoadedImageProtocolGuid) = %r\n", Status));
     return EFI_INVALID_PARAMETER;
   }
 
-  FilePathText = FileDevicePathToText (Image->FilePath);
-  DEBUG ((DEBUG_VERBOSE, "ImageBase: %p - %lx (%lx)\n", Image->ImageBase, (UINT64)Image->ImageBase + Image->ImageSize, Image->ImageSize));
+  FilePathText = FileDevicePathToStr (LoadedImage->FilePath);
+  DEBUG ((DEBUG_VERBOSE, "ImageBase: %p - %lx (%lx)\n",
+      LoadedImage->ImageBase,
+      (UINT64)LoadedImage->ImageBase + LoadedImage->ImageSize,
+      LoadedImage->ImageSize
+    ));
   DEBUG ((DEBUG_VERBOSE, "FilePath: %s\n", FilePathText ? FilePathText : L"(Unknown)"));
 
   if (FilePathText && StrStriBasic (FilePathText, L"boot.efi")) {
@@ -189,7 +197,7 @@ DetectBooterStartImage (
         DEBUG ((DEBUG_WARN, "Failed to set recovery-boot-mode: %r\n", Status));
 
       Status = gRT->SetVariable (L"aptiofixflag", &gAppleBootVariableGuid, 0, 0, NULL);
-      DirectFreePool(Value);
+      FreePool (Value);
       ValueSize = 0;
     }
 
@@ -219,7 +227,7 @@ DetectBooterStartImage (
         gRT->ResetSystem (EfiResetCold, EFI_SUCCESS, 0, NULL);
       }
 
-      DirectFreePool (Value);
+      FreePool (Value);
     }
 
     mBootNestedCount++;
@@ -236,12 +244,12 @@ DetectBooterStartImage (
       FilePathText,
       gHibernateWake ? L" (hibernate wake)" : L"");
 
-    DirectFreePool (FilePathText);
+    FreePool (FilePathText);
 
     //
     // Run boot.efi with our overrides
     //
-    Status = RunImageWithOverrides (ImageHandle, Image, ExitDataSize, ExitData);
+    Status = RunImageWithOverrides (ImageHandle, LoadedImage, ExitDataSize, ExitData);
   } else {
     //
     // Call the original function to do the job for any other booter
@@ -280,11 +288,11 @@ AptioMemoryFixEntrypoint (
   }
 
   gBS->InstallProtocolInterface (
-        &Handle,
-        &gAptioMemoryFixProtocolGuid,
-        EFI_NATIVE_INTERFACE,
-        &mAptioMemoryFixProtocol
-        );
+    &Handle,
+    &gAptioMemoryFixProtocolGuid,
+    EFI_NATIVE_INTERFACE,
+    &mAptioMemoryFixProtocol
+    );
 
   //
   // Install StartImage override

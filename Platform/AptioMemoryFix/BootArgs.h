@@ -9,6 +9,8 @@
 #ifndef APTIOFIX_BOOT_ARGS_H
 #define APTIOFIX_BOOT_ARGS_H
 
+#include "Utils.h"
+
 /*
  * Video information...
  */
@@ -175,35 +177,27 @@ typedef struct {
   UINT32  *deviceTreeLength;
 
   UINT32  *csrActiveConfig;
-} BootArguments;
+} AMF_BOOT_ARGUMENTS;
 
-BootArguments *
-EFIAPI
+AMF_BOOT_ARGUMENTS *
 GetBootArgs (
-  VOID *bootArgs
+  IN VOID  *BootArgs
   );
 
-VOID *
-EFIAPI
-BootArgsFind (
-  IN EFI_PHYSICAL_ADDRESS Start
+CONST CHAR8 *
+GetArgumentFromCommandLine (
+  IN CONST CHAR8  *CommandLine,
+  IN CONST CHAR8  *Argument,
+  IN CONST UINTN  ArgumentLength
   );
 
 VOID
 RemoveArgumentFromCommandLine (
-  CHAR8        *CommandLine,
-  CONST CHAR8  *Argument
+  IN OUT CHAR8        *CommandLine,
+  IN     CONST CHAR8  *Argument
   );
 
-// Invalidate found boot arg if:
-// - it is neither the beginning of Cmd, nor has space prefix            -> boot arg is a suffix of another arg
-// - it has neither space suffix, nor \0 suffix, and does not end with = -> boot arg is a prefix of another arg
-#define VERIFY_BOOT_ARG(Found, Cmd, Arg)                                       \
-  do {                                                                         \
-    UINTN Len = ARRAY_SIZE((Arg)) - 1;                                         \
-    if (!(Found) || ((Found) != (Cmd) && *((Found) - 1) != ' ') ||             \
-      ((Found)[Len] != ' ' && (Found)[Len] != '\0' && (Found)[Len-1] != '='))  \
-        (Found) = NULL;                                                        \
-  } while (0)
+/** A convenient macro for GetArgumentFromCommandLine(). NOTE: must use string literals only here as Arg. */
+#define GET_BOOT_ARG(Cmd, Arg) GetArgumentFromCommandLine ((Cmd), (Arg), LITERAL_STRLEN ((Arg)))
 
 #endif // APTIOFIX_BOOT_ARGS_H

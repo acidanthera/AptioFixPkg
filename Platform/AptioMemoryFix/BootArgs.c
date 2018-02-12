@@ -12,23 +12,23 @@
 
 #include "Config.h"
 #include "BootArgs.h"
-#include "Lib.h"
 
-STATIC BootArguments mBootArgs;
+STATIC AMF_BOOT_ARGUMENTS mBootArgs;
 
-BootArguments *
-EFIAPI
+AMF_BOOT_ARGUMENTS *
 GetBootArgs (
-  VOID *BootArgs
+  IN VOID  *BootArgs
   )
 {
   BootArgs1  *BA1 = BootArgs;
   BootArgs2  *BA2 = BootArgs;
 
-  ZeroMem(&mBootArgs, sizeof(mBootArgs));
+  ZeroMem (&mBootArgs, sizeof(mBootArgs));
 
   if (BA1->Version == kBootArgsVersion1) {
-    // pre Lion
+    //
+    // Pre Lion
+    //
     mBootArgs.MemoryMap = &BA1->MemoryMap;
     mBootArgs.MemoryMapSize = &BA1->MemoryMapSize;
     mBootArgs.MemoryMapDescriptorSize = &BA1->MemoryMapDescriptorSize;
@@ -39,7 +39,9 @@ GetBootArgs (
     mBootArgs.deviceTreeP = &BA1->deviceTreeP;
     mBootArgs.deviceTreeLength = &BA1->deviceTreeLength;
   } else {
-    // Lion and up
+    //
+    // Lion and newer
+    //
     mBootArgs.MemoryMap = &BA2->MemoryMap;
     mBootArgs.MemoryMapSize = &BA2->MemoryMapSize;
     mBootArgs.MemoryMapDescriptorSize = &BA2->MemoryMapDescriptorSize;
@@ -50,68 +52,43 @@ GetBootArgs (
     mBootArgs.deviceTreeP = &BA2->deviceTreeP;
     mBootArgs.deviceTreeLength = &BA2->deviceTreeLength;
 
-    if (BA2->flags & kBootArgsFlagCSRActiveConfig)
+    if (BA2->flags & kBootArgsFlagCSRActiveConfig) {
       mBootArgs.csrActiveConfig = &BA2->csrActiveConfig;
+    }
   }
 
   return &mBootArgs;
 }
 
-/** Searches for bootArgs from Start and returns pointer to bootArgs or ... does not return if can not be found.  **/
-VOID *
-EFIAPI
-BootArgsFind (
-  IN EFI_PHYSICAL_ADDRESS Start
+CONST CHAR8 *
+GetArgumentFromCommandLine (
+  IN CONST CHAR8  *CommandLine,
+  IN CONST CHAR8  *Argument,
+  IN CONST UINTN  ArgumentLength
   )
 {
-  UINT8        *ptr;
-  UINT8        archMode = sizeof(UINTN) * 8;
-  BootArgs1    *BA1;
-  BootArgs2    *BA2;
+  CHAR8 *Str;
 
-  // start searching from 0x200000.
-  ptr = (UINT8*)(UINTN)Start;
+  Str = AsciiStrStr (CommandLine, Argument);
 
-  while(TRUE) {
-
-    // check bootargs for 10.7 and up
-    BA2 = (BootArgs2*)ptr;
-
-    if (BA2->Version==2 && BA2->Revision==0
-      // plus additional checks - some values are not inited by boot.efi yet
-      && BA2->efiMode == archMode
-      && BA2->kaddr == 0 && BA2->ksize == 0
-      && BA2->efiSystemTable == 0
-      )
-    {
-      break;
-    }
-
-    // check bootargs for 10.4 - 10.6.x
-    BA1 = (BootArgs1*)ptr;
-
-    if (BA1->Version==1
-      && (BA1->Revision==6 || BA1->Revision==5 || BA1->Revision==4)
-      // plus additional checks - some values are not inited by boot.efi yet
-      && BA1->efiMode == archMode
-      && BA1->kaddr == 0 && BA1->ksize == 0
-      && BA1->efiSystemTable == 0
-      )
-    {
-      break;
-    }
-
-    ptr += 0x1000;
+  //
+  // Invalidate found boot arg if:
+  // - it is neither the beginning of Cmd, nor has space prefix            -> boot arg is a suffix of another arg
+  // - it has neither space suffix, nor \0 suffix, and does not end with = -> boot arg is a prefix of another arg
+  //
+  if (!Str || (Str != CommandLine && *(Str - 1) != ' ') ||
+      (Str[ArgumentLength] != ' ' && Str[ArgumentLength] != '\0' &&
+       Str[ArgumentLength - 1] != '=')) {
+    return NULL;
   }
 
-  DEBUG ((DEBUG_VERBOSE, "Found bootArgs at %p\n", ptr));
-  return ptr;
+  return Str;
 }
 
 VOID
 RemoveArgumentFromCommandLine (
-  CHAR8        *CommandLine,
-  CONST CHAR8  *Argument
+  IN OUT CHAR8        *CommandLine,
+  IN     CONST CHAR8  *Argument
   )
 {
   CHAR8 *Match = NULL;
@@ -119,24 +96,28 @@ RemoveArgumentFromCommandLine (
   do {
     Match = AsciiStrStr (CommandLine, Argument);
     if (Match && (Match == CommandLine || *(Match - 1) == ' ')) {
-      while (*Match != ' ' && *Match != '\0')
+      while (*Match != ' ' && *Match != '\0') {
         *Match++ = ' ';
+      }
     }
   } while (Match != NULL);
 
+  //
   // Write zeroes to reduce data leak
+  //
   CHAR8 *Updated = CommandLine;
 
-  while (CommandLine[0] == ' ')
+  while (CommandLine[0] == ' ') {
     CommandLine++;
+  }
 
   while (CommandLine[0] != '\0') {
-    while (CommandLine[0] == ' ' && CommandLine[1] == ' ')
+    while (CommandLine[0] == ' ' && CommandLine[1] == ' ') {
       CommandLine++;
+    }
 
     *Updated++ = *CommandLine++;
   }
 
-  while (Updated != CommandLine)
-    *Updated++ = '\0';
+  ZeroMem (Updated, CommandLine - Updated);
 }

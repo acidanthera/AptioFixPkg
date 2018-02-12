@@ -7,7 +7,8 @@ AptioFixPkg drivers fixing certain UEFI APTIO Firmware issues relevant to bootin
 
 ## AptioInputFix 
 
-Reference driver to shim AMI APTIO proprietary mouse & keyboard protocols for File Vault 2 GUI input support.
+Reference driver to shim AMI APTIO proprietary mouse & keyboard protocols for File Vault 2 GUI input support.  
+Generally [modified UsbKbDxe](https://github.com/CupertinoNet/CupertinoModulePkg) by [CupertinoNet](https://github.com/CupertinoNet) team works better on APTIO V, but for Z77, Z87, and similar AptioInputFix may be the only solution. 
 
 #### Features
 - Sends pressed keys to APPLE_KEY_MAP_DATABASE_PROTOCOL

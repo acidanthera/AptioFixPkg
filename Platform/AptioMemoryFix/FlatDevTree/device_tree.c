@@ -28,7 +28,6 @@
 
 #include <Library/UefiLib.h>
 #include <Library/MemoryAllocationLib.h>
-#include "Lib.h"
 #include "device_tree.h"
 
 #define round_long(x)  (((x) + 3UL) & ~(3UL))
@@ -248,7 +247,7 @@ DTCreateEntryIterator(CONST DTEntry startEntry, DTEntryIterator *iterator)
     return kError;
   }
 
-  iter = (RealDTEntryIterator) DirectAllocatePool(sizeof(struct OpaqueDTEntryIterator));
+  iter = (RealDTEntryIterator) AllocatePool(sizeof(struct OpaqueDTEntryIterator));
   if (startEntry != NULL) {
     iter->outerScope = (RealDTEntry) startEntry;
     iter->currentScope = (RealDTEntry) startEntry;
@@ -272,9 +271,9 @@ DTDisposeEntryIterator(DTEntryIterator iterator)
 
   while ((scope = iter->savedScope) != NULL) {
     iter->savedScope = scope->nextScope;
-    DirectFreePool(scope);
+    FreePool(scope);
   }
-  DirectFreePool(iterator);
+  FreePool(iterator);
   return kSuccess;
 }
 
@@ -287,7 +286,7 @@ DTEnterEntry(DTEntryIterator iterator, DTEntry childEntry)
   if (childEntry == NULL) {
     return kError;
   }
-  newScope = (DTSavedScopePtr) DirectAllocatePool(sizeof(struct DTSavedScope));
+  newScope = (DTSavedScopePtr) AllocatePool(sizeof(struct DTSavedScope));
   newScope->nextScope = iter->savedScope;
   newScope->scope = iter->currentScope;
   newScope->entry = iter->currentEntry;
@@ -317,7 +316,7 @@ DTExitEntry(DTEntryIterator iterator, DTEntry *currentPosition)
   iter->currentIndex = newScope->index;
   *currentPosition = iter->currentEntry;
 
-  DirectFreePool(newScope);
+  FreePool(newScope);
 
   return kSuccess;
 }
@@ -355,7 +354,7 @@ DTRestartEntryIteration(DTEntryIterator iterator)
   if (outer) {
     while ((scope = iter->savedScope) != NULL) {
       iter->savedScope = scope->nextScope;
-      DirectFreePool(scope);
+      FreePool(scope);
     }
     iter->currentScope = iter->outerScope;
   }
@@ -393,7 +392,7 @@ DTCreatePropertyIterator(CONST DTEntry entry, DTPropertyIterator *iterator)
 {
   RealDTPropertyIterator iter;
 
-  iter = (RealDTPropertyIterator) DirectAllocatePool(sizeof(struct OpaqueDTPropertyIterator));
+  iter = (RealDTPropertyIterator) AllocatePool(sizeof(struct OpaqueDTPropertyIterator));
   iter->entry = entry;
   iter->currentProperty = NULL;
   iter->currentIndex = 0;
@@ -420,7 +419,7 @@ DTCreatePropertyIteratorNoAlloc(CONST DTEntry entry, DTPropertyIterator iterator
 INTN
 DTDisposePropertyIterator(DTPropertyIterator iterator)
 {
-  DirectFreePool(iterator);
+  FreePool(iterator);
   return kSuccess;
 }
 

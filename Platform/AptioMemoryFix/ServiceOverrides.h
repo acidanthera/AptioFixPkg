@@ -100,6 +100,13 @@ MOExitBootServices (
   );
 
 EFI_STATUS
+ForceExitBootServices (
+  IN EFI_EXIT_BOOT_SERVICES  ExitBs,
+  IN EFI_HANDLE              ImageHandle,
+  IN UINTN                   MapKey
+  );
+
+EFI_STATUS
 EFIAPI
 MOSetVirtualAddressMap (
   IN UINTN                  MemoryMapSize,
