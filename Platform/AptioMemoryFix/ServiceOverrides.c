@@ -18,6 +18,7 @@
 #include "ServiceOverrides.h"
 #include "BootArgs.h"
 #include "BootFixes.h"
+#include "CustomSlide.h"
 #include "Hibernate.h"
 #include "MemoryMap.h"
 #include "RtShims.h"
@@ -174,9 +175,9 @@ UninstallRtOverrides (
 EFI_STATUS
 EFIAPI
 MOHandleProtocol (
-  IN EFI_HANDLE    Handle,
-  IN EFI_GUID      *Protocol,
-  OUT VOID         **Interface
+  IN     EFI_HANDLE  Handle,
+  IN     EFI_GUID    *Protocol,
+     OUT VOID        **Interface
   )
 {
   EFI_STATUS                    Status;
@@ -204,9 +205,9 @@ MOHandleProtocol (
 EFI_STATUS
 EFIAPI
 MOAllocatePages (
-  IN EFI_ALLOCATE_TYPE         Type,
-  IN EFI_MEMORY_TYPE           MemoryType,
-  IN UINTN                     NumberOfPages,
+  IN     EFI_ALLOCATE_TYPE     Type,
+  IN     EFI_MEMORY_TYPE       MemoryType,
+  IN     UINTN                 NumberOfPages,
   IN OUT EFI_PHYSICAL_ADDRESS  *Memory
   )
 {
@@ -254,9 +255,9 @@ MOAllocatePages (
 EFI_STATUS
 EFIAPI
 MOAllocatePool (
-  IN EFI_MEMORY_TYPE       Type,
-  IN  UINTN                Size,
-  OUT VOID                 **Buffer
+  IN     EFI_MEMORY_TYPE  Type,
+  IN     UINTN            Size,
+     OUT VOID             **Buffer
   )
 {
   //
@@ -313,7 +314,7 @@ MOAllocatePool (
 EFI_STATUS
 EFIAPI
 MOFreePool (
-  IN VOID                 *Buffer
+  IN VOID  *Buffer
   )
 {
   //
@@ -333,9 +334,9 @@ EFIAPI
 MOGetMemoryMap (
   IN OUT UINTN                  *MemoryMapSize,
   IN OUT EFI_MEMORY_DESCRIPTOR  *MemoryMap,
-  OUT UINTN                     *MapKey,
-  OUT UINTN                     *DescriptorSize,
-  OUT UINT32                    *DescriptorVersion
+     OUT UINTN                  *MapKey,
+     OUT UINTN                  *DescriptorSize,
+     OUT UINT32                 *DescriptorVersion
   )
 {
   EFI_STATUS            Status;
@@ -368,9 +369,9 @@ EFIAPI
 OrgGetMemoryMap (
   IN OUT UINTN                  *MemoryMapSize,
   IN OUT EFI_MEMORY_DESCRIPTOR  *MemoryMap,
-  OUT UINTN                     *MapKey,
-  OUT UINTN                     *DescriptorSize,
-  OUT UINT32                    *DescriptorVersion
+     OUT UINTN                  *MapKey,
+     OUT UINTN                  *DescriptorSize,
+     OUT UINT32                 *DescriptorVersion
   )
 {
   return (mStoredGetMemoryMap ? mStoredGetMemoryMap : gBS->GetMemoryMap) (
@@ -388,8 +389,8 @@ OrgGetMemoryMap (
 EFI_STATUS
 EFIAPI
 MOExitBootServices (
-  IN EFI_HANDLE     ImageHandle,
-  IN UINTN          MapKey
+  IN EFI_HANDLE  ImageHandle,
+  IN UINTN       MapKey
   )
 {
   EFI_STATUS               Status;
@@ -426,7 +427,7 @@ MOExitBootServices (
     DEBUG ((DEBUG_VERBOSE, "ExitBootServices: gMinAllocatedAddr: %lx, gMaxAllocatedAddr: %lx\n", gMinAllocatedAddr, gMaxAllocatedAddr));
 
     SlideAddr  = gMinAllocatedAddr - 0x100000;
-    MachOImage = (VOID*)(UINTN)(SlideAddr + 0x200000);
+    MachOImage = (VOID*)(UINTN)(SlideAddr + SLIDE_GRANULARITY);
     KernelEntryFromMachOPatchJump (MachOImage, SlideAddr);
   } else {
     //
@@ -546,7 +547,7 @@ MOSetVirtualAddressMap (
   //
   Status = ExecSetVirtualAddressesToMemMap (MemoryMapSize, DescriptorSize, DescriptorVersion, VirtualMap);
 
-  CopyEfiSysTableToSeparateRtDataArea (&EfiSystemTable);
+  CopyEfiSysTableToRtArea (&EfiSystemTable);
 
   //
   // Correct shim pointers right away

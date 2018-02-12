@@ -14,14 +14,14 @@
 #include <Library/UefiBootServicesTableLib.h>
 
 #include "Config.h"
+#include "CustomSlide.h"
 #include "BootArgs.h"
 #include "BootFixes.h"
-#include "CustomSlide.h"
-#include "MemoryMap.h"
-#include "Utils.h"
-#include "FlatDevTree/device_tree.h"
 #include "CsrConfig.h"
+#include "FlatDevTree/device_tree.h"
+#include "MemoryMap.h"
 #include "RtShims.h"
+#include "Utils.h"
 
 //
 // Modified boot-args buffer with an additional slide parameter, when custom slide is used.

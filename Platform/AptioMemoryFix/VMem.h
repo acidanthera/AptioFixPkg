@@ -23,7 +23,7 @@ Extended by dmazar.
 #ifndef APTIOFIX_VMEM_H
 #define APTIOFIX_VMEM_H
 
-#pragma pack(1)
+#pragma pack(push, 1)
 
 //
 // Page-Map Level-4 Offset (PML4) and
@@ -145,7 +145,7 @@ typedef union {
 
 #define VA_FIX_SIGN_EXTEND(VA) VA.Pg4K.SignExtend = (VA.Pg4K.PML4Offset & 0x100) ? 0xFFFF : 0;
 
-#pragma pack()
+#pragma pack(pop)
 
 // 64 bit
 #define CR3_ADDR_MASK   0x000FFFFFFFFFF000
@@ -173,9 +173,9 @@ PrintPageTable (
 /** Returns physical addr for given virtual addr. */
 EFI_STATUS 
 GetPhysicalAddr (
-  PAGE_MAP_AND_DIRECTORY_POINTER *PageTable,
-  EFI_VIRTUAL_ADDRESS            VirtualAddr,
-  EFI_PHYSICAL_ADDRESS           *PhysicalAddr
+  PAGE_MAP_AND_DIRECTORY_POINTER  *PageTable,
+  EFI_VIRTUAL_ADDRESS             VirtualAddr,
+  EFI_PHYSICAL_ADDRESS            *PhysicalAddr
   );
 
 /** Inits vm memory pool. Should be called while boot services are still usable. */
@@ -187,23 +187,23 @@ VmAllocateMemoryPool (
 /** Maps (remaps) 4K page given by VirtualAddr to PhysicalAddr page in PageTable. */
 EFI_STATUS
 VmMapVirtualPage (
-  PAGE_MAP_AND_DIRECTORY_POINTER *PageTable,
-  EFI_VIRTUAL_ADDRESS            VirtualAddr,
-  EFI_PHYSICAL_ADDRESS           PhysicalAddr
+  PAGE_MAP_AND_DIRECTORY_POINTER  *PageTable,
+  EFI_VIRTUAL_ADDRESS             VirtualAddr,
+  EFI_PHYSICAL_ADDRESS            PhysicalAddr
   );
 
 /** Maps (remaps) NumPages 4K pages given by VirtualAddr to PhysicalAddr pages in PageTable. */
 EFI_STATUS
 VmMapVirtualPages (
-  PAGE_MAP_AND_DIRECTORY_POINTER *PageTable,
-  EFI_VIRTUAL_ADDRESS            VirtualAddr,
-  UINTN                          NumPages,
-  EFI_PHYSICAL_ADDRESS           PhysicalAddr
+  PAGE_MAP_AND_DIRECTORY_POINTER  *PageTable,
+  EFI_VIRTUAL_ADDRESS             VirtualAddr,
+  UINTN                           NumPages,
+  EFI_PHYSICAL_ADDRESS            PhysicalAddr
   );
 
-/** Flashes TLB caches. */
+/** Flushes TLB caches. */
 VOID
-VmFlashCaches (
+VmFlushCaches (
   VOID
   );
 

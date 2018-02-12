@@ -21,6 +21,14 @@ ShrinkMemMap (
   IN     UINTN                  DescriptorSize
   );
 
+/** Protects AMI CSM region from being overwritten by the kernel. */
+VOID
+ProtectCsmRegion (
+  UINTN                  MemoryMapSize,
+  EFI_MEMORY_DESCRIPTOR  *MemoryMap,
+  UINTN                  DescriptorSize
+  );
+
 /** Prints mem map. */
 VOID
 PrintMemMap (

@@ -7,10 +7,8 @@
 **/
 
 #include <Library/UefiBootServicesTableLib.h>
-
 #include <Library/UefiLib.h>
 #include <Library/DebugLib.h>
-#include <Library/PrintLib.h>
 
 #include "UefiLoader.h"
 #include "Mach-O.h"
@@ -20,8 +18,9 @@
 
 /** Returns Mach-O entry point from LC_UNIXTHREAD loader command. */
 UINTN
-EFIAPI
-MachOGetEntryAddress(IN VOID *MachOImage)
+MachOGetEntryAddress(
+  IN VOID  *MachOImage
+  )
 {
   struct mach_header      *MHdr;
   struct mach_header_64   *MHdr64;
@@ -36,28 +35,36 @@ MachOGetEntryAddress(IN VOID *MachOImage)
   Address = 0;
   MHdr = (struct mach_header *)MachOImage;
   MHdr64 = (struct mach_header_64 *)MachOImage;
-  DEBUG ((DEBUG_VERBOSE, "MachOImage: %p, magic: %x", MachOImage, MHdr->magic));
+  DEBUG ((DEBUG_VERBOSE, "Mach-O image: %p, magic: %x", MachOImage, MHdr->magic));
 
   if (MHdr->magic == MH_MAGIC || MHdr->magic == MH_CIGAM) {
-    // 32 bit header
+    //
+    // 32-bit header
+    //
     DEBUG ((DEBUG_VERBOSE, " -> 32 bit\n"));
     Is64Bit = FALSE;
     NCmds = MHdr->ncmds;
-    LCmd = PTR_OFFSET(MachOImage, sizeof(struct mach_header), struct load_command *);
+    LCmd = PTR_OFFSET (MachOImage, sizeof(struct mach_header), struct load_command *);
   } else if (MHdr64->magic == MH_MAGIC_64 || MHdr64->magic == MH_CIGAM_64) {
-    // 64 bit header
+    //
+    // 64-bit header
+    //
     DEBUG ((DEBUG_VERBOSE, " -> 64 bit\n"));
     Is64Bit = TRUE;
     NCmds = MHdr64->ncmds;
-    LCmd = PTR_OFFSET(MachOImage, sizeof(struct mach_header_64), struct load_command *);
+    LCmd = PTR_OFFSET (MachOImage, sizeof(struct mach_header_64), struct load_command *);
   } else {
-    // invalid MachOImage
+    //
+    // Invalid Mach-O image
+    //
     return Address;
   }
-  DEBUG ((DEBUG_VERBOSE, "ncmds: %d\n", NCmds, LCmd));
-  //gBS->Stall(10 * 1000000);
 
-  // iterate over load commands
+  DEBUG ((DEBUG_VERBOSE, "Number of cmds: %d, address: %p\n", NCmds, LCmd));
+
+  //
+  // Iterate over load commands
+  //
   for (Index = 0; Index < NCmds; Index++) {
 
     DEBUG ((DEBUG_VERBOSE, "%d. LCmd: %p, cmd: %x, size: %d\n", Index, LCmd, LCmd->cmd, LCmd->cmdsize));
@@ -76,7 +83,7 @@ MachOGetEntryAddress(IN VOID *MachOImage)
       //  uint32_t count         count of longs in thread state */
       //  struct XXX_thread_state state   thread state for this flavor */
       //
-      ThreadState = PTR_OFFSET(LCmd, sizeof(struct load_command) + 2 * sizeof(UINT32), i386_thread_state_t *);
+      ThreadState = PTR_OFFSET (LCmd, sizeof(struct load_command) + 2 * sizeof(UINT32), i386_thread_state_t *);
       ThreadState64 = (x86_thread_state64_t *)ThreadState;
 
       if (Is64Bit) {
@@ -87,12 +94,10 @@ MachOGetEntryAddress(IN VOID *MachOImage)
       break;
     }
 
-    // next command
-    LCmd = PTR_OFFSET(LCmd, LCmd->cmdsize, struct load_command *);
+    LCmd = PTR_OFFSET (LCmd, LCmd->cmdsize, struct load_command *);
 
   }
 
   DEBUG ((DEBUG_VERBOSE, "Address: %lx\n", Address));
-  //gBS->Stall(20 * 1000000);
   return Address;
 }

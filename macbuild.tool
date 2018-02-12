@@ -17,6 +17,18 @@ prompt() {
   fi
 }
 
+updaterepo() {
+  if [ ! -d "$2" ]; then
+    git clone "$1" "$2" || exit 1
+  fi
+  pushd "$2" >/dev/null
+  git pull
+  if [ "$3" != "" ]; then
+    git checkout "$3"
+  fi
+  popd >/dev/null
+}
+
 if [ "$BUILDDIR" != "$(printf "%s\n" $BUILDDIR)" ]; then
   echo "EDK2 build system may still fail to support directories with spaces!"
   exit 1
@@ -68,19 +80,21 @@ fi
 
 if [ ! -f edk2/edk2.ready ]; then
   rm -rf edk2
-  git clone https://github.com/tianocore/edk2 || exit 1
-  cd edk2
-  git clone https://github.com/CupertinoNet/CupertinoModulePkg || exit 1
-  git clone https://github.com/CupertinoNet/EfiMiscPkg || exit 1
-  git clone https://github.com/CupertinoNet/EfiPkg || exit 1
-  ln -s .. AptioFixPkg || exit 1
-  source edksetup.sh || exit 1
-  make -C BaseTools || exit 1
-  touch edk2.ready
-else
-  cd edk2
-  source edksetup.sh || exit 1
 fi
+
+updaterepo "https://github.com/tianocore/edk2" edk2 || exit 1
+cd edk2
+updaterepo "https://github.com/CupertinoNet/CupertinoModulePkg" CupertinoModulePkg || exit 1
+updaterepo "https://github.com/CupertinoNet/EfiMiscPkg" EfiMiscPkg || exit 1
+updaterepo "https://github.com/CupertinoNet/EfiPkg" EfiPkg || exit 1
+
+if [ -f AptioFixPkg ]; then
+  ln -s .. AptioFixPkg || exit 1
+fi
+
+source edksetup.sh || exit 1
+make -C BaseTools || exit 1
+touch edk2.ready
 
 if [ "$MODE" = "" ] || [ "$MODE" = "DEBUG" ]; then
   build -a X64 -b DEBUG -t XCODE5 -p AptioFixPkg/AptioFixPkg.dsc || exit 1

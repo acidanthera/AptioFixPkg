@@ -9,19 +9,34 @@
 #ifndef APTIOFIX_BOOT_FIXES_H
 #define APTIOFIX_BOOT_FIXES_H
 
+//
+// Original and relocated new area for EFI System Table.
+// XNU requires gST pointers to be passed relative to boot.efi.
+// We have to allocate a new system table and let boot.efi relocate it.
+//
 extern EFI_PHYSICAL_ADDRESS   gSysTableRtArea;
-
 extern EFI_PHYSICAL_ADDRESS   gRelocatedSysTableRtArea;
 
+//
 // TRUE if we are doing hibernate wake
+//
 extern BOOLEAN gHibernateWake;
 
+//
 // TRUE if booting with -aptiodump
+//
 extern BOOLEAN gDumpMemArgPresent;
 
+//
 // TRUE if booting with a manually specified slide=X
+//
 extern BOOLEAN gSlideArgPresent;
 
+VOID
+ReadBooterArguments (
+  CHAR16  *Options,
+  UINTN   OptionsSize
+  );
 
 EFI_STATUS
 PrepareJumpFromKernel (
@@ -30,13 +45,13 @@ PrepareJumpFromKernel (
 
 EFI_STATUS
 KernelEntryPatchJump (
-  UINT32 KernelEntry
+  UINT32  KernelEntry
   );
 
 EFI_STATUS
 KernelEntryFromMachOPatchJump (
-  VOID *MachOImage,
-  UINTN SlideAddr
+  VOID   *MachOImage,
+  UINTN  SlideAddr
   );
 
 EFI_STATUS
@@ -48,33 +63,8 @@ ExecSetVirtualAddressesToMemMap (
   );
 
 VOID
-CopyEfiSysTableToSeparateRtDataArea (
-  IN OUT UINT32             *EfiSystemTable
-  );
-
-VOID
-ReadBooterArguments (
-  CHAR16 *Options,
-  UINTN   OptionsSize
-  );
-
-/** Protects CSM regions from the kernel and boot.efi. */
-VOID
-ProtectCsmRegion (
-  UINTN                    MemoryMapSize,
-  EFI_MEMORY_DESCRIPTOR    *MemoryMap,
-  UINTN                    DescriptorSize
-  );
-
-/** Fixes stuff for booting without relocation block. Called when boot.efi jumps to kernel. */
-UINTN
-FixBooting (
-  UINTN   BootArgs
-  );
-
-/** Fixes stuff for hibernate wake booting without relocation block. Called when boot.efi jumps to kernel. */
-UINTN FixHibernateWake (
-  UINTN   ImageHeaderPage
+CopyEfiSysTableToRtArea (
+  IN OUT UINT32  *EfiSystemTable
   );
 
 #endif // APTIOFIX_BOOT_FIXES_H

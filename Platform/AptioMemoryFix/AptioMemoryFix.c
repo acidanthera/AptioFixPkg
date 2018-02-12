@@ -6,13 +6,12 @@
 
  **/
 
-#include <Library/UefiLib.h>
-#include <Library/UefiBootServicesTableLib.h>
-#include <Library/UefiRuntimeServicesTableLib.h>
 #include <Library/BaseMemoryLib.h>
-#include <Library/MemoryAllocationLib.h>
 #include <Library/DebugLib.h>
-#include <Library/CpuLib.h>
+#include <Library/MemoryAllocationLib.h>
+#include <Library/UefiBootServicesTableLib.h>
+#include <Library/UefiLib.h>
+#include <Library/UefiRuntimeServicesTableLib.h>
 
 #include <Guid/GlobalVariable.h>
 
@@ -22,12 +21,10 @@
 #include "Config.h"
 #include "BootArgs.h"
 #include "BootFixes.h"
-#include "AsmFuncs.h"
-#include "VMem.h"
-#include "Hibernate.h"
-#include "RtShims.h"
 #include "CustomSlide.h"
+#include "RtShims.h"
 #include "ServiceOverrides.h"
+#include "VMem.h"
 
 //
 // One could discover AptioMemoryFix with this protocol
@@ -46,22 +43,6 @@ STATIC UINTN            mBootNestedCount = 0;
 //
 STATIC EFI_IMAGE_START  mStartImage = NULL;
 
-/** Callback called when boot.efi jumps to kernel. */
-UINTN
-EFIAPI
-KernelEntryPatchJumpBack (
-  UINTN    Args,
-  BOOLEAN  ModeX64
-  )
-{
-  if (!gHibernateWake)
-    Args = FixBooting (Args);
-  else
-    Args = FixHibernateWake (Args);
-
-  return Args;
-}
-
 /** SWITCH_STACK_ENTRY_POINT implementation:
  * Allocates kernel image reloc block, installs UEFI overrides and starts given image.
  * If image returns, then deinstalls overrides and releases kernel image reloc block.
@@ -70,10 +51,10 @@ KernelEntryPatchJumpBack (
  */
 EFI_STATUS
 RunImageWithOverrides(
-  IN EFI_HANDLE                 ImageHandle,
-  IN EFI_LOADED_IMAGE_PROTOCOL  *Image,
-  OUT UINTN                     *ExitDataSize,
-  OUT CHAR16                    **ExitData  OPTIONAL
+  IN     EFI_HANDLE                 ImageHandle,
+  IN     EFI_LOADED_IMAGE_PROTOCOL  *Image,
+     OUT UINTN                      *ExitDataSize,
+     OUT CHAR16                     **ExitData  OPTIONAL
   )
 {
   EFI_STATUS           Status;
@@ -84,7 +65,7 @@ RunImageWithOverrides(
   // proper place and jumping back to it)
   //
   Status = PrepareJumpFromKernel ();
-  if (EFI_ERROR(Status)) {
+  if (EFI_ERROR (Status)) {
     return Status;
   }
 
@@ -92,7 +73,7 @@ RunImageWithOverrides(
   // Init VMem memory pool - will be used after ExitBootServices
   //
   Status = VmAllocateMemoryPool ();
-  if (EFI_ERROR(Status)) {
+  if (EFI_ERROR (Status)) {
     return Status;
   }
 
@@ -123,7 +104,7 @@ RunImageWithOverrides(
   //
   // Read options
   //
-  ReadBooterArguments((CHAR16*)Image->LoadOptions, Image->LoadOptionsSize/sizeof(CHAR16));
+  ReadBooterArguments ((CHAR16*)Image->LoadOptions, Image->LoadOptionsSize/sizeof(CHAR16));
 
   //
   // Run image
@@ -149,9 +130,9 @@ RunImageWithOverrides(
 EFI_STATUS
 EFIAPI
 DetectBooterStartImage (
-  IN EFI_HANDLE      ImageHandle,
-  OUT UINTN          *ExitDataSize,
-  OUT CHAR16         **ExitData  OPTIONAL
+  IN     EFI_HANDLE  ImageHandle,
+     OUT UINTN       *ExitDataSize,
+     OUT CHAR16      **ExitData  OPTIONAL
   )
 {
   EFI_STATUS                  Status;
@@ -270,9 +251,9 @@ AptioMemoryFixEntrypoint (
   IN EFI_SYSTEM_TABLE  *SystemTable
   )
 {
-  EFI_STATUS    Status;
-  VOID          *Interface;
-  EFI_HANDLE    Handle = NULL;
+  EFI_STATUS  Status;
+  VOID        *Interface;
+  EFI_HANDLE  Handle = NULL;
 
   Status = gBS->LocateProtocol (
     &gAptioMemoryFixProtocolGuid,

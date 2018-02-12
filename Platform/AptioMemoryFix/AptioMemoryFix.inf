@@ -67,8 +67,8 @@
   Utils.h
 
 [Sources.X64]
-  X64/AsmFuncsX64.nasm
-  X64/RtShims.nasm
+  X64/AsmFuncs.nasm
+  X64/AsmRtShims.nasm
 
 [Guids]
   gEfiFileInfoGuid                            ## CONSUMES

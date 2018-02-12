@@ -540,7 +540,7 @@ VmMapVirtualPages (
 
 /** Flashes TLB caches. */
 VOID
-VmFlashCaches (
+VmFlushCaches (
   VOID
   )
 {

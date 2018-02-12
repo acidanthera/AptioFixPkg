@@ -11,7 +11,8 @@
 
 /** Returns Mach-O entry point from LC_UNIXTHREAD loader command. */
 UINTN
-EFIAPI
-MachOGetEntryAddress(IN VOID *MachOImage);
+MachOGetEntryAddress (
+  IN VOID  *MachOImage
+  );
 
 #endif //APTIOFIX_MACH_O_H

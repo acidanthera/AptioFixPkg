@@ -44,32 +44,32 @@ UninstallRtOverrides (
 EFI_STATUS
 EFIAPI
 MOHandleProtocol (
-  IN EFI_HANDLE    Handle,
-  IN EFI_GUID      *Protocol,
-  OUT VOID         **Interface
+  IN     EFI_HANDLE  Handle,
+  IN     EFI_GUID    *Protocol,
+     OUT VOID        **Interface
   );
 
 EFI_STATUS
 EFIAPI
 MOAllocatePages (
-  IN EFI_ALLOCATE_TYPE         Type,
-  IN EFI_MEMORY_TYPE           MemoryType,
-  IN UINTN                     NumberOfPages,
+  IN     EFI_ALLOCATE_TYPE     Type,
+  IN     EFI_MEMORY_TYPE       MemoryType,
+  IN     UINTN                 NumberOfPages,
   IN OUT EFI_PHYSICAL_ADDRESS  *Memory
   );
 
 EFI_STATUS
 EFIAPI
 MOAllocatePool (
-  IN EFI_MEMORY_TYPE       Type,
-  IN  UINTN                Size,
-  OUT VOID                 **Buffer
+  IN     EFI_MEMORY_TYPE  Type,
+  IN     UINTN            Size,
+     OUT VOID             **Buffer
   );
 
 EFI_STATUS
 EFIAPI
 MOFreePool (
-  IN VOID                 *Buffer
+  IN VOID  *Buffer
   );
 
 EFI_STATUS
@@ -77,9 +77,9 @@ EFIAPI
 MOGetMemoryMap (
   IN OUT UINTN                  *MemoryMapSize,
   IN OUT EFI_MEMORY_DESCRIPTOR  *MemoryMap,
-  OUT UINTN                     *MapKey,
-  OUT UINTN                     *DescriptorSize,
-  OUT UINT32                    *DescriptorVersion
+     OUT UINTN                  *MapKey,
+     OUT UINTN                  *DescriptorSize,
+     OUT UINT32                 *DescriptorVersion
   );
 
 EFI_STATUS
@@ -87,16 +87,16 @@ EFIAPI
 OrgGetMemoryMap (
   IN OUT UINTN                  *MemoryMapSize,
   IN OUT EFI_MEMORY_DESCRIPTOR  *MemoryMap,
-  OUT UINTN                     *MapKey,
-  OUT UINTN                     *DescriptorSize,
-  OUT UINT32                    *DescriptorVersion
+     OUT UINTN                  *MapKey,
+     OUT UINTN                  *DescriptorSize,
+     OUT UINT32                 *DescriptorVersion
   );
 
 EFI_STATUS
 EFIAPI
 MOExitBootServices (
-  IN EFI_HANDLE     ImageHandle,
-  IN UINTN          MapKey
+  IN EFI_HANDLE  ImageHandle,
+  IN UINTN       MapKey
   );
 
 EFI_STATUS
