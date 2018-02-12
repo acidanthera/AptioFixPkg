@@ -21,6 +21,17 @@
 extern UINTN gRtShimsDataStart;
 extern UINTN gRtShimsDataEnd;
 
+extern UINTN gGetVariable;
+extern UINTN gGetNextVariableName;
+extern UINTN gSetVariable;
+extern UINTN gGetTime;
+extern UINTN gSetTime;
+extern UINTN gGetWakeupTime;
+extern UINTN gSetWakeupTime;
+extern UINTN gGetNextHighMonoCount;
+extern UINTN gResetSystem;
+extern UINTN gGetVariableOverride;
+
 extern UINTN RtShimGetVariable;
 extern UINTN RtShimGetNextVariableName;
 extern UINTN RtShimSetVariable;
@@ -188,4 +199,23 @@ VirtualizeRtShims (
   }
 
   mRtShimsAddrUpdated = TRUE;
+}
+
+EFI_STATUS
+EFIAPI
+OrgGetVariable (
+  IN     CHAR16    *VariableName,
+  IN     EFI_GUID  *VendorGuid,
+  OUT    UINT32    *Attributes OPTIONAL,
+  IN OUT UINTN     *DataSize,
+  OUT    VOID      *Data
+  )
+{
+  return (gGetVariable ? (EFI_GET_VARIABLE)gGetVariable : gRT->GetVariable) (
+    VariableName,
+    VendorGuid,
+    Attributes,
+    DataSize,
+    Data
+    );
 }

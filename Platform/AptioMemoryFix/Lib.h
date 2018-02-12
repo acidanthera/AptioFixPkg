@@ -18,10 +18,6 @@ extern CHAR16 *mEfiLocateSearchType[];
 #define PREV_MEMORY_DESCRIPTOR(MemoryDescriptor, Size) \
   ((EFI_MEMORY_DESCRIPTOR *)((UINT8 *)(MemoryDescriptor) - (Size)))
 
-/** Quick and dirty dec digit printer */
-#define DEC_TO_ASCII(Val) ("0123456789      "[(Val) & 0xF])
-#define DEC_SPACE 0xF
-
 /** Map of known guids and friendly names. Searchable with GuidStr() */
 typedef struct {
   EFI_GUID    *Guid;

@@ -327,51 +327,58 @@ CopyEfiSysTableToSeparateRtDataArea (
 
 VOID
 ReadBooterArguments (
-    CHAR16 *Options,
-    UINTN OptionsSize
-)
+  CHAR16  *Options,
+  UINTN   OptionsSize
+  )
 {
-  CHAR8 BootArgsVar[BOOT_LINE_LENGTH];
-  EFI_STATUS Status;
-  UINTN BootArgsVarLen;
+  CHAR8       BootArgsVar[BOOT_LINE_LENGTH];
+  UINTN       BootArgsVarLen = BOOT_LINE_LENGTH;
+  EFI_STATUS  Status;
+  UINTN       LastIndex;
+  CHAR16      Last;
 
   if (Options && OptionsSize > 0) {
-    UINTN LastIndex;
-    CHAR16 Last;
+    //
     // Just in case we do not have 0-termination
+    //
     LastIndex = OptionsSize - 1;
     Last = Options[LastIndex];
     Options[LastIndex] = '\0';
 
-    ConvertUnicodeStrToAsciiStr(Options, BootArgsVar, BOOT_LINE_LENGTH);
+    ConvertUnicodeStrToAsciiStr (Options, BootArgsVar, BOOT_LINE_LENGTH);
 
-    gSlideArgPresent |= (GET_BOOT_ARG(BootArgsVar, "slide=") != NULL);
+    gSlideArgPresent |= (GET_BOOT_ARG (BootArgsVar, "slide=") != NULL);
 
 #if APTIOFIX_ALLOW_MEMORY_DUMP_ARG == 1
-    gDumpMemArgPresent |= (GET_BOOT_ARG(BootArgsVar, "-aptiodump") != NULL);
+    gDumpMemArgPresent |= (GET_BOOT_ARG (BootArgsVar, "-aptiodump") != NULL);
 #endif
 
+    //
+    // Options do not belong to us, restore the changed value
+    //
     Options[LastIndex] = Last;
   }
 
-  BootArgsVarLen = BOOT_LINE_LENGTH;
-
+  //
   // Important to avoid triggering boot-args wrapper too early
-  Status = ((EFI_GET_VARIABLE)gGetVariable)(
-      L"boot-args",
-      &gAppleBootVariableGuid,
-      NULL, &BootArgsVarLen,
-      &BootArgsVar[0]
-  );
+  //
+  Status = OrgGetVariable (
+    L"boot-args",
+    &gAppleBootVariableGuid,
+    NULL, &BootArgsVarLen,
+    &BootArgsVar[0]
+    );
 
-  if (!EFI_ERROR(Status) && BootArgsVarLen > 0) {
+  if (!EFI_ERROR (Status) && BootArgsVarLen > 0) {
+    //
     // Just in case we do not have 0-termination
+    //
     BootArgsVar[BootArgsVarLen-1] = '\0';
 
-    gSlideArgPresent |= (GET_BOOT_ARG(BootArgsVar, "slide=") != NULL);
+    gSlideArgPresent |= (GET_BOOT_ARG (BootArgsVar, "slide=") != NULL);
 
 #if APTIOFIX_ALLOW_MEMORY_DUMP_ARG == 1
-    gDumpMemArgPresent |= (GET_BOOT_ARG(BootArgsVar, "-aptiodump") != NULL);
+    gDumpMemArgPresent |= (GET_BOOT_ARG (BootArgsVar, "-aptiodump") != NULL);
 #endif
   }
 }
@@ -535,13 +542,17 @@ FixBooting (
   MemoryMap = (EFI_MEMORY_DESCRIPTOR*)(UINTN)(*BA->MemoryMap);
   DescriptorSize = *BA->MemoryMapDescriptorSize;
 
-  FixBootingForCustomSlide(BA);
+  RestoreCustomSlideOverrides (BA);
 
+  //
   // We must restore EfiRuntimeServicesCode memory areas, because otherwise
   // RuntimeServices won't be executable.
-  RestoreRelocInfoProtectMemTypes(MemoryMapSize, DescriptorSize, MemoryMap);
+  //
+  RestoreRelocInfoProtectMemTypes (MemoryMapSize, DescriptorSize, MemoryMap);
 
+  //
   // Restore original kernel entry code.
+  //
   CopyMem((VOID *)(UINTN)AsmKernelEntry, (VOID *)gOrigKernelCode, gOrigKernelCodeSize);
 
   return BootArgs;

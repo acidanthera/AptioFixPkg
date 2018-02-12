@@ -9,17 +9,6 @@
 #ifndef APTIOFIX_RT_SHIMS_H
 #define APTIOFIX_RT_SHIMS_H
 
-extern UINTN gGetVariable;
-extern UINTN gGetNextVariableName;
-extern UINTN gSetVariable;
-extern UINTN gGetTime;
-extern UINTN gSetTime;
-extern UINTN gGetWakeupTime;
-extern UINTN gSetWakeupTime;
-extern UINTN gGetNextHighMonoCount;
-extern UINTN gResetSystem;
-extern UINTN gGetVariableOverride;
-
 extern VOID *gRtShims;
 
 typedef struct {
@@ -40,9 +29,19 @@ UninstallRtShims (
 
 VOID
 VirtualizeRtShims (
-  UINTN                   MemoryMapSize,
-  UINTN                   DescriptorSize,
-  EFI_MEMORY_DESCRIPTOR   *MemoryMap
+  UINTN                  MemoryMapSize,
+  UINTN                  DescriptorSize,
+  EFI_MEMORY_DESCRIPTOR  *MemoryMap
+  );
+
+EFI_STATUS
+EFIAPI
+OrgGetVariable (
+  IN     CHAR16    *VariableName,
+  IN     EFI_GUID  *VendorGuid,
+  OUT    UINT32    *Attributes OPTIONAL,
+  IN OUT UINTN     *DataSize,
+  OUT    VOID      *Data
   );
 
 #endif // APTIOFIX_RT_SHIMS_H
