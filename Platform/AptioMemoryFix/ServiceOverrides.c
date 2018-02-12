@@ -66,9 +66,10 @@ InstallBsOverrides (
   VOID
   )
 {
+#if APTIOFIX_CUSTOM_POOL_ALLOCATOR == 1
   EFI_STATUS               Status;
   EFI_PHYSICAL_ADDRESS     UmmHeap = BASE_4GB;
-  UINTN                    PageNum = EFI_SIZE_TO_PAGES (APTIOFIX_ALLOCATOR_POOL_SIZE);
+  UINTN                    PageNum = EFI_SIZE_TO_PAGES (APTIOFIX_CUSTOM_POOL_ALLOCATOR_SIZE);
 
   //
   // We do not uninstall our custom allocator to avoid memory corruption issues
@@ -78,7 +79,7 @@ InstallBsOverrides (
   if (!UmmInitialized ()) {
     Status = AllocatePagesFromTop (EfiBootServicesData, PageNum, &UmmHeap, TRUE);
     if (!EFI_ERROR (Status)) {
-      gBS->SetMem ((VOID *)UmmHeap, APTIOFIX_ALLOCATOR_POOL_SIZE, 0);
+      gBS->SetMem ((VOID *)UmmHeap, APTIOFIX_CUSTOM_POOL_ALLOCATOR_SIZE, 0);
       UmmSetHeap ((VOID *)UmmHeap);
 
       mStoredAllocatePool   = gBS->AllocatePool;
@@ -101,6 +102,7 @@ InstallBsOverrides (
       PrintScreen (L"AMF: Not using custom memory pool - %r\n", Status);
     }
   }
+#endif
 
   mStoredAllocatePages    = gBS->AllocatePages;
   mStoredGetMemoryMap     = gBS->GetMemoryMap;

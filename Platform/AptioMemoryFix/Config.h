@@ -79,13 +79,21 @@
 /**
  * Due to os crashes caused by using AllocatePool on several Skylake APTIO V boards we provide
  * a custom allocator which avoids the use of boot services allocator by preallocating a memory pool
- * (currently 512 MB) and spreading it as requested throughout the boot process.
- * Another benefit is that this allocator will allocate from memory top and avoid conflicts with custom
- * ASLR implementation (important for X99/X299 boards).
- * On allocation failure the original allocator will be used.
+ * and spreading it as requested throughout the boot process.
+ * Another benefit is that this allocator will return higher memory and avoid conflicts with custom
+ * ASLR implementation. On allocation failure the original allocator will be used.
+ * This hack appears to cause launchd crashes at sleep wake on GA-X79-UP4. Since normally the bug
+ * is not triggered by anything by -aptiodump, it is turned off by default. 
  */
-#ifndef APTIOFIX_ALLOCATOR_POOL_SIZE
-#define APTIOFIX_ALLOCATOR_POOL_SIZE 0x20000000
+#ifndef APTIOFIX_CUSTOM_POOL_ALLOCATOR
+#define APTIOFIX_CUSTOM_POOL_ALLOCATOR APTIOFIX_ALLOW_MEMORY_DUMP_ARG
+#endif
+
+/**
+ * Maximum reserved area used for a custom pool allocator.
+ */
+#ifndef APTIOFIX_CUSTOM_POOL_ALLOCATOR_SIZE
+#define APTIOFIX_CUSTOM_POOL_ALLOCATOR_SIZE 0x20000000
 #endif
 
 #endif // APTIOFIX_HACK_CONFIG_H
