@@ -12,7 +12,8 @@
 
 #include "Config.h"
 #include "VMem.h"
-#include "Lib.h"
+#include "MemoryMap.h"
+#include "Utils.h"
 
 /** Memory allocation for VM map pages that we will create with VmMapVirtualPage.
   * We need to have it preallocated during boot services.
@@ -53,7 +54,6 @@ PrintPageTablePTE (
       (PTE->Uint64 & ~PT_ADDR_MASK_4K), VA.Uint64, VA.Uint64 + 0x1000 - 1, Start, Start + 0x1000 - 1));
     PTE++;
   }
-  //WaitForKeyPress(L"more ...");
 #endif
 }
 
@@ -85,7 +85,6 @@ PrintPageTablePDE (
     }
     PDE++;
   }
-  //WaitForKeyPress(L"more ...");
 #endif
 }
 
@@ -117,7 +116,6 @@ PrintPageTablePDPE (
     }
     PDPE++;
   }
-  //WaitForKeyPress(L"more ...");
 #endif
 }
 
@@ -143,7 +141,6 @@ PrintPageTable (
     PrintPageTablePDPE(PDPE, VA);
     PML4++;
   }
-  //WaitForKeyPress(L"END");
 }
 
 EFI_STATUS
@@ -537,7 +534,6 @@ VmMapVirtualPages (
     PhysicalAddr += 0x1000;
     NumPages--;
     DEBUG ((DEBUG_VERBOSE, "NumPages: %d, %lx => %lx\n", NumPages, VirtualAddr, PhysicalAddr));
-    //WaitForKeyPress(L"press a key to continue\n");
   }
   return Status;
 }

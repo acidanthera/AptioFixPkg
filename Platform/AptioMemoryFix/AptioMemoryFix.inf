@@ -49,12 +49,12 @@
   FlatDevTree/device_tree.c
   FlatDevTree/device_tree.h
   Hibernate.h
-  Lib.c
-  Lib.h
   Mach-O/loader.h
   Mach-O/Mach-O.c
   Mach-O/Mach-O.h
   Mach-O/UefiLoader.h
+  MemoryMap.c
+  MemoryMap.h
   RtShims.c
   RtShims.h
   ServiceOverrides.c

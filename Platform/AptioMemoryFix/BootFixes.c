@@ -15,10 +15,10 @@
 
 #include "Config.h"
 #include "BootArgs.h"
+#include "MemoryMap.h"
 #include "BootFixes.h"
 #include "AsmFuncs.h"
 #include "VMem.h"
-#include "Lib.h"
 #include "Mach-O/Mach-O.h"
 #include "Hibernate.h"
 #include "CustomSlide.h"
@@ -27,17 +27,15 @@
 
 
 // buffer and size for original kernel entry code
-STATIC UINT8 gOrigKernelCode[32];
-STATIC UINTN gOrigKernelCodeSize = 0;
+STATIC UINT8 mOrigKernelCode[32];
+STATIC UINTN mOrigKernelCodeSize = 0;
 
 // buffer for virtual address map - only for RT areas
 // note: DescriptorSize is usually > sizeof(EFI_MEMORY_DESCRIPTOR)
 // so this buffer can hold less then 64 descriptors
-STATIC EFI_MEMORY_DESCRIPTOR gVirtualMemoryMap[64];
-STATIC UINTN gVirtualMapSize = 0;
-STATIC UINTN gVirtualMapDescriptorSize = 0;
-
-STATIC RT_RELOC_PROTECT_DATA gRelocInfoData;
+STATIC EFI_MEMORY_DESCRIPTOR mVirtualMemoryMap[64];
+STATIC UINTN mVirtualMapSize = 0;
+STATIC UINTN mVirtualMapDescriptorSize = 0;
 
 // XNU requires gST pointers to be passed relative to boot.efi.
 // We have to allocate a new system table and let boot.efi relocate it.
@@ -153,19 +151,19 @@ KernelEntryPatchJump (
   DEBUG ((DEBUG_VERBOSE, "KernelEntryPatchJump KernelEntry (reloc): %lx (%lx)\n", KernelEntry, KernelEntry));
 
   // Size of EntryPatchCode code
-  gOrigKernelCodeSize = (UINT8*)&EntryPatchCodeEnd - (UINT8*)&EntryPatchCode;
-  if (gOrigKernelCodeSize > sizeof(gOrigKernelCode)) {
-    DEBUG ((DEBUG_WARN, "KernelEntryPatchJump: not enough space for orig. kernel entry code: size needed: %d\n", gOrigKernelCodeSize));
+  mOrigKernelCodeSize = (UINT8*)&EntryPatchCodeEnd - (UINT8*)&EntryPatchCode;
+  if (mOrigKernelCodeSize > sizeof(mOrigKernelCode)) {
+    DEBUG ((DEBUG_WARN, "KernelEntryPatchJump: not enough space for orig. kernel entry code: size needed: %d\n", mOrigKernelCodeSize));
     return EFI_NOT_FOUND;
   }
 
-  DEBUG ((DEBUG_VERBOSE, "EntryPatchCode: %p, Size: %d, AsmJumpFromKernel: %p\n", &EntryPatchCode, gOrigKernelCodeSize, &AsmJumpFromKernel));
+  DEBUG ((DEBUG_VERBOSE, "EntryPatchCode: %p, Size: %d, AsmJumpFromKernel: %p\n", &EntryPatchCode, mOrigKernelCodeSize, &AsmJumpFromKernel));
 
   // Save original kernel entry code
-  CopyMem((VOID *)gOrigKernelCode, (VOID *)(UINTN)KernelEntry, gOrigKernelCodeSize);
+  CopyMem((VOID *)mOrigKernelCode, (VOID *)(UINTN)KernelEntry, mOrigKernelCodeSize);
 
   // Copy EntryPatchCode code to kernel entry address
-  CopyMem((VOID *)(UINTN)KernelEntry, (VOID *)&EntryPatchCode, gOrigKernelCodeSize);
+  CopyMem((VOID *)(UINTN)KernelEntry, (VOID *)&EntryPatchCode, mOrigKernelCodeSize);
 
   // pass KernelEntry to assembler funcs
   // this is not needed really, since asm code will determine
@@ -177,7 +175,10 @@ KernelEntryPatchJump (
 
 /** Reads kernel entry from Mach-O load command and patches it with jump to AsmJumpFromKernel. */
 EFI_STATUS
-KernelEntryFromMachOPatchJump(VOID *MachOImage, UINTN SlideAddr)
+KernelEntryFromMachOPatchJump (
+  VOID   *MachOImage,
+  UINTN  SlideAddr
+  )
 {
   UINTN  KernelEntry;
 
@@ -241,9 +242,9 @@ ExecSetVirtualAddressesToMemMap (
 
   Desc                      = MemoryMap;
   NumEntries                = MemoryMapSize / DescriptorSize;
-  VirtualDesc               = gVirtualMemoryMap;
-  gVirtualMapSize           = 0;
-  gVirtualMapDescriptorSize = DescriptorSize;
+  VirtualDesc               = mVirtualMemoryMap;
+  mVirtualMapSize           = 0;
+  mVirtualMapDescriptorSize = DescriptorSize;
   DEBUG ((DEBUG_VERBOSE, "ExecSetVirtualAddressesToMemMap: Size=%d, Addr=%p, DescSize=%d\n", MemoryMapSize, MemoryMap, DescriptorSize));
 
   // get current VM page table
@@ -268,22 +269,22 @@ ExecSetVirtualAddressesToMemMap (
     // EFI_MEMORY_RUNTIME attribute set, and there is no reason to mess with the memory map passed to boot.efi.
     //
     if (Desc->Type != EfiReservedMemoryType && (Desc->Attribute & EFI_MEMORY_RUNTIME) != 0) {
-      // check if there is enough space in gVirtualMemoryMap
-      if (gVirtualMapSize + DescriptorSize > sizeof(gVirtualMemoryMap)) {
+      // check if there is enough space in mVirtualMemoryMap
+      if (mVirtualMapSize + DescriptorSize > sizeof(mVirtualMemoryMap)) {
         DEBUG ((DEBUG_WARN, "ERROR: too much mem map RT areas\n"));
         return EFI_OUT_OF_RESOURCES;
       }
 
-      // copy region with EFI_MEMORY_RUNTIME flag to gVirtualMemoryMap
+      // copy region with EFI_MEMORY_RUNTIME flag to mVirtualMemoryMap
       CopyMem ((VOID*)VirtualDesc, (VOID*)Desc, DescriptorSize);
 
       // define virtual to phisical mapping
       DEBUG ((DEBUG_VERBOSE, "Map pages: %lx (%x) -> %lx\n", Desc->VirtualStart, Desc->NumberOfPages, Desc->PhysicalStart));
       VmMapVirtualPages (PageTable, Desc->VirtualStart, Desc->NumberOfPages, Desc->PhysicalStart);
 
-      // next gVirtualMemoryMap slot
+      // next mVirtualMemoryMap slot
       VirtualDesc = NEXT_MEMORY_DESCRIPTOR (VirtualDesc, DescriptorSize);
-      gVirtualMapSize += DescriptorSize;
+      mVirtualMapSize += DescriptorSize;
 
       // Remember future physical address for our special relocated
       // efi system table
@@ -301,8 +302,8 @@ ExecSetVirtualAddressesToMemMap (
   VmFlashCaches ();
 
   DEBUG ((DEBUG_VERBOSE, "ExecSetVirtualAddressesToMemMap: Size=%d, Addr=%p, DescSize=%d\nSetVirtualAddressMap ... ",
-    gVirtualMapSize, MemoryMap, DescriptorSize));
-  Status = gRT->SetVirtualAddressMap (gVirtualMapSize, DescriptorSize, DescriptorVersion, gVirtualMemoryMap);
+    mVirtualMapSize, MemoryMap, DescriptorSize));
+  Status = gRT->SetVirtualAddressMap (mVirtualMapSize, DescriptorSize, DescriptorVersion, mVirtualMemoryMap);
   DEBUG ((DEBUG_VERBOSE, "%r\n", Status));
 
   return Status;
@@ -383,99 +384,6 @@ ReadBooterArguments (
   }
 }
 
-VOID
-RestoreRelocInfoProtectMemTypes (
-  UINTN                   MemoryMapSize,
-  UINTN                   DescriptorSize,
-  EFI_MEMORY_DESCRIPTOR   *MemoryMap
-  )
-{
-  UINTN Index;
-  UINTN Index2;
-  UINTN NumEntriesLeft;
-
-  NumEntriesLeft = gRelocInfoData.NumEntries;
-
-  if (NumEntriesLeft > 0) {
-    for (Index = 0; Index < (MemoryMapSize / DescriptorSize); ++Index) {
-      if (NumEntriesLeft > 0) {
-        for (Index2 = 0; Index2 < gRelocInfoData.NumEntries; ++Index2) {
-          if (MemoryMap->PhysicalStart == gRelocInfoData.RelocInfo[Index2].PhysicalStart) {
-            MemoryMap->Type = gRelocInfoData.RelocInfo[Index2].Type;
-            --NumEntriesLeft;
-          }
-        }
-      }
-
-      MemoryMap = NEXT_MEMORY_DESCRIPTOR (MemoryMap, DescriptorSize);
-    }
-  }
-}
-
-/** Protect RT data from relocation by marking them MemMapIO. Except area with EFI system table.
- *  This one must be relocated into kernel boot image or kernel will crash (kernel accesses it
- *  before RT areas are mapped into vm).
- *  This fixes NVRAM issues on some boards where access to nvram after boot services is possible
- *  only in SMM mode. RT driver passes data to SM handler through previously negotiated buffer
- *  and this buffer must not be relocated.
- *  Explained and examined in detail by CodeRush and night199uk:
- *  http://www.projectosx.com/forum/index.php?showtopic=3298
- *
- *  It seems this does not do any harm to others where this is not needed,
- *  so it's added as standard fix for all.
- *
- *  Starting with APTIO V for nvram to work not only data but could too can no longer be moved
- *  due to the use of commbuffers. This, however, creates a memory protection issue, because
- *  XNU maps RT data as RW and code as RX, and AMI appears use global variables in some RT drivers.
- *  For this reason we shim (most?) affected RT services via wrapers that unset the WP bit during
- *  the UEFI call and set it back on return.
- *  Explained in detail by Download-Fritz and vit9696:
- *  http://www.insanelymac.com/forum/topic/331381-aptiomemoryfix (first 2 links in particular).
- */
-VOID
-ProtectRtMemoryFromRelocation (
-  IN UINTN                  MemoryMapSize,
-  IN UINTN                  DescriptorSize,
-  IN UINT32                 DescriptorVersion,
-  IN EFI_MEMORY_DESCRIPTOR  *MemoryMap
-  )
-{
-  UINTN                   NumEntries;
-  UINTN                   Index;
-  EFI_MEMORY_DESCRIPTOR   *Desc;
-
-  RT_RELOC_PROTECT_INFO *RelocInfo;
-
-  Desc = MemoryMap;
-  NumEntries = MemoryMapSize / DescriptorSize;
-  DEBUG ((DEBUG_VERBOSE, "FixNvramRelocation\n"));
-
-  gRelocInfoData.NumEntries = 0;
-
-  RelocInfo = &gRelocInfoData.RelocInfo[0];
-
-  for (Index = 0; Index < NumEntries; Index++) {
-    if ((Desc->Attribute & EFI_MEMORY_RUNTIME) != 0 &&
-        (Desc->Type == EfiRuntimeServicesCode ||
-        (Desc->Type == EfiRuntimeServicesData && Desc->PhysicalStart != gSysTableRtArea))) {
-
-      if (gRelocInfoData.NumEntries < ARRAY_SIZE (gRelocInfoData.RelocInfo)) {
-        RelocInfo->PhysicalStart = Desc->PhysicalStart;
-        RelocInfo->Type          = Desc->Type;
-        ++RelocInfo;
-        ++gRelocInfoData.NumEntries;
-      } else {
-        DEBUG ((DEBUG_WARN, " WARNING: Cannot save mem type for entry: %lx (type 0x%x)\n", Desc->PhysicalStart, (UINTN)Desc->Type));
-      }
-
-      DEBUG ((DEBUG_VERBOSE, " RT mem %lx (0x%x) -> MemMapIO\n", Desc->PhysicalStart, Desc->NumberOfPages));
-      Desc->Type = EfiMemoryMappedIO;
-    }
-
-    Desc = NEXT_MEMORY_DESCRIPTOR(Desc, DescriptorSize);
-  }
-}
-
 /** AMI CSM module allocates up to two regions for legacy video output.
  *  1. For PMM and EBDA areas.
  *     On Ivy Bridge and below it ends at 0xA0000-0x1000-0x1 and has EfiBootServicesCode type.
@@ -548,12 +456,12 @@ FixBooting (
   // We must restore EfiRuntimeServicesCode memory areas, because otherwise
   // RuntimeServices won't be executable.
   //
-  RestoreRelocInfoProtectMemTypes (MemoryMapSize, DescriptorSize, MemoryMap);
+  RestoreProtectedRtMemoryTypes (MemoryMapSize, DescriptorSize, MemoryMap);
 
   //
   // Restore original kernel entry code.
   //
-  CopyMem((VOID *)(UINTN)AsmKernelEntry, (VOID *)gOrigKernelCode, gOrigKernelCodeSize);
+  CopyMem((VOID *)(UINTN)AsmKernelEntry, (VOID *)mOrigKernelCode, mOrigKernelCodeSize);
 
   return BootArgs;
 }
@@ -609,7 +517,7 @@ FixHibernateWake (
   while (Handoff->type != kIOHibernateHandoffTypeEnd) {
     if (Handoff->type == kIOHibernateHandoffTypeMemoryMap) {
       // boot.efi removes any memory from the memory map but the one with runtime attribute.
-      RestoreRelocInfoProtectMemTypes(Handoff->bytecount, gMemoryMapDescriptorSize, (EFI_MEMORY_DESCRIPTOR *)Handoff->data);
+      RestoreProtectedRtMemoryTypes (Handoff->bytecount, gMemoryMapDescriptorSize, (EFI_MEMORY_DESCRIPTOR *)Handoff->data);
       break;
     }
     Handoff = (IOHibernateHandoff *)(UINTN)((UINTN)Handoff + sizeof(Handoff) + Handoff->bytecount);
@@ -617,7 +525,7 @@ FixHibernateWake (
 #endif
 
   // Restore original kernel entry code
-  CopyMem((VOID *)(UINTN)AsmKernelEntry, (VOID *)gOrigKernelCode, gOrigKernelCodeSize);
+  CopyMem((VOID *)(UINTN)AsmKernelEntry, (VOID *)mOrigKernelCode, mOrigKernelCodeSize);
 
   return ImageHeaderPage;
 }

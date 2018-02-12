@@ -17,7 +17,7 @@
 #include "BootArgs.h"
 #include "BootFixes.h"
 #include "CustomSlide.h"
-#include "Lib.h"
+#include "MemoryMap.h"
 #include "Utils.h"
 #include "FlatDevTree/device_tree.h"
 #include "CsrConfig.h"
@@ -95,7 +95,7 @@ GetSlideRangeForValue (
   UINTN   *EndAddr
   )
 {
-  *StartAddr = (UINTN)Slide * 0x200000 + BASE_KERNEL_ADDR;
+  *StartAddr = (UINTN)Slide * SLIDE_GRANULARITY + BASE_KERNEL_ADDR;
 
   //
   // Skip ranges used by Intel HD 2000/3000.
@@ -412,13 +412,13 @@ OverlapsWithSlide (
   }
 
   Start = BASE_KERNEL_ADDR;
-  End   = Start + Slide * 0x200000 + APTIOFIX_SPECULATED_KERNEL_SIZE;
+  End   = Start + Slide * SLIDE_GRANULARITY + APTIOFIX_SPECULATED_KERNEL_SIZE;
 
   if (End >= Address && Start <= Address + Size) {
     return TRUE;
   } else if (SandyOrIvy) {
-    Start = 0x80 * 0x200000 + BASE_KERNEL_ADDR + 0x10200000;
-    End   = Start + Slide * 0x200000 + APTIOFIX_SPECULATED_KERNEL_SIZE;
+    Start = 0x80 * SLIDE_GRANULARITY + BASE_KERNEL_ADDR + 0x10200000;
+    End   = Start + Slide * SLIDE_GRANULARITY + APTIOFIX_SPECULATED_KERNEL_SIZE;
     if (End >= Address && Start <= Address + Size) {
       return TRUE;
     }
