@@ -180,7 +180,6 @@ typedef struct {
 } AMF_BOOT_ARGUMENTS;
 
 AMF_BOOT_ARGUMENTS *
-EFIAPI
 GetBootArgs (
   IN VOID  *BootArgs
   );

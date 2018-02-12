@@ -18,6 +18,11 @@
 #define BASE_KERNEL_ADDR       ((UINTN)0x100000)
 
 //
+// Slide offset per slide entry
+//
+#define SLIDE_GRANULARITY      ((UINTN)0x200000)
+
+//
 // Total possible number of KASLR slide offsets. 
 //
 #define TOTAL_SLIDE_NUM        256

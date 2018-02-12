@@ -24,7 +24,6 @@
 #include "BootFixes.h"
 #include "AsmFuncs.h"
 #include "VMem.h"
-#include "Lib.h"
 #include "Hibernate.h"
 #include "RtShims.h"
 #include "CustomSlide.h"
@@ -173,7 +172,7 @@ DetectBooterStartImage (
     return EFI_INVALID_PARAMETER;
   }
 
-  FilePathText = FileDevicePathToText (LoadedImage->FilePath);
+  FilePathText = FileDevicePathToStr (LoadedImage->FilePath);
   DEBUG ((DEBUG_VERBOSE, "ImageBase: %p - %lx (%lx)\n",
       LoadedImage->ImageBase,
       (UINT64)LoadedImage->ImageBase + LoadedImage->ImageSize,
@@ -198,7 +197,7 @@ DetectBooterStartImage (
         DEBUG ((DEBUG_WARN, "Failed to set recovery-boot-mode: %r\n", Status));
 
       Status = gRT->SetVariable (L"aptiofixflag", &gAppleBootVariableGuid, 0, 0, NULL);
-      DirectFreePool(Value);
+      FreePool (Value);
       ValueSize = 0;
     }
 
@@ -228,7 +227,7 @@ DetectBooterStartImage (
         gRT->ResetSystem (EfiResetCold, EFI_SUCCESS, 0, NULL);
       }
 
-      DirectFreePool (Value);
+      FreePool (Value);
     }
 
     mBootNestedCount++;
@@ -245,7 +244,7 @@ DetectBooterStartImage (
       FilePathText,
       gHibernateWake ? L" (hibernate wake)" : L"");
 
-    DirectFreePool (FilePathText);
+    FreePool (FilePathText);
 
     //
     // Run boot.efi with our overrides
@@ -289,11 +288,11 @@ AptioMemoryFixEntrypoint (
   }
 
   gBS->InstallProtocolInterface (
-        &Handle,
-        &gAptioMemoryFixProtocolGuid,
-        EFI_NATIVE_INTERFACE,
-        &mAptioMemoryFixProtocol
-        );
+    &Handle,
+    &gAptioMemoryFixProtocolGuid,
+    EFI_NATIVE_INTERFACE,
+    &mAptioMemoryFixProtocol
+    );
 
   //
   // Install StartImage override

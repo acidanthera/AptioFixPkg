@@ -12,12 +12,10 @@
 
 #include "Config.h"
 #include "BootArgs.h"
-#include "Lib.h"
 
 STATIC AMF_BOOT_ARGUMENTS mBootArgs;
 
 AMF_BOOT_ARGUMENTS *
-EFIAPI
 GetBootArgs (
   IN VOID  *BootArgs
   )
@@ -123,4 +121,3 @@ RemoveArgumentFromCommandLine (
 
   ZeroMem (Updated, CommandLine - Updated);
 }
-
