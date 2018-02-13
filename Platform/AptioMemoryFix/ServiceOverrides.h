@@ -41,6 +41,16 @@ UninstallRtOverrides (
   VOID
   );
 
+VOID
+DisableDynamicPoolAllocations (
+  VOID
+  );
+
+VOID
+EnableDynamicPoolAllocations (
+  VOID
+  );
+
 EFI_STATUS
 EFIAPI
 MOHandleProtocol (

@@ -69,31 +69,29 @@
 
 /**
  * Perform invasive memory dumps when -aptiodump -v are passed to boot.efi.
- *  Fails some boots but allows to reliably get the memory maps (in-OS dtrace script is broken).
- *  Enable for development and testing purposes.
+ * This allows to reliably get the memory maps when in-OS dtrace script is broken.
+ * Enable for development and testing purposes.
  */
 #ifndef APTIOFIX_ALLOW_MEMORY_DUMP_ARG
 #define APTIOFIX_ALLOW_MEMORY_DUMP_ARG 0
 #endif
 
 /**
- * Due to os crashes caused by using AllocatePool on several Skylake APTIO V boards we provide
- * a custom allocator which avoids the use of boot services allocator by preallocating a memory pool
- * and spreading it as requested throughout the boot process.
- * Another benefit is that this allocator will return higher memory and avoid conflicts with custom
- * ASLR implementation. On allocation failure the original allocator will be used.
- * This hack appears to cause launchd crashes at sleep wake on GA-X79-UP4. Since normally the bug
- * is not triggered by anything by -aptiodump, it is turned off by default. 
+ * Performing memory map dumps may alter memory map contents themselves, so it is important to ensure
+ * no memory is allocated during the dump process. This is especially crtitical for most ASUS APTIO V
+ * boards for Skylake and newer, which may crash after bootng.
  */
 #ifndef APTIOFIX_CUSTOM_POOL_ALLOCATOR
 #define APTIOFIX_CUSTOM_POOL_ALLOCATOR APTIOFIX_ALLOW_MEMORY_DUMP_ARG
 #endif
 
 /**
- * Maximum reserved area used for a custom pool allocator.
+ * Maximum reserved area used by the custom pool allocator. This area must be large enough
+ * to fit the screen buffer, but considerably small to avoid colliding with the kernel area.
+ * 32 MB appears experimentally proven to be good enough for most of the boards.
  */
 #ifndef APTIOFIX_CUSTOM_POOL_ALLOCATOR_SIZE
-#define APTIOFIX_CUSTOM_POOL_ALLOCATOR_SIZE 0x20000000
+#define APTIOFIX_CUSTOM_POOL_ALLOCATOR_SIZE 0x2000000
 #endif
 
 #endif // APTIOFIX_HACK_CONFIG_H

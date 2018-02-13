@@ -149,8 +149,8 @@ PrintScreen (
   VA_END (Marker);
 
   //
-  // It is safe to call gST->ConOut->OutputString, because gBS->AllocatePool
-  // is overridden by our own implementation with a custom allocator.
+  // It is safe to call gST->ConOut->OutputString, because in crtitical areas we override
+  // gBS->AllocatePool with our own implementation that uses a custom allocator.
   //
   if (gST->ConOut)
     gST->ConOut->OutputString (gST->ConOut, Buffer);

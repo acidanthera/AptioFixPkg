@@ -52,6 +52,11 @@ STATIC EFI_HANDLE           mExitBSImageHandle;
 STATIC UINTN                mExitBSMapKey;
 
 //
+// Dynamic memory allocation filtering status
+//
+STATIC BOOLEAN              mFilterDynamicPoolAllocations;
+
+//
 // Minimum and maximum addresses allocated by AlocatePages
 //
 EFI_PHYSICAL_ADDRESS        gMinAllocatedAddr;
@@ -78,7 +83,10 @@ InstallBsOverrides (
   // See UninstallBsOverrides for more details.
   //
   if (!UmmInitialized ()) {
-    Status = AllocatePagesFromTop (EfiBootServicesData, PageNum, &UmmHeap, TRUE);
+    //
+    // Enforce memory pool creation when -aptiodump argument is used, but let it slip otherwise.
+    //
+    Status = AllocatePagesFromTop (EfiBootServicesData, PageNum, &UmmHeap, !gDumpMemArgPresent);
     if (!EFI_ERROR (Status)) {
       gBS->SetMem ((VOID *)UmmHeap, APTIOFIX_CUSTOM_POOL_ALLOCATOR_SIZE, 0);
       UmmSetHeap ((VOID *)UmmHeap);
@@ -90,15 +98,8 @@ InstallBsOverrides (
       gBS->FreePool         = MOFreePool;
     } else {
       //
-      // This is undesired, but technically not fatal if AllocatePool is not faulty
-      // or we are lucky using it. The main reason behind allocating a custom pool
-      // only if it does not overlap with the kernel area is to workaround X99 issues,
-      // where a large chunk (~1.5 GB) of 32-bit memory is not present in the memory
-      // map, and the only free addresses are very close to the kernel area.
-      // Allocating a large pool will heavily reduce the amount of free slides, and
-      // may even prevent the system from booting.
-      // Luckily X99 does not seem to be affected by the pool allocation memory
-      // corruptions, so we can just let it slip...
+      // This is undesired, but technically less fatal than attempting to reduce the number
+      // of slides available when no memory map dumping is necessary, for example.
       //
       PrintScreen (L"AMF: Not using custom memory pool - %r\n", Status);
     }
@@ -164,6 +165,22 @@ UninstallRtOverrides (
   gRT->SetVirtualAddressMap = mStoredSetVirtualAddressMap;
 
   gRT->Hdr.CRC32 = mRtPreOverridesCRC32;
+}
+
+VOID
+DisableDynamicPoolAllocations (
+  VOID
+  )
+{
+  mFilterDynamicPoolAllocations = TRUE;
+}
+
+VOID
+EnableDynamicPoolAllocations (
+  VOID
+  )
+{
+  mFilterDynamicPoolAllocations = FALSE;
 }
 
 /** gBS->HandleProtocol override:
@@ -261,47 +278,21 @@ MOAllocatePool (
   )
 {
   //
-  // Extensive use of gBS->AllocatePool is dangerous on many Skylake APTIO V boards or newer.
-  // It results in an OS reboot when calling gRT->SetVariable right before the Desktop shows.
-  // This is not a memory protection issue, since patching XNU to map RT pages with RWX changes
-  // nothing. It is also irrelevant to our RtShims, AMI internal memory is corrupted.
-  // Our GetMemoryMap wrapper that does memory shrinking ir not relevant as well.
+  // The code below allows us to more safely invoke Boot Services to perform onscreen
+  // printing when no memory map modifications (pool memory allocation) is allowed.
+  // While it is imperfect design-wise, it works very well on many ASUS Skylake boards
+  // when performing memory map dumps via -aptiodump.
   //
-  // Tested on ASUS H110-PLUS, B150M-C, Z170I PRO GAMING, Z170M-PLUS, PRIME Z270-P.
-  // Installed GPU irrelevant. Tested: AMD 5670, AMD 560, NVIDIA 980, INEL 520.
-  // Not all the boards are affected, for example, GA H170M-HD3 *appears* to be fine.
-  // Binary diffing confirmed that CoreDxe from GA H170M-HD3 is functionally equal to the one
-  // found on ASUS aside slightly different addresses. Most likely GA is also affected,
-  // but just lucky.
-  //
-  // To trigger the bug it is not necessary to print anything, for example, replacing PrintScreen
-  // function with 2 gBS->AllocatePool calls with 184320 and 127968 sizes followed by 2 
-  // gBS->FreePool calls resulted in exactly the same reboot when booting with -v -aptiodump.
-  // Sizes were chosen to imitate the sizes AMI proprietary PrintLine function allocates.
-  //
-  // Since gST->ConOut->OutputString (as well as any underlying implementations) relies on
-  // gBS->AllocatePool, we had to override gBS->AllocatePool ourselves and force the use
-  // of a custom allocator when doing any prints.
-  //
-  // The same is done for all boot.efi allocations (and obviously our AllocatePool).
-  // It is still a matter of luck whether this works or not.
-  // It is known that there exists in-os memory corruption with ASUS TUF X299 MARK 1
-  // when using external USB 3.0 HDDs, which is not reproducible with Clover Legacy Boot.
-  // It may be just anoter example of this issue, especially since X299 allocator
-  // allocates from the lower addresses unlike the desktop boards.
-  //
-  // I wish luck to anyone who tries to further track this down.
-  //
-
-  if (Type == EfiBootServicesData) {
+  if (Type == EfiBootServicesData && mFilterDynamicPoolAllocations) {
     *Buffer = UmmMalloc ((UINT32)Size);
     if (*Buffer)
       return EFI_SUCCESS;
 
     //
-    // Normally it should never fail with a reasonable chunk of memory set in Config.h.
-    // Tests on 10.13.3 show that the total allocated memory is around 300 MBs.
-    // However, if it does (for any reason), let's try to fallback.
+    // Dynamic pool allocations filtering should technically only be used when booting is more
+    // important than not allocating the requested memory and failing to do something.
+    // However, since we skip other types of allocations anyway, not falling back here to using
+    // the default allocator may have its own consequences on other boards.
     //
   }
 
@@ -342,11 +333,11 @@ MOGetMemoryMap (
   EFI_STATUS            Status;
 
   Status = mStoredGetMemoryMap (MemoryMapSize, MemoryMap, MapKey, DescriptorSize, DescriptorVersion);
-  DEBUG ((DEBUG_VERBOSE, "GetMemoryMap: %p = %r\n", MemoryMap, Status));
 
   if (Status == EFI_SUCCESS) {
-    if (gDumpMemArgPresent)
+    if (gDumpMemArgPresent) {
       PrintMemMap (L"GetMemoryMap", *MemoryMapSize, *DescriptorSize, MemoryMap, gRtShims, gSysTableRtArea);
+    }
 
 #if APTIOFIX_PROTECT_CSM_REGION == 1
     ProtectCsmRegion (*MemoryMapSize, MemoryMap, *DescriptorSize);
@@ -515,8 +506,6 @@ MOSetVirtualAddressMap (
 {
   EFI_STATUS   Status;
   UINT32       EfiSystemTable;
-
-  DEBUG ((DEBUG_VERBOSE, "SetVirtualAddressMap(%d, %d, 0x%x, %p) START ...\n", MemoryMapSize, DescriptorSize, DescriptorVersion, VirtualMap));
 
   //
   // We do not need to recover BS, since they will be invalid.

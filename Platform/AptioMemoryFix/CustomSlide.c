@@ -197,13 +197,13 @@ DecideOnCustomSlideImplementation (
   UINTN                  NumEntries;
 
   Status = GetMemoryMapAlloc (
-      &AllocatedMapPages,
-      &MemoryMapSize,
-      &MemoryMap,
-      &MapKey,
-      &DescriptorSize,
-      &DescriptorVersion
-  );
+    &AllocatedMapPages,
+    &MemoryMapSize,
+    &MemoryMap,
+    &MapKey,
+    &DescriptorSize,
+    &DescriptorVersion
+    );
 
   if (Status != EFI_SUCCESS) {
     PrintScreen (L"AMF: Failed to obtain memory map for KASLR - %r\n", Status);
@@ -569,8 +569,11 @@ GetVariableCustomSlide (
     else if (!StrCmp (VariableName, L"boot-args")) {
       //
       // We delay memory map analysis as much as we can, in case boot.efi or anything else allocates
-      // stuff with gBS->AllocatePool and this is not caught by our gBS->AllocatePool override.
-      // This is a problem when an allocated region overlaps with the slide region (e.g. on X299).
+      // stuff with gBS->AllocatePool and it overlaps with the kernel area.
+      // Overriding AllocatePool with a custom allocator does not really improve the situation,
+      // because on older boards allocated memory above BASE_4GB causes instant reboots, and
+      // on the only (so far) problematic X99 and X299 we have no free region for our pool anyway.
+      // In any case, the current APTIOFIX_SPECULATED_KERNEL_SIZE value appears to work reliably.
       //
       if (!gSlideArgPresent && !mAnalyzeMemoryMapDone) {
         DecideOnCustomSlideImplementation ();

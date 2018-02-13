@@ -169,6 +169,14 @@ PrintMemMap (
   UINT64                  Bytes;
   EFI_MEMORY_DESCRIPTOR   *Desc;
 
+  //
+  // Printing onscreen may allocate the memory internally.
+  // This is very dangerous to do in GetMemoryMap or SetVirtualAddresses wrappers,
+  // because on many ASUS boards the internal memory map will get modified, and
+  // for some reason this will cause crashes right after os boots.
+  //
+  DisableDynamicPoolAllocations ();
+
   Desc = MemoryMap;
   NumEntries = MemoryMapSize / DescriptorSize;
   PrintScreen (L"--- Dump Memory Map (%s) start ---\n", Name);
@@ -199,6 +207,8 @@ PrintMemMap (
 
   PrintScreen (L"--- Dump Memory Map (%s) end ---\n", Name);
   gBS->Stall (5000000);
+
+  EnableDynamicPoolAllocations ();
 }
 
 EFI_STATUS
