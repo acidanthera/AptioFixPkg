@@ -19,6 +19,7 @@
 #include "MemoryMap.h"
 #include "CustomSlide.h"
 #include "ServiceOverrides.h"
+#include "Utils.h"
 
 STATIC CHAR16 *mEfiMemoryTypeDesc[EfiMaxMemoryType] = {
   L"Reserved",
@@ -202,11 +203,11 @@ PrintMemMap (
     // for a moment to let one read the output.
     //
     if ((Index + 1) % 16 == 0)
-      gBS->Stall (5000000);
+      gBS->Stall (SECONDS_TO_MICROSECONDS (5));
   }
 
   PrintScreen (L"--- Dump Memory Map (%s) end ---\n", Name);
-  gBS->Stall (5000000);
+  gBS->Stall (SECONDS_TO_MICROSECONDS (5));
 
   EnableDynamicPoolAllocations ();
 }

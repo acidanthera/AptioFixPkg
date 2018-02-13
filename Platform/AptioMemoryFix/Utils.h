@@ -17,8 +17,13 @@
 /**
   Quick and dirty dec digit printer
 **/
-#define DEC_TO_ASCII(Val) ("0123456789      "[(Val) & 0xF])
+#define DEC_TO_ASCII(x) ("0123456789      "[(x) & 0xF])
 #define DEC_SPACE 0xF
+
+/**
+  Convert seconds to microseconds for use in e.g. gBS->Stall
+**/
+#define SECONDS_TO_MICROSECONDS(x) ((x)*1000000)
 
 /**
   Convert a Null-terminated Unicode string to a Null-terminated

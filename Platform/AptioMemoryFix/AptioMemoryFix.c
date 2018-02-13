@@ -57,7 +57,7 @@ RunImageWithOverrides(
      OUT CHAR16                     **ExitData  OPTIONAL
   )
 {
-  EFI_STATUS           Status;
+  EFI_STATUS  Status;
 
   //
   // Save current 64bit state - will be restored later in callback from kernel jump
@@ -220,6 +220,10 @@ DetectBooterStartImage (
     Status = gRT->GetVariable (L"boot-switch-vars", &gAppleBootVariableGuid, NULL, &ValueSize, NULL);
     gHibernateWake = Status == EFI_BUFFER_TOO_SMALL;
 
+    //
+    // Leading newline here attempts to workaround buggy firmware/bootloaders that leave
+    // the cursor in the middle of the screen.
+    //
     PrintScreen (L"\nAptioMemoryFix(R%d): Starting %s%s\n",
       mAptioMemoryFixProtocol.Revision,
       FilePathText,

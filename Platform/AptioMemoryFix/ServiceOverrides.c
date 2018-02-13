@@ -394,7 +394,7 @@ MOExitBootServices (
   //
   if (gHibernateWake && mHibernateImageAddress == 0) {
     PrintScreen (L"AMF: Failed to find hibernate image address\n");
-    gBS->Stall (5000000);
+    gBS->Stall (SECONDS_TO_MICROSECONDS (5));
     return EFI_INVALID_PARAMETER;
   }
 
@@ -465,8 +465,10 @@ ForceExitBootServices (
       );
 
     //
-    // It is too late to free memory map here, but it does not matter,
-    // because boot.efi has an old one and will freely use the memory.
+    // It is too late to free memory map here, but it does not matter, because boot.efi has an old one
+    // and will freely use the memory.
+    // It is technically forbidden to allocate pool memory here, but we should not hit this code
+    // in the first place, and for older firmwares, where it was necessary (?), it worked just fine.
     //
     Status = GetMemoryMapAlloc (NULL, &MemoryMapSize, &MemoryMap, &MapKey, &DescriptorSize, &DescriptorVersion);
     DEBUG ((DEBUG_VERBOSE, "ExitBootServices: GetMemoryMapKey = %r\n", Status));
@@ -485,7 +487,7 @@ ForceExitBootServices (
 
     if (EFI_ERROR (Status)) {
       PrintScreen (L"Waiting 10 secs...\n");
-      gBS->Stall(10*1000000);
+      gBS->Stall (SECONDS_TO_MICROSECONDS (10));
     }
   }
 
