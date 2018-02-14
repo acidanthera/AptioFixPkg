@@ -31,6 +31,13 @@ Before using AptioMemoryFix please ensure that you have:
 - EHCI/XHCI Hand-off enabled in BIOS *only* if boot stalls unless USB devices are disconnected.
 - VT-x, Hyper Threading, Execute Disable Bit enabled in BIOS if present.
 
+When debugging sleep issues you may want to (temporarily) disable Power Nap and automatic power off, which appear to sometimes cause wake to black screen or bootloop issues on older platforms. The particular issues may vary, but in general you should check ACPI tables first. Here is an example of a bug found in some [Z68 motherboards](http://www.insanelymac.com/forum/topic/329624-need-cmos-reset-after-sleep-only-after-login/#entry2534645). To turn Power Nap and the others off run the following commands in Terminal:
+- `sudo pmset autopoweroff 0`
+- `sudo pmset powernap 0`
+- `sudo pmset standby 0`
+
+Note, that these settings may reset at hardware change and in certain other circumstances. To view their current values run `pmset -g`.
+
 #### Features (compared to the original)
 - Automatically finds the available memory region for boot.efi to use
 - Implements KASLR support for systems where certain slides cannot be used
