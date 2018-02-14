@@ -27,7 +27,7 @@ Before using AptioMemoryFix please ensure that you have:
 - Above 4G Decoding or similar enabled in BIOS if present.
 - VT-d disabled in BIOS if present (you could also drop ACPI DMAR table with a bootloader).
 - CFG Lock (MSR 0xE2 write protection) disabled in BIOS if present (consider [patching it](https://github.com/LongSoft/UEFITool/blob/master/UEFIPatch/patches.txt) otherwise if you have enough skills).
-- CSM disabled in BIOS if present (you may need to flash GOP ROM on NVIDIA 6xx/AMD 2xx or older, relevant material: [#1](https://www.win-raid.com/t892f16-AMD-and-Nvidia-GOP-update-No-requests-DIY.html), [#2](https://www.win-raid.com/t394f12-Kepler-UEFI-updater.html), [#3](http://www.insanelymac.com/forum/topic/299614-asus-eah6450-video-bios-uefi-gop-upgrade-and-gop-uefi-binary-in-efi-for-many-ati-cards/page-1#entry2042163)).
+- CSM disabled in BIOS if present (you may need to flash GOP ROM on NVIDIA 6xx/AMD 2xx or older, using [GopUpdate](https://www.win-raid.com/t892f16-AMD-and-Nvidia-GOP-update-No-requests-DIY.html#msg15730) or [AMD UEFI GOP MAKER](http://www.insanelymac.com/forum/topic/299614-asus-eah6450-video-bios-uefi-gop-upgrade-and-gop-uefi-binary-in-efi-for-many-ati-cards/page-1#entry2042163) could simplify things).
 - EHCI/XHCI Hand-off enabled in BIOS *only* if boot stalls unless USB devices are disconnected.
 - VT-x, Hyper Threading, Execute Disable Bit enabled in BIOS if present.
 
