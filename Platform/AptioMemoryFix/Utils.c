@@ -16,7 +16,6 @@
 #include "Config.h"
 #include "Utils.h"
 
-/** Returns upper case version of char - valid only for ASCII chars in unicode. */
 STATIC
 CHAR16
 ToUpperChar (

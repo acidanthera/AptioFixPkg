@@ -26,6 +26,7 @@ Before using AptioMemoryFix please ensure that you have:
 - Fast Boot and Hardware Fast Boot disabled in BIOS if present.
 - Above 4G Decoding or similar enabled in BIOS if present.
 - VT-d disabled in BIOS if present (you could also drop ACPI DMAR table with a bootloader).
+- _No_ `slide` boot argument present in NVRAM or anywhere else (it is not necessary unless you cannot boot at all or see `No slide values are usable! Use custom slide!` message from AptioMemoryFix).
 - CFG Lock (MSR 0xE2 write protection) disabled in BIOS if present (consider [patching it](https://github.com/LongSoft/UEFITool/blob/master/UEFIPatch/patches.txt) otherwise if you have enough skills).
 - CSM disabled in BIOS if present (you may need to flash GOP ROM on NVIDIA 6xx/AMD 2xx or older, using [GopUpdate](https://www.win-raid.com/t892f16-AMD-and-Nvidia-GOP-update-No-requests-DIY.html#msg15730) or [AMD UEFI GOP MAKER](http://www.insanelymac.com/forum/topic/299614-asus-eah6450-video-bios-uefi-gop-upgrade-and-gop-uefi-binary-in-efi-for-many-ati-cards/page-1#entry2042163) could simplify things).
 - EHCI/XHCI Hand-off enabled in BIOS *only* if boot stalls unless USB devices are disconnected.
