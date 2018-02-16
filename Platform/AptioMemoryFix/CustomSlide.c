@@ -13,6 +13,7 @@
 #include <Library/PrintLib.h>
 #include <Library/RngLib.h>
 #include <Library/UefiBootServicesTableLib.h>
+#include <Register/Microcode.h>
 
 #include "Config.h"
 #include "CustomSlide.h"
@@ -60,23 +61,23 @@ IsSandyOrIvy (
   VOID
   )
 {
-  UINT32  Eax;
-  UINT32  CpuFamily;
-  UINT32  CpuModel;
+  CPU_MICROCODE_PROCESSOR_SIGNATURE  Sig;
+  UINT32                             CpuFamily;
+  UINT32                             CpuModel;
 
   if (!mSandyOrIvySet) {
-    Eax = 0;
+    Sig.Uint32 = 0;
 
-    AsmCpuid (1, &Eax, NULL, NULL, NULL);
+    AsmCpuid (1, &Sig.Uint32, NULL, NULL, NULL);
 
-    CpuFamily = (Eax >> 8) & 0xF;
-    if (CpuFamily == 15) { // Use ExtendedFamily
-      CpuFamily = (Eax >> 20) + 15;
+    CpuFamily = Sig.Bits.Family;
+    if (CpuFamily == 15) {
+      CpuFamily += Sig.Bits.ExtendedFamily;
     }
 
-    CpuModel = (Eax & 0xFF) >> 4;
-    if (CpuFamily == 15 || CpuFamily == 6) { // Use ExtendedModel
-      CpuModel |= (Eax >> 12) & 0xF0;
+    CpuModel = Sig.Bits.Model;
+    if (CpuFamily == 15 || CpuFamily == 6) {
+      CpuModel |= Sig.Bits.ExtendedModel << 4;
     }
 
     mSandyOrIvy = CpuFamily == 6 && (CpuModel == 0x2A || CpuModel == 0x3A);
