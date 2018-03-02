@@ -31,7 +31,7 @@ Before using AptioMemoryFix please ensure that you have:
 - CSM disabled in BIOS if present (you may need to flash GOP ROM on NVIDIA 6xx/AMD 2xx or older, using [GopUpdate](https://www.win-raid.com/t892f16-AMD-and-Nvidia-GOP-update-No-requests-DIY.html#msg15730) or [AMD UEFI GOP MAKER](http://www.insanelymac.com/forum/topic/299614-asus-eah6450-video-bios-uefi-gop-upgrade-and-gop-uefi-binary-in-efi-for-many-ati-cards/page-1#entry2042163) could simplify things).
 - EHCI/XHCI Hand-off enabled in BIOS *only* if boot stalls unless USB devices are disconnected.
 - VT-x, Hyper Threading, Execute Disable Bit enabled in BIOS if present.
-
+- While it may not be required, sometimes you have to disable Thunderbolt support, Intel SGX, and Intel Platform Trust in BIOS if present.
 When debugging sleep issues you may want to (temporarily) disable Power Nap and automatic power off, which appear to sometimes cause wake to black screen or bootloop issues on older platforms. The particular issues may vary, but in general you should check ACPI tables first. Here is an example of a bug found in some [Z68 motherboards](http://www.insanelymac.com/forum/topic/329624-need-cmos-reset-after-sleep-only-after-login/#entry2534645). To turn Power Nap and the others off run the following commands in Terminal:
 - `sudo pmset autopoweroff 0`
 - `sudo pmset powernap 0`
