@@ -28,32 +28,32 @@
 //
 // Modified boot-args buffer with an additional slide parameter, when custom slide is used.
 //
-STATIC BOOLEAN mStoredBootArgsVarSet = FALSE;
-STATIC UINTN   mStoredBootArgsVarSize = 0;
-STATIC CHAR8   mStoredBootArgsVar[BOOT_LINE_LENGTH] = {0};
+STATIC BOOLEAN mStoredBootArgsVarSet;
+STATIC UINTN   mStoredBootArgsVarSize;
+STATIC CHAR8   mStoredBootArgsVar[BOOT_LINE_LENGTH];
 
 //
 // Memory map slide availability analysis status.
 //
-STATIC BOOLEAN mAnalyzeMemoryMapDone = FALSE;
+STATIC BOOLEAN mAnalyzeMemoryMapDone;
 
 //
 // Original csr-active-config value to be restored before kernel handoff.
 //
-STATIC BOOLEAN mCsrActiveConfigSet = FALSE;
-STATIC UINT32  mCsrActiveConfig = 0;
+STATIC BOOLEAN mCsrActiveConfigSet;
+STATIC UINT32  mCsrActiveConfig;
 
 //
 // List of KASLR slides that do not conflict with the previously allocated memory.
 //
-STATIC UINT8   mValidSlides[TOTAL_SLIDE_NUM] = {0};
+STATIC UINT8   mValidSlides[TOTAL_SLIDE_NUM];
 STATIC UINT32  mValidSlidesNum = TOTAL_SLIDE_NUM;
 
 //
 // Detect Sandy or Ivy Bridge CPUs, since they use a different slide formula.
 //
-STATIC BOOLEAN mSandyOrIvy = FALSE;
-STATIC BOOLEAN mSandyOrIvySet = FALSE;
+STATIC BOOLEAN mSandyOrIvy;
+STATIC BOOLEAN mSandyOrIvySet;
 
 STATIC
 BOOLEAN
@@ -196,6 +196,8 @@ DecideOnCustomSlideImplementation (
   UINTN                  Index;
   UINTN                  Slide;
   UINTN                  NumEntries;
+  UINTN                  MaxAvailableSize = 0;
+  UINT8                  FallbackSlide = 0;
 
   Status = GetMemoryMapAlloc (
     &AllocatedMapPages,
@@ -273,6 +275,11 @@ DecideOnCustomSlideImplementation (
       Desc = NEXT_MEMORY_DESCRIPTOR (Desc, DescriptorSize);
     }
 
+    if (AvailableSize > MaxAvailableSize) {
+      MaxAvailableSize = AvailableSize;
+      FallbackSlide = (UINT8)Slide;
+    }
+
     if ((StartAddr + AvailableSize) != EndAddr) {
       //
       // The slide region is not continuous.
@@ -292,13 +299,14 @@ DecideOnCustomSlideImplementation (
 
   if (mValidSlidesNum != TOTAL_SLIDE_NUM) {
     if (mValidSlidesNum == 0) {
-      PrintScreen (L"AMF: No slide values are usable! Use custom slide!\n");
+      PrintScreen (L"AMF: No slide values are usable! Falling back to %d with 0x%08X bytes!\n", FallbackSlide, MaxAvailableSize);
+      mValidSlides[mValidSlidesNum++] = (UINT8)FallbackSlide;
     } else {
       //
       // Pretty-print valid slides as ranges.
       // For example, 1, 2, 3, 4, 5 will become 1-5.
       //
-      PrintScreen (L"AMF: Only %d/%d slide values are usable! Booting may fail!\n", mValidSlidesNum, TOTAL_SLIDE_NUM);
+      PrintScreen (L"AMF: Only %d/%d slide values are usable!\n", mValidSlidesNum, TOTAL_SLIDE_NUM);
       NumEntries = 0;
       for (Index = 0; Index <= mValidSlidesNum; Index++) {
         if (Index == 0) {
