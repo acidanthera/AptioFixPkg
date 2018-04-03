@@ -24,7 +24,8 @@ To debug boot.efi errors on 10.13, aside the usual verbose (-v) boot-arg, you ma
 Before using AptioMemoryFix please ensure that you have:
 - Most up-to-date UEFI BIOS firmware (check your motherboard vendor website).
 - Fast Boot and Hardware Fast Boot disabled in BIOS if present.
-- Above 4G Decoding or similar enabled in BIOS if present.
+- Above 4G Decoding or similar enabled in BIOS if present.  
+**WARNING**: On some motherboards (notably ASUS WS-X299-PRO) this option causes adverse effects, and must be disabled. While no other motherboards with the same issue are known, consider this option to be first to check if you have erratic boot failures.
 - VT-d disabled in BIOS if present (you could also drop ACPI DMAR table with a bootloader).
 - _No_ `slide` boot argument present in NVRAM or anywhere else (it is not necessary unless you cannot boot at all or see `No slide values are usable! Use custom slide!` message from AptioMemoryFix).
 - CFG Lock (MSR 0xE2 write protection) disabled in BIOS if present (consider [patching it](https://github.com/LongSoft/UEFITool/blob/master/UEFIPatch/patches.txt) otherwise if you have enough skills).
