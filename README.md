@@ -48,6 +48,10 @@ Note, that these settings may reset at hardware change and in certain other circ
 - Attempts to more properly handle the memory mappings
 - Implements new mapping code when waking from hibernation (still not stable enough)
 
+## VerifyMsrE2
+
+Certain firmwares fail to properly initialize 0xE2 MSR register (`MSR_BROADWELL_PKG_CST_CONFIG_CONTROL`) across all the cores. This application prints 0xE2 values of all the cores and reports 0xE2 status. The notable example of desyncrhonised 0xE2 MSR registers are GIGABYTE UEFI firmwares for Intel 100 Series and Intel 200 Series chipsets.
+
 #### Credits
 - [Apple](https://www.apple.com) for macOS
 - [AMI](https://ami.com) for APTIO firmware

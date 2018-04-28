@@ -41,13 +41,16 @@
   PcdLib|MdePkg/Library/BasePcdLibNull/BasePcdLibNull.inf
   UefiBootServicesTableLib|MdePkg/Library/UefiBootServicesTableLib/UefiBootServicesTableLib.inf
   UefiDriverEntryPoint|MdePkg/Library/UefiDriverEntryPoint/UefiDriverEntryPoint.inf
+  UefiApplicationEntryPoint|MdePkg/Library/UefiApplicationEntryPoint/UefiApplicationEntryPoint.inf
   UefiLib|MdePkg/Library/UefiLib/UefiLib.inf
   UefiRuntimeServicesTableLib|MdePkg/Library/UefiRuntimeServicesTableLib/UefiRuntimeServicesTableLib.inf
   UefiUsbLib|MdePkg/Library/UefiUsbLib/UefiUsbLib.inf
+  IoLib|MdePkg/Library/BaseIoLibIntrinsic/BaseIoLibIntrinsic.inf
 
 [Components]
   AptioFixPkg/Platform/AptioInputFix/AptioInputFix.inf
   AptioFixPkg/Platform/AptioMemoryFix/AptioMemoryFix.inf
+  AptioFixPkg/Application/VerifyMsrE2/VerifyMsrE2.inf
 
 [PcdsFixedAtBuild]
 !if $(TARGET) == DEBUG
