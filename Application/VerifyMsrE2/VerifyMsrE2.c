@@ -1,5 +1,5 @@
 /** @file
-  Viery MSR 0xE2 status on all the processors.
+  Verify MSR 0xE2 status on all the processors.
 
 Copyright (c) 2018, vit9696. All rights reserved.<BR>
 This program and the accompanying materials
@@ -13,6 +13,7 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 **/
 
 #include <Uefi.h>
+#include <PiDxe.h>
 #include <Library/PcdLib.h>
 #include <Library/UefiLib.h>
 #include <Library/BaseMemoryLib.h>
@@ -20,14 +21,6 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 #include <Library/UefiRuntimeServicesTableLib.h>
 #include <Library/UefiApplicationEntryPoint.h>
 #include <Register/Msr.h>
-
-// This prototype is here to get things compile with the latest EDK2.
-typedef
-VOID
-(EFIAPI *EFI_AP_PROCEDURE) (
-  IN  VOID                              *Buffer
-  );
-
 #include <Protocol/MpService.h>
 
 STATIC EFI_MP_SERVICES_PROTOCOL  *mMpServices;
