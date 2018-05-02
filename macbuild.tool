@@ -5,7 +5,7 @@ pushd "$BUILDDIR" >/dev/null
 BUILDDIR=$(pwd)
 popd >/dev/null
 
-NASMVER="2.13.02"
+NASMVER="2.13.03"
 
 cd "$BUILDDIR"
 
@@ -45,7 +45,7 @@ if [ "$(nasm -v)" = "" ] || [ "$(nasm -v | grep Apple)" != "" ]; then
   prompt "Last tested with nasm $NASMVER. Install it automatically?"
   pushd /tmp >/dev/null
   rm -rf "nasm-${NASMVER}-macosx.zip" "nasm-${NASMVER}"
-  curl -O "http://www.nasm.us/pub/nasm/releasebuilds/${NASMVER}/macosx/nasm-${NASMVER}-macosx.zip" || exit 1
+  curl -OL "http://www.nasm.us/pub/nasm/releasebuilds/${NASMVER}/macosx/nasm-${NASMVER}-macosx.zip" || exit 1
   unzip -q "nasm-${NASMVER}-macosx.zip" "nasm-${NASMVER}/nasm" "nasm-${NASMVER}/ndisasm" || exit 1
   sudo mkdir -p /usr/local/bin || exit 1
   sudo mv "nasm-${NASMVER}/nasm" /usr/local/bin/ || exit 1
