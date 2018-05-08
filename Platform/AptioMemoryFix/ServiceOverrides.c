@@ -10,9 +10,12 @@
 #include <Library/BaseLib.h>
 #include <Library/BaseMemoryLib.h>
 #include <Library/DebugLib.h>
+#include <Library/DevicePathLib.h>
 #include <Library/UefiLib.h>
 #include <Library/UefiBootServicesTableLib.h>
 #include <Library/UefiRuntimeServicesTableLib.h>
+
+#include <Protocol/LoadedImage.h>
 
 #include "Config.h"
 #include "ServiceOverrides.h"
@@ -34,9 +37,10 @@ STATIC EFI_GET_MEMORY_MAP          mStoredGetMemoryMap;
 STATIC EFI_EXIT_BOOT_SERVICES      mStoredExitBootServices;
 STATIC EFI_HANDLE_PROTOCOL         mStoredHandleProtocol;
 STATIC EFI_SET_VIRTUAL_ADDRESS_MAP mStoredSetVirtualAddressMap;
+STATIC EFI_IMAGE_START             mStoredStartImage;
 
 //
-// Original runtime services hash we restore on uninstallation
+// Original runtime services hash we restore at address virtualisation
 //
 STATIC UINT32               mRtPreOverridesCRC32;
 
@@ -59,8 +63,13 @@ STATIC BOOLEAN              mFilterDynamicPoolAllocations;
 //
 // Minimum and maximum addresses allocated by AlocatePages
 //
-EFI_PHYSICAL_ADDRESS        gMinAllocatedAddr;
-EFI_PHYSICAL_ADDRESS        gMaxAllocatedAddr;
+STATIC EFI_PHYSICAL_ADDRESS mMinAllocatedAddr;
+STATIC EFI_PHYSICAL_ADDRESS mMaxAllocatedAddr;
+
+//
+// Amount of nested boot.efi detected
+//
+UINTN                       gMacOSBootNestedCount;
 
 //
 // Last descriptor size obtained from GetMemoryMap
@@ -110,33 +119,13 @@ InstallBsOverrides (
   mStoredGetMemoryMap     = gBS->GetMemoryMap;
   mStoredExitBootServices = gBS->ExitBootServices;
   mStoredHandleProtocol   = gBS->HandleProtocol;
+  mStoredStartImage       = gBS->StartImage;
 
   gBS->AllocatePages      = MOAllocatePages;
   gBS->GetMemoryMap       = MOGetMemoryMap;
   gBS->ExitBootServices   = MOExitBootServices;
   gBS->HandleProtocol     = MOHandleProtocol;
-
-  gBS->Hdr.CRC32 = 0;
-  gBS->CalculateCrc32 (gBS, gBS->Hdr.HeaderSize, &gBS->Hdr.CRC32);
-}
-
-VOID
-UninstallBsOverrides (
-  VOID
-  )
-{
-  //
-  // AllocatePool and FreePool restoration is intentionally not present!
-  // Uninstalling a custom allocator is unsafe if anything tries to free
-  // an allocated pointer afterwards. While this should not be the case for
-  // our code, there are no guarantees for AMI, which we have to shim.
-  // See MOAllocatePool itself for bug details.
-  //
-
-  gBS->AllocatePages    = mStoredAllocatePages;
-  gBS->GetMemoryMap     = mStoredGetMemoryMap;
-  gBS->ExitBootServices = mStoredExitBootServices;
-  gBS->HandleProtocol   = mStoredHandleProtocol;
+  gBS->StartImage         = MOStartImage;
 
   gBS->Hdr.CRC32 = 0;
   gBS->CalculateCrc32 (gBS, gBS->Hdr.HeaderSize, &gBS->Hdr.CRC32);
@@ -181,6 +170,110 @@ EnableDynamicPoolAllocations (
   )
 {
   mFilterDynamicPoolAllocations = FALSE;
+}
+
+/** gBS->StartImage override:
+ * Called to start an efi image.
+ *
+ * If this is boot.efi, then run it with our overrides.
+ */
+EFI_STATUS
+EFIAPI
+MOStartImage (
+  IN     EFI_HANDLE  ImageHandle,
+     OUT UINTN       *ExitDataSize,
+     OUT CHAR16      **ExitData  OPTIONAL
+  )
+{
+  EFI_STATUS                  Status;
+  EFI_LOADED_IMAGE_PROTOCOL   *LoadedImage  = NULL;
+  UINTN                       ValueSize     = 0;
+  EFI_DEVICE_PATH_PROTOCOL    *CurrNode     = NULL;
+  FILEPATH_DEVICE_PATH        *LastNode     = NULL;
+  BOOLEAN                     IsMacOS       = FALSE;
+  UINTN                       PathLen       = 0;
+
+
+  DEBUG ((DEBUG_VERBOSE, "StartImage (%lx)\n", ImageHandle));
+
+  //
+  // Find out image name from EfiLoadedImageProtocol
+  //
+  Status = gBS->HandleProtocol (ImageHandle, &gEfiLoadedImageProtocolGuid, (VOID **)&LoadedImage);
+
+  if (!EFI_ERROR (Status)) {
+    for (CurrNode = LoadedImage->FilePath; !IsDevicePathEnd (CurrNode); CurrNode = NextDevicePathNode (CurrNode)) {
+      if (CurrNode && CurrNode->Type == MEDIA_DEVICE_PATH && CurrNode->SubType == MEDIA_FILEPATH_DP) {
+        LastNode = (FILEPATH_DEVICE_PATH *)CurrNode;
+      }
+    }
+
+    if (LastNode) {
+      //
+      // Detect macOS by boot.efi in the bootloader name.
+      //
+      PathLen = StrLen(LastNode->PathName);
+      if (PathLen > LITERAL_STRLEN(L"boot.efi")) {
+        IsMacOS = !StrCmp(LastNode->PathName + PathLen - LITERAL_STRLEN(L"boot.efi"), L"boot.efi");
+      }
+    }
+  } else {
+    DEBUG ((DEBUG_WARN, "StartImage: OpenProtocol(gEfiLoadedImageProtocolGuid) = %r\n", Status));
+  }
+
+  //
+  // Clear monitoring vars
+  //
+  mMinAllocatedAddr = 0;
+  mMaxAllocatedAddr = 0;
+
+  if (IsMacOS) {
+    //
+    // Report about macOS being loaded.
+    //
+    gMacOSBootNestedCount++;
+
+    //
+    // The presence of the variable means HibernateWake
+    // To cancel hibernate wake it is enough to delete the variable
+    //
+    Status = gRT->GetVariable (L"boot-switch-vars", &gAppleBootVariableGuid, NULL, &ValueSize, NULL);
+    gHibernateWake = Status == EFI_BUFFER_TOO_SMALL;
+
+    //
+    // Save current 64bit state - will be restored later in callback from kernel jump
+    // and relocate JumpToKernel32 code to higher mem (for copying kernel back to
+    // proper place and jumping back to it)
+    //
+    Status = PrepareJumpFromKernel ();
+    if (!EFI_ERROR (Status)) {
+      //
+      // Force boot.efi to use our copy of system table
+      //
+      LoadedImage->SystemTable = (EFI_SYSTEM_TABLE *)(UINTN)gSysTableRtArea;
+
+  #if APTIOFIX_ALLOW_ASLR_IN_SAFE_MODE == 1
+      UnlockSlideSupportForSafeMode ((UINT8 *)LoadedImage->ImageBase, LoadedImage->ImageSize);
+  #endif
+
+      //
+      // Read options
+      //
+      ReadBooterArguments ((CHAR16*)LoadedImage->LoadOptions, LoadedImage->LoadOptionsSize/sizeof(CHAR16));
+    }
+  }
+
+
+  Status = mStoredStartImage (ImageHandle, ExitDataSize, ExitData);
+
+  if (IsMacOS) {
+    //
+    // We failed but other operating systems should be loadable.
+    //
+    gMacOSBootNestedCount--;
+  }
+
+  return Status;
 }
 
 /** gBS->HandleProtocol override:
@@ -231,7 +324,7 @@ MOAllocatePages (
   EFI_STATUS              Status;
   EFI_PHYSICAL_ADDRESS    UpperAddr;
 
-  if (Type == AllocateAddress && MemoryType == EfiLoaderData) {
+  if (gMacOSBootNestedCount > 0 && Type == AllocateAddress && MemoryType == EfiLoaderData) {
     //
     // Called from boot.efi
     //
@@ -240,13 +333,13 @@ MOAllocatePages (
     //
     // Store min and max mem - can be used later to determine start and end of kernel boot image
     //
-    if (gMinAllocatedAddr == 0 || *Memory < gMinAllocatedAddr)
-      gMinAllocatedAddr = *Memory;
-    if (UpperAddr > gMaxAllocatedAddr)
-      gMaxAllocatedAddr = UpperAddr;
+    if (mMinAllocatedAddr == 0 || *Memory < mMinAllocatedAddr)
+      mMinAllocatedAddr = *Memory;
+    if (UpperAddr > mMaxAllocatedAddr)
+      mMaxAllocatedAddr = UpperAddr;
 
     Status = mStoredAllocatePages (Type, MemoryType, NumberOfPages, Memory);
-  } else if (gHibernateWake && Type == AllocateAnyPages && MemoryType == EfiLoaderData) {
+  } else if (gMacOSBootNestedCount > 0 && gHibernateWake && Type == AllocateAnyPages && MemoryType == EfiLoaderData) {
     //
     // Called from boot.efi during hibernate wake,
     // first such allocation is for hibernate image
@@ -283,7 +376,7 @@ MOAllocatePool (
   // While it is imperfect design-wise, it works very well on many ASUS Skylake boards
   // when performing memory map dumps via -aptiodump.
   //
-  if (Type == EfiBootServicesData && mFilterDynamicPoolAllocations) {
+  if (gMacOSBootNestedCount > 0 && Type == EfiBootServicesData && mFilterDynamicPoolAllocations) {
     *Buffer = UmmMalloc ((UINT32)Size);
     if (*Buffer)
       return EFI_SUCCESS;
@@ -334,7 +427,7 @@ MOGetMemoryMap (
 
   Status = mStoredGetMemoryMap (MemoryMapSize, MemoryMap, MapKey, DescriptorSize, DescriptorVersion);
 
-  if (Status == EFI_SUCCESS) {
+  if (gMacOSBootNestedCount > 0 && Status == EFI_SUCCESS) {
     if (gDumpMemArgPresent) {
       PrintMemMap (L"GetMemoryMap", *MemoryMapSize, *DescriptorSize, MemoryMap, gRtShims, gSysTableRtArea);
     }
@@ -390,6 +483,13 @@ MOExitBootServices (
   IOHibernateImageHeader   *ImageHeader = NULL;
 
   //
+  // For non-macOS operating systems return directly.
+  //
+  if (gMacOSBootNestedCount == 0) {
+    return mStoredExitBootServices (ImageHandle, MapKey);
+  }
+
+  //
   // We need hibernate image address for wake
   //
   if (gHibernateWake && mHibernateImageAddress == 0) {
@@ -415,9 +515,9 @@ MOExitBootServices (
     return Status;
 
   if (!gHibernateWake) {
-    DEBUG ((DEBUG_VERBOSE, "ExitBootServices: gMinAllocatedAddr: %lx, gMaxAllocatedAddr: %lx\n", gMinAllocatedAddr, gMaxAllocatedAddr));
+    DEBUG ((DEBUG_VERBOSE, "ExitBootServices: mMinAllocatedAddr: %lx, mMaxAllocatedAddr: %lx\n", mMinAllocatedAddr, mMaxAllocatedAddr));
 
-    SlideAddr  = gMinAllocatedAddr - 0x100000;
+    SlideAddr  = mMinAllocatedAddr - 0x100000;
     MachOImage = (VOID*)(UINTN)(SlideAddr + SLIDE_GRANULARITY);
     KernelEntryFromMachOPatchJump (MachOImage, SlideAddr);
   } else {
@@ -514,31 +614,38 @@ MOSetVirtualAddressMap (
   //
   UninstallRtOverrides ();
 
-  if (gDumpMemArgPresent) {
-    PrintMemMap (L"SetVirtualAddressMap", MemoryMapSize, DescriptorSize, VirtualMap, gRtShims, gSysTableRtArea);
+  //
+  // Apply the necessary changes for macOS support
+  //
+  if (gMacOSBootNestedCount > 0) {
+    if (gDumpMemArgPresent) {
+      PrintMemMap (L"SetVirtualAddressMap", MemoryMapSize, DescriptorSize, VirtualMap, gRtShims, gSysTableRtArea);
+      //
+      // To print as much information as possible we delay ExitBootServices.
+      // Most likely this will fail, but let's still try!
+      //
+      ForceExitBootServices (mStoredExitBootServices, mExitBSImageHandle, mExitBSMapKey);
+    }
+
     //
-    // To print as much information as possible we delay ExitBootServices.
-    // Most likely this will fail, but let's still try!
+    // Protect RT areas from relocation by marking then MemMapIO
     //
-    ForceExitBootServices (mStoredExitBootServices, mExitBSImageHandle, mExitBSMapKey);
+    ProtectRtMemoryFromRelocation (MemoryMapSize, DescriptorSize, DescriptorVersion, VirtualMap, gSysTableRtArea);
+
+    //
+    // Remember physical sys table addr
+    //
+    EfiSystemTable = (UINT32)(UINTN)gST;
+
+    //
+    // Virtualize RT services with all needed fixes
+    //
+    Status = ExecSetVirtualAddressesToMemMap (MemoryMapSize, DescriptorSize, DescriptorVersion, VirtualMap);
+
+    CopyEfiSysTableToRtArea (&EfiSystemTable);
+  } else {
+    Status = gRT->SetVirtualAddressMap (MemoryMapSize, DescriptorSize, DescriptorVersion, VirtualMap);
   }
-
-  //
-  // Protect RT areas from relocation by marking then MemMapIO
-  //
-  ProtectRtMemoryFromRelocation (MemoryMapSize, DescriptorSize, DescriptorVersion, VirtualMap, gSysTableRtArea);
-
-  //
-  // Remember physical sys table addr
-  //
-  EfiSystemTable = (UINT32)(UINTN)gST;
-
-  //
-  // Virtualize RT services with all needed fixes
-  //
-  Status = ExecSetVirtualAddressesToMemMap (MemoryMapSize, DescriptorSize, DescriptorVersion, VirtualMap);
-
-  CopyEfiSysTableToRtArea (&EfiSystemTable);
 
   //
   // Correct shim pointers right away

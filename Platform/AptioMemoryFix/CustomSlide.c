@@ -23,6 +23,7 @@
 #include "FlatDevTree/device_tree.h"
 #include "MemoryMap.h"
 #include "RtShims.h"
+#include "ServiceOverrides.h"
 #include "Utils.h"
 
 //
@@ -396,6 +397,13 @@ GetVariableBootArgs (
   UINT8       Slide;
   CHAR8       SlideArgument[10];
   CONST UINTN SlideArgumentLength = ARRAY_SIZE (SlideArgument)-1;
+
+  //
+  // Run as is for non-macOS operating system
+  //
+  if (gMacOSBootNestedCount == 0) {
+    return OrgGetVariable (VariableName, VendorGuid, Attributes, DataSize, Data);
+  }
 
   if (!mStoredBootArgsVarSet) {
     Slide  = GenerateRandomSlideValue ();

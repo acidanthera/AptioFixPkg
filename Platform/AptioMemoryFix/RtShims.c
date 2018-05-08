@@ -127,26 +127,6 @@ VOID InstallRtShims (
   }
 }
 
-
-VOID
-UninstallRtShims (
-  VOID
-  )
-{
-  gRT->GetVariable               = (EFI_GET_VARIABLE)gGetVariable;
-  gRT->GetNextVariableName       = (EFI_GET_NEXT_VARIABLE_NAME)gGetNextVariableName;
-  gRT->SetVariable               = (EFI_SET_VARIABLE)gSetVariable;
-  gRT->GetTime                   = (EFI_GET_TIME)gGetTime;
-  gRT->SetTime                   = (EFI_SET_TIME)gSetTime;
-  gRT->GetWakeupTime             = (EFI_GET_WAKEUP_TIME)gGetWakeupTime;
-  gRT->SetWakeupTime             = (EFI_SET_WAKEUP_TIME)gSetWakeupTime;
-  gRT->GetNextHighMonotonicCount = (EFI_GET_NEXT_HIGH_MONO_COUNT)gGetNextHighMonoCount;
-  gRT->ResetSystem               = (EFI_RESET_SYSTEM)gResetSystem;
-
-  gRT->Hdr.CRC32 = 0;
-  gBS->CalculateCrc32(gRT, gRT->Hdr.HeaderSize, &gRT->Hdr.CRC32);
-}
-
 VOID
 VirtualizeRtShims (
   UINTN                  MemoryMapSize,

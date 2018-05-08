@@ -293,7 +293,7 @@ VmAllocateMemoryPool (
   Addr = BASE_4GB; // max address
 
   Status = AllocatePagesFromTop (EfiBootServicesData, VmMemoryPoolFreePages, &Addr, FALSE);
-  if (Status != EFI_SUCCESS) {
+  if (EFI_ERROR (Status)) {
     PrintScreen (L"AMF: vm memory pool allocation failure - %r\n", Status);
   } else {
     VmMemoryPool = (UINT8*)Addr;

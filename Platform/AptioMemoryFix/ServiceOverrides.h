@@ -11,23 +11,17 @@
 #define APTIOFIX_SERVICE_OVERRIDES_H
 
 //
-// Minimum and maximum addresses allocated by AlocatePages
-//
-extern EFI_PHYSICAL_ADDRESS        gMinAllocatedAddr;
-extern EFI_PHYSICAL_ADDRESS        gMaxAllocatedAddr;
-
-//
 // Last descriptor size obtained from GetMemoryMap
 //
 extern UINTN                       gMemoryMapDescriptorSize;
 
-VOID
-InstallBsOverrides (
-  VOID
-  );
+//
+// Amount of nested boot.efi detected
+//
+extern UINTN                       gMacOSBootNestedCount;
 
 VOID
-UninstallBsOverrides (
+InstallBsOverrides (
   VOID
   );
 
@@ -49,6 +43,14 @@ DisableDynamicPoolAllocations (
 VOID
 EnableDynamicPoolAllocations (
   VOID
+  );
+
+EFI_STATUS
+EFIAPI
+MOStartImage (
+  IN     EFI_HANDLE  ImageHandle,
+     OUT UINTN       *ExitDataSize,
+     OUT CHAR16      **ExitData  OPTIONAL
   );
 
 EFI_STATUS

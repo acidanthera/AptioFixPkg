@@ -33,11 +33,6 @@ InstallRtShims (
   );
 
 VOID
-UninstallRtShims (
-  VOID
-  );
-
-VOID
 VirtualizeRtShims (
   UINTN                  MemoryMapSize,
   UINTN                  DescriptorSize,
