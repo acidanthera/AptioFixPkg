@@ -9,6 +9,9 @@
 BITS     64
 DEFAULT  REL
 
+; Constructs a shim with write protection patch avoiding
+; a conflict with XNU W^X mapping.
+; The argument marks a number of args the func takes (1~5).
 %macro        ConstructShim 1
 %if %1 > 5
     %error "At Most 5 Args Supported."
@@ -77,8 +80,43 @@ ASM_PFX(RtShimGetNextVariableName):
 
 global ASM_PFX(RtShimGetTime)
 ASM_PFX(RtShimGetTime):
+    ; On old AMI firmwares (like the one found in GA-Z87X-UD4H) there is a chance
+    ; of getting 2047 (EFI_UNSPECIFIED_TIMEZONE) from GetTime. This is valid,
+    ; yet is disliked by some software including but not limited to UEFI Shell.
+    ; See the patch: https://lists.01.org/pipermail/edk2-devel/2018-May/024534.html
+    ; As a workaround we make sure this does not happen at all.
+    push       rsi
+    push       rbx
+    push       rcx                    ; Save the original EFI_TIME pointer
+    sub        rsp, 0x20
+    pushfq
+    cli
+    pop        rsi
+    mov        rbx, cr0
+    mov        rax, rbx
+    and        rax, 0xfffffffffffeffff
+    mov        cr0, rax
     mov        rax, qword [ASM_PFX(gGetTime)]
-    jmp        short FourArgsShim
+    call       rax
+    add        rsp, 0x20
+    test       ebx, 0x10000
+    je         .SKIP_RESTORE_WP
+    mov        cr0, rbx
+.SKIP_RESTORE_WP:
+    pop        rbx                    ; load saved EFI_TIME pointer
+    test       rax, rax               ; check for EFI_ERROR
+    js         .SKIP_CORRECT_TIMEZONE
+    cmp        word [rbx + 12], 2047  ; offsetof(EFI_TIME, TimeZone)
+    jnz        .SKIP_CORRECT_TIMEZONE
+    mov        word [rbx + 12], 0     ; default to UTC
+.SKIP_CORRECT_TIMEZONE:
+    pop        rbx
+    test       si, 0x200
+    pop        rsi
+    je         .SKIP_RESTORE_INTR
+    sti
+.SKIP_RESTORE_INTR:
+    ret
 
 global ASM_PFX(RtShimSetTime)
 ASM_PFX(RtShimSetTime):
