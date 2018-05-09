@@ -398,13 +398,6 @@ GetVariableBootArgs (
   CHAR8       SlideArgument[10];
   CONST UINTN SlideArgumentLength = ARRAY_SIZE (SlideArgument)-1;
 
-  //
-  // Run as is for non-macOS operating system
-  //
-  if (gMacOSBootNestedCount == 0) {
-    return OrgGetVariable (VariableName, VendorGuid, Attributes, DataSize, Data);
-  }
-
   if (!mStoredBootArgsVarSet) {
     Slide  = GenerateRandomSlideValue ();
     Status = OrgGetVariable (VariableName, VendorGuid, Attributes, &StoredBootArgsSize, mStoredBootArgsVar);
@@ -560,7 +553,7 @@ GetVariableCustomSlide (
   OUT    VOID      *Data
   )
 {
-  if (VariableName && VendorGuid && DataSize &&
+  if (gMacOSBootNestedCount > 0 && VariableName && VendorGuid && DataSize &&
     !CompareMem (VendorGuid, &gAppleBootVariableGuid, sizeof(EFI_GUID))) {
     //
     // We override csr-active-config with CSR_ALLOW_UNRESTRICTED_NVRAM bit set
