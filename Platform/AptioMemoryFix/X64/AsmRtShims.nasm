@@ -54,19 +54,74 @@ ALIGN          8         ; to align the dqs
 global ASM_PFX(gRtShimsDataStart)
 ASM_PFX(gRtShimsDataStart):
 
+global ASM_PFX(RtShimsReturnInvalidParameter)
+ASM_PFX(RtShimsReturnInvalidParameter):
+    mov        rax, 0x8000000000000002
+    ret
+
+global ASM_PFX(RtShimsReturnSecurityViolation)
+ASM_PFX(RtShimsReturnSecurityViolation):
+    mov        rax, 0x800000000000001A
+    ret
+
 global ASM_PFX(RtShimSetVariable)
 ASM_PFX(RtShimSetVariable):
+    ; For performance and simplicity do initial validation ourselves.
+    test       rcx, rcx
+    jz         ASM_PFX(RtShimsReturnInvalidParameter)     ; VariableName is NULL
+    test       rdx, rdx
+    jz         ASM_PFX(RtShimsReturnInvalidParameter)     ; VendorGuid is NULL
+.INITIAL_VALIDATION_OVER:
+    ; Once boot.efi virtualizes the pointers we should protect read-only
+    ; variables from writing.
+    mov        rax, qword [ASM_PFX(gGetVariableOverride)]
+    test       rax, rax
+    jnz        .SKIP_ACCESS_CHECK
+    ; We have a virtualized pointer, so we also need to protect write-only
+    ; variables from reading. Compare VendorGuid against gReadOnlyVariableGuid
+    ; and return EFI_SECURITY_VIOLATION on equals.
+    mov        rax, qword [rdx]
+    cmp        qword [ASM_PFX(gReadOnlyVariableGuid)], rax
+    jnz        .SKIP_ACCESS_CHECK
+    mov        rax, qword [rdx+8]
+    cmp        qword [ASM_PFX(gReadOnlyVariableGuid)+8], rax
+    jz         ASM_PFX(RtShimsReturnSecurityViolation)
+.SKIP_ACCESS_CHECK:
     mov        rax, qword [ASM_PFX(gSetVariable)]
     jmp        short FiveArgsShim
 
 global ASM_PFX(RtShimGetVariable)
 ASM_PFX(RtShimGetVariable):
-    ; Until boot.efi virtualizes the pointers we use a custom wrapper.
+    ; For performance and simplicity do initial validation ourselves.
+    test       rcx, rcx
+    jz         ASM_PFX(RtShimsReturnInvalidParameter)     ; VariableName is NULL
+    test       rdx, rdx
+    jz         ASM_PFX(RtShimsReturnInvalidParameter)     ; VendorGuid is NULL
+    test       r9, r9
+    jz         ASM_PFX(RtShimsReturnInvalidParameter)     ; DataSize is NULL
+    cmp        qword [rsp+0x28], 0
+    jnz        .INITIAL_VALIDATION_OVER                   ; Data is not NULL
+    mov        rax, qword [r9]
+    test       rax, rax
+    jnz        ASM_PFX(RtShimsReturnInvalidParameter)     ; Data is NULL and *DataSize is not 0
+.INITIAL_VALIDATION_OVER:
+    ; Once boot.efi virtualizes the pointers we should protect write-only
+    ; variables from reading. Prior to that a custom wrapper is used.
     mov        rax, qword [ASM_PFX(gGetVariableOverride)]
     test       rax, rax
-    jnz        .USE_CURRENT_FUNC
+    jnz        .SKIP_ACCESS_CHECK_WRAPPER
+    ; We have a virtualized pointer, so we also need to protect write-only
+    ; variables from reading. Compare VendorGuid against gWriteOnlyVariableGuid
+    ; and return EFI_SECURITY_VIOLATION on equals.
+    mov        rax, qword [rdx]
+    cmp        qword [ASM_PFX(gWriteOnlyVariableGuid)], rax
+    jnz        .SKIP_ACCESS_CHECK_INTERNAL
+    mov        rax, qword [rdx+8]
+    cmp        qword [ASM_PFX(gWriteOnlyVariableGuid)+8], rax
+    jz         ASM_PFX(RtShimsReturnSecurityViolation)
+.SKIP_ACCESS_CHECK_INTERNAL:
     mov        rax, qword [ASM_PFX(gGetVariable)]
-.USE_CURRENT_FUNC:
+.SKIP_ACCESS_CHECK_WRAPPER:
     ;jmp       short FiveArgsShim
     ; fall through to FiveArgsShim
 
@@ -178,6 +233,12 @@ ASM_PFX(gResetSystem):            dq  0
 
 global ASM_PFX(gGetVariableOverride)
 ASM_PFX(gGetVariableOverride):    dq  0
+
+global ASM_PFX(gReadOnlyVariableGuid)
+ASM_PFX(gReadOnlyVariableGuid):   times 2 dq 0
+
+global ASM_PFX(gWriteOnlyVariableGuid)
+ASM_PFX(gWriteOnlyVariableGuid):  times 2 dq 0
 
 global ASM_PFX(gRtShimsDataEnd)
 ASM_PFX(gRtShimsDataEnd):

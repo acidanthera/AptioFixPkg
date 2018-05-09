@@ -14,6 +14,8 @@
 #include <Library/UefiBootServicesTableLib.h>
 #include <Library/UefiRuntimeServicesTableLib.h>
 
+#include <Guid/LiluVariables.h>
+
 #include "Config.h"
 #include "RtShims.h"
 
@@ -30,6 +32,9 @@ extern UINTN gSetWakeupTime;
 extern UINTN gGetNextHighMonoCount;
 extern UINTN gResetSystem;
 extern UINTN gGetVariableOverride;
+
+extern EFI_GUID gReadOnlyVariableGuid;
+extern EFI_GUID gWriteOnlyVariableGuid;
 
 extern UINTN RtShimGetVariable;
 extern UINTN RtShimGetNextVariableName;
@@ -59,11 +64,20 @@ STATIC RT_SHIM_PTRS mShimPtrArray[] = {
 
 STATIC RT_RELOC_PROTECT_DATA mRelocInfoData;
 
+STATIC EFI_GUID mLiluReadOnlyVariableGuid   = LILU_READ_ONLY_VARIABLE_GUID;
+STATIC EFI_GUID mLiluWriteOnlyVariableGuid  = LILU_WRITE_ONLY_VARIABLE_GUID;
+
 VOID InstallRtShims (
   EFI_GET_VARIABLE GetVariableOverride
   )
 {
   EFI_STATUS Status;
+
+  //
+  // Support read-only and write-only variables from runtime-services.
+  //
+  CopyMem(&gReadOnlyVariableGuid, &mLiluReadOnlyVariableGuid, sizeof(EFI_GUID));
+  CopyMem(&gWriteOnlyVariableGuid, &mLiluWriteOnlyVariableGuid, sizeof(EFI_GUID));
 
 #if APTIOFIX_ALLOCATE_POOL_GIVES_STABLE_ADDR == 1
   //
