@@ -1,5 +1,5 @@
 ## @file
-#  Viery MSR 0xE2 status on all the processors.
+#  Clean several important nvram variables to recover from issues.
 #
 #  Copyright (c) 2018, vit9696. All rights reserved.<BR>
 #
@@ -14,8 +14,8 @@
 
 [Defines]
   INF_VERSION                    = 0x00010005
-  BASE_NAME                      = VerifyMsrE2
-  FILE_GUID                      = 9031CCA3-EF7A-4D36-ADCA-F75802085D32
+  BASE_NAME                      = CleanNvram
+  FILE_GUID                      = 09BD751B-774E-4F54-A339-D9D6D8274BD1
   MODULE_TYPE                    = UEFI_APPLICATION
   VERSION_STRING                 = 1.0
   ENTRY_POINT                    = UefiMain
@@ -32,16 +32,22 @@
 #
 
 [Sources]
-  VerifyMsrE2.c
+  CleanNvram.c
 
 [Packages]
   AptioFixPkg/AptioFixPkg.dec
+  EfiPkg/EfiPkg.dec
   MdePkg/MdePkg.dec
   MdeModulePkg/MdeModulePkg.dec
   UefiCpuPkg/UefiCpuPkg.dec
 
+[Guids]
+  gEfiGlobalVariableGuid                      ## CONSUMES
+  gAppleBootVariableGuid                      ## CONSUMES
+  gAppleVendorVariableGuid                    ## CONSUMES
+  gAppleTrbSecureVariableGuid                 ## CONSUMES
+
 [Protocols]
-  gEfiMpServiceProtocolGuid                 ## CONSUMES
 
 [LibraryClasses]
   UefiApplicationEntryPoint

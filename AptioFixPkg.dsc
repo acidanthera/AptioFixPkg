@@ -51,6 +51,7 @@
   AptioFixPkg/Platform/AptioInputFix/AptioInputFix.inf
   AptioFixPkg/Platform/AptioMemoryFix/AptioMemoryFix.inf
   AptioFixPkg/Application/VerifyMsrE2/VerifyMsrE2.inf
+  AptioFixPkg/Application/CleanNvram/CleanNvram.inf
 
 [PcdsFixedAtBuild]
 !if $(TARGET) == DEBUG
