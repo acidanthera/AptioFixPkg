@@ -23,6 +23,7 @@
 #include "CustomSlide.h"
 #include "RtShims.h"
 #include "ServiceOverrides.h"
+#include "UnicodeCollation/UnicodeCollationEng.h"
 #include "VMem.h"
 
 //
@@ -59,12 +60,25 @@ AptioMemoryFixEntrypoint (
     return EFI_ALREADY_STARTED;
   }
 
-  gBS->InstallProtocolInterface (
+  Status = gBS->InstallProtocolInterface (
     &Handle,
     &gAptioMemoryFixProtocolGuid,
     EFI_NATIVE_INTERFACE,
     &mAptioMemoryFixProtocol
     );
+
+  if (EFI_ERROR (Status)) {
+    PrintScreen (L"AMF: protocol install failure\n");
+    return Status;
+  }
+
+#ifdef APTIOFIX_UNICODE_COLLATION_FIX
+  Status = InitializeUnicodeCollationEng (ImageHandle, SystemTable);
+  if (EFI_ERROR (Status)) {
+    PrintScreen (L"AMF: collation install failure\n");
+    return Status;
+  }
+#endif
 
   //
   // Init VMem memory pool - will be used after ExitBootServices

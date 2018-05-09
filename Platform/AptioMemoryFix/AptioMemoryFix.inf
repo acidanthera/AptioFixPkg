@@ -63,6 +63,8 @@
   VMem.h
   UmmMalloc/UmmMalloc.h
   UmmMalloc/UmmMalloc.c
+  UnicodeCollation/UnicodeCollationEng.c
+  UnicodeCollation/UnicodeCollationEng.h
   Utils.c
   Utils.h
 

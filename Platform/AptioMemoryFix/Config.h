@@ -94,4 +94,12 @@
 #define APTIOFIX_CUSTOM_POOL_ALLOCATOR_SIZE 0x2000000
 #endif
 
+/**
+ * Fix unicode collation if unavailable or broken. Necessary for many applications, notably UEFI Shell
+ * on multiple APTIO IV boards.
+ */
+#ifdef APTIOFIX_UNICODE_COLLATION_FIX
+#define APTIOFIX_UNICODE_COLLATION_FIX 1
+#endif
+
 #endif // APTIOFIX_HACK_CONFIG_H
