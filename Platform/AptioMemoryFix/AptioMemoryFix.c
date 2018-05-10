@@ -21,6 +21,7 @@
 #include "BootArgs.h"
 #include "BootFixes.h"
 #include "CustomSlide.h"
+#include "HashServices/HashServices.h"
 #include "RtShims.h"
 #include "ServiceOverrides.h"
 #include "UnicodeCollation/UnicodeCollationEng.h"
@@ -68,15 +69,29 @@ AptioMemoryFixEntrypoint (
     );
 
   if (EFI_ERROR (Status)) {
-    PrintScreen (L"AMF: protocol install failure\n");
+    PrintScreen (L"AMF: protocol install failure - %r\n", Status);
     return Status;
   }
 
-#ifdef APTIOFIX_UNICODE_COLLATION_FIX
+#if APTIOFIX_UNICODE_COLLATION_FIX == 1
   Status = InitializeUnicodeCollationEng (ImageHandle, SystemTable);
   if (EFI_ERROR (Status)) {
-    PrintScreen (L"AMF: collation install failure\n");
+    PrintScreen (L"AMF: collation install failure - %r\n", Status);
     return Status;
+  }
+#endif
+
+#if APTIOFIX_HASH_SERVICES_FIX == 1
+  Status = InitializeHashServices (ImageHandle, SystemTable);
+  if (EFI_ERROR (Status)) {
+    PrintScreen (L"AMF: hash install failure - %r\n", Status);
+    return Status;
+  }
+#endif
+
+#if APTIOFIX_HASH_SERVICES_TEST == 1
+  if (!EFI_ERROR (Status)) {
+    HSTestImpl ();
   }
 #endif
 

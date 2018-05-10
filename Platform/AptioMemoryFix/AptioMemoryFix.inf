@@ -48,6 +48,14 @@
   CustomSlide.h
   FlatDevTree/device_tree.c
   FlatDevTree/device_tree.h
+  HashServices/HashServices.c
+  HashServices/HashServices.h
+  HashServices/md5.c
+  HashServices/md5.h
+  HashServices/sha1.c
+  HashServices/sha1.h
+  HashServices/sha256.h
+  HashServices/sha256.c
   Hibernate.h
   Mach-O/loader.h
   Mach-O/Mach-O.c
@@ -83,6 +91,9 @@
   gEfiMiscSubClassGuid                        ## SOMETIMES_CONSUMES
   gEfiProcessorSubClassGuid                   ## SOMETIMES_CONSUMES
   gEfiMemorySubClassGuid                      ## SOMETIMES_CONSUMES
+  gEfiHashAlgorithmMD5Guid                    ## SOMETIMES_CONSUMES
+  gEfiHashAlgorithmSha1Guid                   ## SOMETIMES_CONSUMES
+  gEfiHashAlgorithmSha256Guid                 ## SOMETIMES_CONSUMES
 
 [Protocols]
   gAptioMemoryFixProtocolGuid                 ## PRODUCES
@@ -103,6 +114,9 @@
   gAppleImageCodecProtocolGuid                ## SOMETIMES_CONSUMES
   gEfiDataHubProtocolGuid                     ## SOMETIMES_CONSUMES
   gEfiLegacy8259ProtocolGuid                  ## SOMETIMES_CONSUMES
+  gEfiUnicodeCollation2ProtocolGuid           ## SOMETIMES_CONSUMES
+  gEfiHashServiceBindingProtocolGuid          ## SOMETIMES_CONSUMES
+  gEfiHashProtocolGuid                        ## SOMETIMES_CONSUMES
 
 # if built as runtime driver
 [Depex]

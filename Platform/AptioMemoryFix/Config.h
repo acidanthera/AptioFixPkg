@@ -98,8 +98,22 @@
  * Fix unicode collation if unavailable or broken. Necessary for many applications, notably UEFI Shell
  * on multiple APTIO IV boards.
  */
-#ifdef APTIOFIX_UNICODE_COLLATION_FIX
+#ifndef APTIOFIX_UNICODE_COLLATION_FIX
 #define APTIOFIX_UNICODE_COLLATION_FIX 1
+#endif
+
+/**
+ * Install built-in hash services protocol to replace often broken SHA-1 implementaiton in APTIO IV.
+ */
+#ifndef APTIOFIX_HASH_SERVICES_FIX
+#define APTIOFIX_HASH_SERVICES_FIX 1
+#endif
+
+/**
+ * Perform hash services basic sanity check at boot.
+ */
+#ifndef APTIOFIX_HASH_SERVICES_TEST
+#define APTIOFIX_HASH_SERVICES_TEST 0
 #endif
 
 #endif // APTIOFIX_HACK_CONFIG_H

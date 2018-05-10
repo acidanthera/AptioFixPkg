@@ -51,7 +51,9 @@ sudo nvram bootercfg="log=0 debug=0"
 - Adds Safe Mode support on systems with used lower addresses
 - Ensures no slide argument leak to the operating system
 - Attempts to more properly handle the memory mappings
+- Implements read-only and write-only RT variables beneficial to Lilu plugins
 - Works around missing gUnicodeCollation and `PlatformLang` on several firmwares
+- Fixes broken legacy hash services protocol (only MD5, SHA-1, SHA-256 are supported)
 - Ensures that GetTime does not report unspecified timezone
 - Supports boot.efi chainloading (e.g. via `sudo nvram recovery-boot-mode=open`)
 - Implements new mapping code when waking from hibernation (still not stable enough)

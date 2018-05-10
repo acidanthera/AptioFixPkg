@@ -15,6 +15,8 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 
 #include "UnicodeCollationEng.h"
 
+#include <Library/BaseLib.h>
+
 CHAR8 mEngUpperMap[MAP_TABLE_SIZE];
 CHAR8 mEngLowerMap[MAP_TABLE_SIZE];
 CHAR8 mEngInfoMap[MAP_TABLE_SIZE];
@@ -87,21 +89,27 @@ InitializeUnicodeCollationEng (
   )
 {
   EFI_STATUS  Status;
+  BOOLEAN     OverwroteLang = FALSE;
   UINTN       Index;
   UINTN       Index2;
   UINTN       Size = 0;
   VOID        *Existing = NULL;
+  CHAR8       PlatformLang[16];
 
   //
   // On several platforms EFI_PLATFORM_LANG_VARIABLE_NAME is not available.
-  // Fallback to "en-US".
+  // Fallback to "en-US" which is supported by this driver and the wide majority of others.
   //
-  Status = gRT->GetVariable (EFI_PLATFORM_LANG_VARIABLE_NAME, &gEfiGlobalVariableGuid, NULL, &Size, NULL);
-  if (Status != EFI_BUFFER_TOO_SMALL) {
+  Status = gRT->GetVariable (EFI_PLATFORM_LANG_VARIABLE_NAME, &gEfiGlobalVariableGuid, NULL, &Size, PlatformLang);
+  //
+  // If we got EFI_BUFFER_TOO_SMALL, we got some really insane value, discard it.
+  //
+  if (EFI_ERROR (Status)) {
     gRT->SetVariable (
       EFI_PLATFORM_LANG_VARIABLE_NAME, &gEfiGlobalVariableGuid,
       EFI_VARIABLE_RUNTIME_ACCESS | EFI_VARIABLE_BOOTSERVICE_ACCESS | EFI_VARIABLE_NON_VOLATILE,
       6, "en-US");
+    OverwroteLang = TRUE;
   }
 
   Status = gBS->LocateProtocol (
@@ -114,6 +122,18 @@ InitializeUnicodeCollationEng (
     // We do not need to install an existing collation.
     //
     return Status;
+  }
+
+  //
+  // On some platforms with missing gEfiUnicodeCollation2ProtocolGuid EFI_PLATFORM_LANG_VARIABLE_NAME is set 
+  // to the value different from "en-...". This is not going to work with our driver UEFI Shell load failures.
+  // We did not overwrite EFI_PLATFORM_LANG_VARIABLE_NAME, but it uses some other language.
+  //
+  if (!OverwroteLang && AsciiStrnCmp (PlatformLang, "en-", 3)) {
+    gRT->SetVariable (
+      EFI_PLATFORM_LANG_VARIABLE_NAME, &gEfiGlobalVariableGuid,
+      EFI_VARIABLE_RUNTIME_ACCESS | EFI_VARIABLE_BOOTSERVICE_ACCESS | EFI_VARIABLE_NON_VOLATILE,
+      6, "en-US");
   }
 
   //
