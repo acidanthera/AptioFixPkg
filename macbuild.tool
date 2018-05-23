@@ -26,6 +26,32 @@ updaterepo() {
   popd >/dev/null
 }
 
+package() {
+  if [ ! -d "$1" ]; then
+    echo "Missing package directory"
+    exit 1
+  fi
+
+  local ver=$(cat Include/Protocol/AptioMemoryFixProtocol.h | grep APTIOMEMORYFIX_PROTOCOL_REVISION | cut -f4 -d' ')
+  if [ "$(echo $ver | grep -E '^[0-9]+$')" = "" ]; then
+    echo "Invalid version $ver"
+  fi
+
+  pushd "$1" || exit 1
+  rm -rf tmp || exit 1
+  mkdir -p tmp/Drivers || exit 1
+  mkdir -p tmp/Tools || exit 1
+  cp AptioInputFix.efi tmp/Drivers/ || exit 1
+  cp AptioMemoryFix.efi tmp/Drivers/ || exit 1
+  cp CleanNvram.efi tmp/Tools/ || exit 1
+  cp VerifyMsrE2.efi tmp/Tools/ || exit 1
+  pushd tmp || exit 1
+  zip -qry ../"AptioFix-R${ver}-${2}.zip" * || exit 1
+  popd || exit 1
+  rm -rf tmp || exit 1
+  popd || exit 1
+}
+
 if [ "$BUILDDIR" != "$(printf "%s\n" $BUILDDIR)" ]; then
   echo "EDK2 build system may still fail to support directories with spaces!"
   exit 1
@@ -99,4 +125,14 @@ fi
 
 if [ "$MODE" = "" ] || [ "$MODE" = "RELEASE" ]; then
   build -a X64 -b RELEASE -t XCODE5 -p AptioFixPkg/AptioFixPkg.dsc || exit 1
+fi
+
+cd .. || exit 1
+
+if [ "$PACKAGE" = "" ] || [ "$PACKAGE" = "DEBUG" ]; then
+  package "Binaries/DEBUG" "DEBUG" || exit 1
+fi
+
+if [ "$PACKAGE" = "" ] || [ "$PACKAGE" = "RELEASE" ]; then
+  package "Binaries/RELEASE" "RELEASE" || exit 1
 fi
