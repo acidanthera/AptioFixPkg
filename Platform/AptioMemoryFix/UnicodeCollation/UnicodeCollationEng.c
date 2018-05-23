@@ -16,6 +16,7 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 #include "UnicodeCollationEng.h"
 
 #include <Library/BaseLib.h>
+#include <Library/UefiLib.h>
 
 CHAR8 mEngUpperMap[MAP_TABLE_SIZE];
 CHAR8 mEngLowerMap[MAP_TABLE_SIZE];
@@ -56,6 +57,11 @@ CHAR8 mOtherChars[] = {
 EFI_HANDLE  mHandle = NULL;
 
 //
+// Supported language list, meant to contain one extra language if necessary.
+//
+STATIC CHAR8  UnicodeLanguages[6] = "en";
+
+//
 // EFI Unicode Collation2 Protocol supporting RFC 4646 language code
 //
 GLOBAL_REMOVE_IF_UNREFERENCED EFI_UNICODE_COLLATION_PROTOCOL  Unicode2Eng = {
@@ -65,7 +71,7 @@ GLOBAL_REMOVE_IF_UNREFERENCED EFI_UNICODE_COLLATION_PROTOCOL  Unicode2Eng = {
   EngStrUpr,
   EngFatToStr,
   EngStrToFat,
-  "en"
+  UnicodeLanguages
 };
 
 /**
@@ -92,19 +98,19 @@ InitializeUnicodeCollationEng (
   BOOLEAN     OverwroteLang = FALSE;
   UINTN       Index;
   UINTN       Index2;
-  UINTN       Size = 0;
   VOID        *Existing = NULL;
-  CHAR8       PlatformLang[16];
+  CHAR8       *PlatformLang = NULL;
+  UINTN       Size = 0;
 
   //
   // On several platforms EFI_PLATFORM_LANG_VARIABLE_NAME is not available.
   // Fallback to "en-US" which is supported by this driver and the wide majority of others.
   //
-  Status = gRT->GetVariable (EFI_PLATFORM_LANG_VARIABLE_NAME, &gEfiGlobalVariableGuid, NULL, &Size, PlatformLang);
+  Status = GetVariable2 (EFI_PLATFORM_LANG_VARIABLE_NAME, &gEfiGlobalVariableGuid, (VOID **)&PlatformLang, &Size);
   //
-  // If we got EFI_BUFFER_TOO_SMALL, we got some really insane value, discard it.
+  // No value or something broken, discard and fallback.
   //
-  if (EFI_ERROR (Status)) {
+  if (EFI_ERROR (Status) || AsciiStrLen (PlatformLang) < 2) {
     gRT->SetVariable (
       EFI_PLATFORM_LANG_VARIABLE_NAME, &gEfiGlobalVariableGuid,
       EFI_VARIABLE_RUNTIME_ACCESS | EFI_VARIABLE_BOOTSERVICE_ACCESS | EFI_VARIABLE_NON_VOLATILE,
@@ -126,14 +132,23 @@ InitializeUnicodeCollationEng (
 
   //
   // On some platforms with missing gEfiUnicodeCollation2ProtocolGuid EFI_PLATFORM_LANG_VARIABLE_NAME is set 
-  // to the value different from "en-...". This is not going to work with our driver UEFI Shell load failures.
-  // We did not overwrite EFI_PLATFORM_LANG_VARIABLE_NAME, but it uses some other language.
+  // to the value different from "en" or "en-...". This is not going to work with our driver UEFI Shell load failures:
+  // we did not overwrite EFI_PLATFORM_LANG_VARIABLE_NAME, but it uses some other language.
+  // Workaround by appending the other language to the list of supported ones.
   //
-  if (!OverwroteLang && AsciiStrnCmp (PlatformLang, "en-", 3)) {
-    gRT->SetVariable (
-      EFI_PLATFORM_LANG_VARIABLE_NAME, &gEfiGlobalVariableGuid,
-      EFI_VARIABLE_RUNTIME_ACCESS | EFI_VARIABLE_BOOTSERVICE_ACCESS | EFI_VARIABLE_NON_VOLATILE,
-      6, "en-US");
+  if (!OverwroteLang && AsciiStrnCmp (PlatformLang, "en", 2)) {
+    VERIFY_SIZE_OF (UnicodeLanguages, 6);
+    UnicodeLanguages[2] = ';';
+    UnicodeLanguages[3] = PlatformLang[0];
+    UnicodeLanguages[4] = PlatformLang[1];
+    UnicodeLanguages[5] = '\0';
+  }
+
+  //
+  // Free allocated memory for platform languages
+  //
+  if (PlatformLang) {
+    gBS->FreePool (PlatformLang);
   }
 
   //
