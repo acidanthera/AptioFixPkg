@@ -19,13 +19,10 @@ prompt() {
 
 updaterepo() {
   if [ ! -d "$2" ]; then
-    git clone "$1" "$2" || exit 1
+    git clone "$1" -b "$3" --depth=1 "$2" || exit 1
   fi
   pushd "$2" >/dev/null
   git pull
-  if [ "$3" != "" ]; then
-    git checkout "$3"
-  fi
   popd >/dev/null
 }
 
@@ -59,15 +56,15 @@ if [ "$(which mtoc.NEW)" == "" ] || [ "$(which mtoc)" == "" ]; then
   echo "To build mtoc follow: https://github.com/tianocore/tianocore.github.io/wiki/Xcode#mac-os-x-xcode"
   prompt "Install prebuilt mtoc and mtoc.NEW automatically?"
   rm -f mtoc mtoc.NEW
-  unzip -q external/mtoc-mac64.zip mtoc mtoc.NEW || exit 1
+  unzip -q external/mtoc-mac64.zip mtoc.NEW || exit 1
   sudo mkdir -p /usr/local/bin || exit 1
-  sudo mv mtoc /usr/local/bin/ || exit 1
+  sudo cp mtoc.NEW /usr/local/bin/mtoc || exit 1
   sudo mv mtoc.NEW /usr/local/bin/ || exit 1
 fi
 
-if [ ! -d "binaries" ]; then
-  mkdir binaries || exit 1
-  cd binaries || exit 1
+if [ ! -d "Binaries" ]; then
+  mkdir Binaries || exit 1
+  cd Binaries || exit 1
   ln -s ../edk2/Build/AptioFixPkg/RELEASE_XCODE5/X64 RELEASE || exit 1
   ln -s ../edk2/Build/AptioFixPkg/DEBUG_XCODE5/X64 DEBUG || exit 1
   cd .. || exit 1
@@ -78,15 +75,15 @@ if [ "$1" != "" ]; then
   shift
 fi
 
-if [ ! -f edk2/edk2.ready ]; then
-  rm -rf edk2
+if [ ! -f UDK/UDK.ready ]; then
+  rm -rf UDK
 fi
 
-updaterepo "https://github.com/tianocore/edk2" edk2 || exit 1
-cd edk2
-updaterepo "https://github.com/CupertinoNet/CupertinoModulePkg" CupertinoModulePkg || exit 1
-updaterepo "https://github.com/CupertinoNet/EfiMiscPkg" EfiMiscPkg || exit 1
-updaterepo "https://github.com/CupertinoNet/EfiPkg" EfiPkg || exit 1
+updaterepo "https://github.com/tianocore/edk2" UDK UDK2018 || exit 1
+cd UDK
+updaterepo "https://github.com/CupertinoNet/CupertinoModulePkg" CupertinoModulePkg development || exit 1
+updaterepo "https://github.com/CupertinoNet/EfiMiscPkg" EfiMiscPkg development || exit 1
+updaterepo "https://github.com/CupertinoNet/EfiPkg" EfiPkg development || exit 1
 
 if [ ! -d AptioFixPkg ]; then
   ln -s .. AptioFixPkg || exit 1
@@ -94,7 +91,7 @@ fi
 
 source edksetup.sh || exit 1
 make -C BaseTools || exit 1
-touch edk2.ready
+touch UDK.ready
 
 if [ "$MODE" = "" ] || [ "$MODE" = "DEBUG" ]; then
   build -a X64 -b DEBUG -t XCODE5 -p AptioFixPkg/AptioFixPkg.dsc || exit 1
