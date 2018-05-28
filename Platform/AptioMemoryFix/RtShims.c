@@ -18,6 +18,8 @@
 
 #include "Config.h"
 #include "RtShims.h"
+#include "MemoryMap.h"
+#include "Utils.h"
 
 extern UINTN gRtShimsDataStart;
 extern UINTN gRtShimsDataEnd;
@@ -71,7 +73,11 @@ VOID InstallRtShims (
   EFI_GET_VARIABLE GetVariableOverride
   )
 {
-  EFI_STATUS Status;
+  EFI_STATUS            Status;
+  UINTN                 ModeIndex;
+  UINTN                 BaseIndex;
+  UINTN                 PageCount;
+  EFI_PHYSICAL_ADDRESS  RtShims;
 
   //
   // Support read-only and write-only variables from runtime-services.
@@ -79,32 +85,74 @@ VOID InstallRtShims (
   CopyMem(&gReadOnlyVariableGuid, &mLiluReadOnlyVariableGuid, sizeof(EFI_GUID));
   CopyMem(&gWriteOnlyVariableGuid, &mLiluWriteOnlyVariableGuid, sizeof(EFI_GUID));
 
-#if APTIOFIX_ALLOCATE_POOL_GIVES_STABLE_ADDR == 1
   //
-  // Allocating from pool may use random addresses, including the ones requested
-  // by the kernel may sit, so is very dangerous.
-  // However, it almost always produces the same address across the reboots
-  // unlike AllocatePagesFromTop, which is necessary for a memory map reuse
-  // when waking from hibernation.
+  // Due to some still unfixed bug in hibernation code here we need to generate a valid address,
+  // that should not change across the reboots. (See APTIOFIX_HIBERNATION_FORCE_OLD_MEMORYMAP).
+  // It must also be 32-bit accessible (within BASE_4GB).
+  //
+  // Allocating from pool may use random addresses, including the ones requested by the kernel
+  // may sit, so is very dangerous. Normally it somehow works, but it is best not to risk.
+  // Furthermore, on some firmwares pool-allocated pages somehow fail to get marked as executable
+  // and cause Linux kernel panics. Discussed here and onwards:
+  // https://www.insanelymac.com/forum/topic/331381-aptiomemoryfix/?do=findComment&comment=2615307
+  // On some other (Insyde) firmwares a lot of pool allocations happen in the higher addresses,
+  // so we cannot use BASE_4GB straight away as the addresses will change quite often.
+  //
+  // To work it out we use some heuristics, and try to allocare a top-most address from each base
+  // if available: BASE_2GB (0x7FFFF000) or BASE_1GB (0x3FFFF000). It is pointless to try 4GB, as
+  // we allocated there before.
+  // Most of the problematic firmwares leave these addresses to an operating system, so at least one
+  // of them is likely to be free. Another bonus is that on all systems but Sandy and Ivy XNU kernel
+  // does not exceed 1GB and it will not conflict with KASLR. Since all the existing firmwares for
+  // Sandy and Ivy already pollute the lower addresses and force the custom KASLR usage there is
+  // nothing wrong in disabling a few more slides when only BASE_1GB is available.
+  // Then we perform a normal fallback to higher addresses on failure, which seems to work fine
+  // on newer systems.
+  //
   // Remove once we can wake with APTIOFIX_HIBERNATION_FORCE_OLD_MEMORYMAP = 0.
   //
-  Status = gBS->AllocatePool (
-    EfiRuntimeServicesCode,
-    ((UINTN)&gRtShimsDataEnd - (UINTN)&gRtShimsDataStart),
-    &gRtShims
-    );
-#else
-  EFI_PHYSICAL_ADDRESS RtShims = BASE_4GB;
-  Status = AllocatePagesFromTop (
-    EfiRuntimeServicesCode,
-    EFI_SIZE_TO_PAGES ((UINTN)&gRtShimsDataEnd - (UINTN)&gRtShimsDataStart),
-    &RtShims,
-    FALSE
-    );
-  gRtShims             = (VOID *)(UINTN)RtShims;
-#endif
+  PageCount = EFI_SIZE_TO_PAGES ((UINTN)&gRtShimsDataEnd - (UINTN)&gRtShimsDataStart);
+  Status    = EFI_NOT_FOUND;
+  for (ModeIndex = 0; ModeIndex < 2 && EFI_ERROR (Status); ModeIndex++) {
+    for (BaseIndex = 0; BaseIndex < 2 && EFI_ERROR (Status); BaseIndex++) {
+      RtShims = (BASE_2GB >> BaseIndex) - EFI_PAGES_TO_SIZE (PageCount);
+      if (ModeIndex == 0) {
+        Status = gBS->AllocatePages (
+          AllocateAddress,
+          EfiRuntimeServicesCode,
+          PageCount,
+          &RtShims
+          );
+      } else {
+        Status = AllocatePagesFromTop (
+          EfiRuntimeServicesCode,
+          PageCount,
+          &RtShims,
+          FALSE
+          );
+      }
+      // PrintScreen (L"RtShims of %d pages allocate mode %d attempt at 0x%08X - %r\n",
+      //  (UINT32)PageCount, (UINT32)ModeIndex, (UINT32)RtShims, Status);
+      // gBS->Stall (SECONDS_TO_MICROSECONDS (2));
+    }
+  }
+
+  //
+  // Try to allocate at least something. This is basically the only thing we should have.
+  //
+  if (!EFI_ERROR (Status)) {
+    RtShims = BASE_4GB;
+    Status = AllocatePagesFromTop (
+      EfiRuntimeServicesCode,
+      PageCount,
+      &RtShims,
+      FALSE
+      );
+  }
 
   if (!EFI_ERROR (Status)) {
+    gRtShims              = (VOID *)(UINTN)RtShims;
+
     gGetVariable          = (UINTN)gRT->GetVariable;
     gSetVariable          = (UINTN)gRT->SetVariable;
     gGetNextVariableName  = (UINTN)gRT->GetNextVariableName;

@@ -12,21 +12,10 @@
 
 /**
  * Forces XNU to use old UEFI memory mapping after hibernation wake.
- * May cause memory corruption. See FixHibernateWakeWithoutRelocBlock for details.
+ * May cause memory corruption. See UpdateEnvironmentForHibernateWake for details.
  */
 #ifndef APTIOFIX_HIBERNATION_FORCE_OLD_MEMORYMAP
 #define APTIOFIX_HIBERNATION_FORCE_OLD_MEMORYMAP 1
-#endif
-
-/**
- * When attempting to reuse old UEFI memory mapping gBS->AllocatePool seems
- * to produce the same addresses way more often, and thus the system will not reboot
- * when accessing RTShims after waking from hibernation.
- * However, gBS->AllocatePool is dangerous, because it may overlap with the kernel
- * region and break aslr.
- */
-#ifndef APTIOFIX_ALLOCATE_POOL_GIVES_STABLE_ADDR
-#define APTIOFIX_ALLOCATE_POOL_GIVES_STABLE_ADDR APTIOFIX_HIBERNATION_FORCE_OLD_MEMORYMAP
 #endif
 
 /**

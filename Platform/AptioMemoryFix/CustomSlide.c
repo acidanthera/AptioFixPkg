@@ -142,6 +142,7 @@ GenerateRandomSlideValue (
   return mValidSlides[Slide % mValidSlidesNum];
 }
 
+#if APTIOFIX_CLEANUP_SLIDE_BOOT_ARGUMENT == 1
 STATIC
 VOID
 HideSlideFromOS (
@@ -180,6 +181,7 @@ HideSlideFromOS (
   ZeroMem (mValidSlides, sizeof(mValidSlides));
   ZeroMem (mStoredBootArgsVar, sizeof(mStoredBootArgsVar));
 }
+#endif
 
 STATIC
 VOID
