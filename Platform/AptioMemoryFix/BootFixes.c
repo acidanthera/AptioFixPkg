@@ -94,26 +94,6 @@ UpdateEnvironmentForHibernateWake (
   //
   ImageHeader->systemTableOffset = (UINT32)(UINTN)(gRelocatedSysTableRtArea - ImageHeader->runtimePages);
 
-#if APTIOFIX_HIBERNATION_FORCE_OLD_MEMORYMAP == 1
-  //
-  // XNU replaces the original restored UEFI mapping by a new one based on kIOHibernateHandoffTypeMemoryMap
-  // passed values. This caused instant reboots after hibernation wake for dmazar during the development
-  // of the original AptioFixV2 driver. The reasons mentioned were XNU attempts to map the rt pages which
-  // overlap with the existing memory.
-  //
-  // To workaround this issue AptioFixV2 disables memory map handoff, and XNU reuses the original mapping.
-  // Due to dynamic allocation memory mapping may sometimes change across the boots, and as a result
-  // some of the wakes will fail or result in a memory corruption after some time.
-  //
-  Handoff = (IOHibernateHandoff *)(UINTN)(ImageHeader->handoffPages << EFI_PAGE_SHIFT);
-  while (Handoff->type != kIOHibernateHandoffTypeEnd) {
-    if (Handoff->type == kIOHibernateHandoffTypeMemoryMap) {
-      Handoff->type = kIOHibernateHandoffType;
-      break;
-    }
-    Handoff = (IOHibernateHandoff *)(UINTN)((UINTN)Handoff + sizeof(Handoff) + Handoff->bytecount);
-  }
-#else
   //
   // When reusing the original memory mapping we do not have to restore memory protection types & attributes,
   // since the new memory map is discarded anyway.
@@ -137,12 +117,11 @@ UpdateEnvironmentForHibernateWake (
       //
       // boot.efi removes any memory from the memory map but the one with runtime attribute.
       //
-      RestoreProtectedRtMemoryTypes (Handoff->bytecount, gMemoryMapDescriptorSize, (EFI_MEMORY_DESCRIPTOR *)Handoff->data);
+      RestoreProtectedRtMemoryTypes (Handoff->bytecount, mVirtualMapDescriptorSize, (EFI_MEMORY_DESCRIPTOR *)Handoff->data);
       break;
     }
     Handoff = (IOHibernateHandoff *)(UINTN)((UINTN)Handoff + sizeof(Handoff) + Handoff->bytecount);
   }
-#endif
 }
 
 VOID

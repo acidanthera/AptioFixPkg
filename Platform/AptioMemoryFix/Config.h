@@ -11,14 +11,6 @@
 #define APTIOFIX_HACK_CONFIG_H
 
 /**
- * Forces XNU to use old UEFI memory mapping after hibernation wake.
- * May cause memory corruption. See UpdateEnvironmentForHibernateWake for details.
- */
-#ifndef APTIOFIX_HIBERNATION_FORCE_OLD_MEMORYMAP
-#define APTIOFIX_HIBERNATION_FORCE_OLD_MEMORYMAP 1
-#endif
-
-/**
  * Attempt to protect certain CSM memory regions from being used by the kernel (by Slice).
  * On older firmwares this caused wake issues.
  */
