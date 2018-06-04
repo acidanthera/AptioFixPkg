@@ -234,11 +234,22 @@ MOStartImage (
     gMacOSBootNestedCount++;
 
     //
-    // The presence of the variable means HibernateWake
-    // To cancel hibernate wake it is enough to delete the variable
+    // This is reverse engineered from boot.efi.
+    // To cancel hibernate wake it is enough to delete the variables.
+    // Starting with 10.13.6 boot-switch-vars is no longer supported.
     //
-    Status = gRT->GetVariable (L"boot-switch-vars", &gAppleBootVariableGuid, NULL, &ValueSize, NULL);
-    gHibernateWake = Status == EFI_BUFFER_TOO_SMALL;
+    ValueSize = 0;
+    if (gRT->GetVariable (L"boot-signature", &gAppleBootVariableGuid, NULL, &ValueSize, NULL) == EFI_BUFFER_TOO_SMALL) {
+      ValueSize = 0;
+      if (gRT->GetVariable (L"boot-image-key", &gAppleBootVariableGuid, NULL, &ValueSize, NULL) == EFI_BUFFER_TOO_SMALL) {
+        gHibernateWake = TRUE;
+      }
+    } else {
+      ValueSize = 0;
+      if (gRT->GetVariable (L"boot-switch-vars", &gAppleBootVariableGuid, NULL, &ValueSize, NULL) == EFI_BUFFER_TOO_SMALL) {
+        gHibernateWake = TRUE;
+      }
+    }
 
     //
     // Save current 64bit state - will be restored later in callback from kernel jump

@@ -25,12 +25,17 @@
 #include "RtShims.h"
 #include "VMem.h"
 
+#include "HashServices/HashServices.h"
+#include "UnicodeCollation/UnicodeCollationEng.h"
+
 EFI_PHYSICAL_ADDRESS         gSysTableRtArea;
 EFI_PHYSICAL_ADDRESS         gRelocatedSysTableRtArea;
 
 BOOLEAN                      gHibernateWake;
 BOOLEAN                      gDumpMemArgPresent;
 BOOLEAN                      gSlideArgPresent;
+BOOLEAN                      gHasBrokenS4MemoryMap;
+BOOLEAN                      gHasBrokenS4Allocator;
 
 //
 // Buffer and size for original kernel entry code
@@ -100,27 +105,92 @@ UpdateEnvironmentForHibernateWake (
   // Otherwise we must restore memory map types just like at a normal boot, because MMIO regions are not
   // mapped as executable by XNU.
   //
-  // However, there is an issue here. After hibernation restoration we may get corrupted memory, which
-  // sometimes results in crashing apps and not working NVRAM. The exact cause is unknown, dumping
-  // the memory shows that the handoff memory map is mostly similar, but partially differs.
-  //
   // Due to a non-contiguous RT_Code/RT_Data areas (thanks to NVRAM hack) the original areas
   // will not be unmapped and this will result in a memory leak if some new runtime pages are added.
   // But even that should not cause crashes.
   //
-  // From the top of my head I could imagine a new memory mapping
-  // SystemTable gets a new address, and this address is marked as "Available".
-  //
   Handoff = (IOHibernateHandoff *)(UINTN)(ImageHeader->handoffPages << EFI_PAGE_SHIFT);
   while (Handoff->type != kIOHibernateHandoffTypeEnd) {
     if (Handoff->type == kIOHibernateHandoffTypeMemoryMap) {
-      //
-      // boot.efi removes any memory from the memory map but the one with runtime attribute.
-      //
-      RestoreProtectedRtMemoryTypes (Handoff->bytecount, mVirtualMapDescriptorSize, (EFI_MEMORY_DESCRIPTOR *)Handoff->data);
+      if (gHasBrokenS4MemoryMap) {
+        //
+        // Some firmwares provide us a (supposedly) invalid memory map, which results in
+        // broken NVRAM and crashes after waking from hibernation. These firmwares for
+        // whatever reason have code to ensure the same memory map over the reboots, and
+        // it is a way some Windows versions hibernate. While terrible, we just discard
+        // the new memory map here, and let XNU use what it has.
+        //
+        Handoff->type = kIOHibernateHandoffType;
+      } else {
+        //
+        // boot.efi removes any memory from the memory map but the one with runtime attribute.
+        //
+        RestoreProtectedRtMemoryTypes (Handoff->bytecount, mVirtualMapDescriptorSize, (EFI_MEMORY_DESCRIPTOR *)Handoff->data);
+      }
       break;
     }
     Handoff = (IOHibernateHandoff *)(UINTN)((UINTN)Handoff + sizeof(Handoff) + Handoff->bytecount);
+  }
+}
+
+VOID
+ApplyFirmwareQuirks (
+  IN EFI_HANDLE        ImageHandle,
+  IN EFI_SYSTEM_TABLE  *SystemTable
+  )
+{
+  //
+  // Broken Unicode collation protocol will make some programs
+  // (e.g. UEFI Shell) unloadable.
+  //
+#if APTIOFIX_UNICODE_COLLATION_FIX == 1
+  {
+    EFI_STATUS  Status = InitializeUnicodeCollationEng (ImageHandle, SystemTable);
+    if (EFI_ERROR (Status)) {
+      PrintScreen (L"AMF: collation install failure - %r\n", Status);
+    }
+  }
+#endif
+
+  //
+  // Functioning hash services (SHA-1) are used by boot.efi
+  // for accessing external files.
+  //
+#if APTIOFIX_HASH_SERVICES_FIX == 1
+  {
+    EFI_STATUS Status = InitializeHashServices (ImageHandle, SystemTable);
+    if (EFI_ERROR (Status)) {
+      PrintScreen (L"AMF: hash install failure - %r\n", Status);
+    }
+#if APTIOFIX_HASH_SERVICES_TEST == 1
+    if (!EFI_ERROR (Status)) { {
+      HSTestImpl ();
+    }
+#endif // APTIOFIX_HASH_SERVICES_TEST == 1
+  }
+#endif // APTIOFIX_HASH_SERVICES_FIX == 1
+
+  //
+  // Detect broken firmwares.
+  //
+  if (SystemTable->FirmwareVendor) {
+    if (!StrCmp (SystemTable->FirmwareVendor, L"American Megatrends")) {
+      //
+      // All APTIO firmwares provide invalid memory map after waking from
+      // hibernation. This results in not working NVRAM or crashes.
+      // FIXME: Find the root cause of the problem.
+      //
+      gHasBrokenS4MemoryMap = TRUE;
+    } else if (!StrCmp (SystemTable->FirmwareVendor, L"INSYDE Corp.")) {
+      //
+      // At least some INSYDE firmwares have NVRAM issues just like APTIO.
+      // Some are heard not to, but we are not aware of it.
+      // FIXME: In addition to that we have difficulties allocating RtShims
+      // on INSYDE, some address lead to reboots after hibernate wake.
+      //
+      gHasBrokenS4MemoryMap = TRUE;
+      gHasBrokenS4Allocator = TRUE;
+    }
   }
 }
 

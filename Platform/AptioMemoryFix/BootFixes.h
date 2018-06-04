@@ -32,6 +32,22 @@ extern BOOLEAN gDumpMemArgPresent;
 //
 extern BOOLEAN gSlideArgPresent;
 
+//
+// TRUE if booting on memory map unstable firmware, such as APTIO
+//
+extern BOOLEAN gHasBrokenS4MemoryMap;
+
+//
+// TRUE if booting on memory allocation unstable firmware, such as INSYDE
+//
+extern BOOLEAN gHasBrokenS4Allocator;
+
+VOID
+ApplyFirmwareQuirks (
+  IN EFI_HANDLE        ImageHandle,
+  IN EFI_SYSTEM_TABLE  *SystemTable
+  );
+
 VOID
 ReadBooterArguments (
   CHAR16  *Options,

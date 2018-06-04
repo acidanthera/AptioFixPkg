@@ -21,10 +21,8 @@
 #include "BootArgs.h"
 #include "BootFixes.h"
 #include "CustomSlide.h"
-#include "HashServices/HashServices.h"
 #include "RtShims.h"
 #include "ServiceOverrides.h"
-#include "UnicodeCollation/UnicodeCollationEng.h"
 #include "VMem.h"
 
 //
@@ -73,27 +71,10 @@ AptioMemoryFixEntrypoint (
     return Status;
   }
 
-#if APTIOFIX_UNICODE_COLLATION_FIX == 1
-  Status = InitializeUnicodeCollationEng (ImageHandle, SystemTable);
-  if (EFI_ERROR (Status)) {
-    PrintScreen (L"AMF: collation install failure - %r\n", Status);
-    return Status;
-  }
-#endif
-
-#if APTIOFIX_HASH_SERVICES_FIX == 1
-  Status = InitializeHashServices (ImageHandle, SystemTable);
-  if (EFI_ERROR (Status)) {
-    PrintScreen (L"AMF: hash install failure - %r\n", Status);
-    return Status;
-  }
-#endif
-
-#if APTIOFIX_HASH_SERVICES_TEST == 1
-  if (!EFI_ERROR (Status)) {
-    HSTestImpl ();
-  }
-#endif
+  //
+  // Detect and apply the necessary firmware workarounds
+  //
+  ApplyFirmwareQuirks (ImageHandle, SystemTable);
 
   //
   // Init VMem memory pool - will be used after ExitBootServices

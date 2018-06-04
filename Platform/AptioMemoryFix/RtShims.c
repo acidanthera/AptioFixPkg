@@ -18,6 +18,7 @@
 
 #include "Config.h"
 #include "RtShims.h"
+#include "BootFixes.h"
 #include "MemoryMap.h"
 #include "Utils.h"
 
@@ -83,20 +84,35 @@ VOID InstallRtShims (
   CopyMem(&gReadOnlyVariableGuid, &mLiluReadOnlyVariableGuid, sizeof(EFI_GUID));
   CopyMem(&gWriteOnlyVariableGuid, &mLiluWriteOnlyVariableGuid, sizeof(EFI_GUID));
 
-  PageCount = EFI_SIZE_TO_PAGES ((UINTN)&gRtShimsDataEnd - (UINTN)&gRtShimsDataStart);
-  Status = AllocatePagesFromTop (
-    EfiRuntimeServicesCode,
-    PageCount,
-    &RtShims,
-    FALSE
-    );
-  // PrintScreen (L"RtShims of %d pages allocate attempt at 0x%08X - %r\n",
-  //  (UINT32)PageCount, (UINT32)RtShims, Status);
-  // gBS->Stall (SECONDS_TO_MICROSECONDS (2));
+  if (gHasBrokenS4Allocator) {
+    //
+    // Some firmwares appear to allocate rt shims at randomly incomprehensible area.
+    // This unfortunately results in crashes and using pool allocs is one of the workarounds.
+    //
+    Status = gBS->AllocatePool (
+      EfiRuntimeServicesCode,
+      ((UINTN)&gRtShimsDataEnd - (UINTN)&gRtShimsDataStart),
+      &gRtShims
+      );
+  } else {
+    //
+    // It is important to allocate properly from top on saner firmwares.
+    // If we do not and use hacks like above many other operating systems (like Linux)
+    // may stop loading.
+    //
+    PageCount = EFI_SIZE_TO_PAGES ((UINTN)&gRtShimsDataEnd - (UINTN)&gRtShimsDataStart);
+    Status = AllocatePagesFromTop (
+      EfiRuntimeServicesCode,
+      PageCount,
+      &RtShims,
+      FALSE
+      );
+    if (!EFI_ERROR (Status)) {
+      gRtShims = (VOID *)(UINTN)RtShims;
+    }
+  }
 
   if (!EFI_ERROR (Status)) {
-    gRtShims              = (VOID *)(UINTN)RtShims;
-
     gGetVariable          = (UINTN)gRT->GetVariable;
     gSetVariable          = (UINTN)gRT->SetVariable;
     gGetNextVariableName  = (UINTN)gRT->GetNextVariableName;
