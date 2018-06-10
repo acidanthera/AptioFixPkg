@@ -458,6 +458,16 @@ UnlockSlideSupportForSafeMode (
   // Furthermore, since boot.efi state mask uses higher bits, it is safe to assume that
   // the comparison will be at least 32-bit.
   //
+  //
+  // The new way patch is a workaround for 10.13.5 and newer, where the code got finally changed.
+  // if (State & BOOT_MODE_SAFE) {
+  //   ReportFeature(FEATURE_BOOT_MODE_SAFE);
+  //   if (State & BOOT_MODE_ASLR) {
+  //     * Disable KASLR *
+  //   }
+  // }
+  //
+  CONST UINT8 SearchSeqNew[] = {0xF6, 0xC4, 0x40, 0x75};
   CONST UINT8 SearchSeq[] = {0x01, 0x40, 0x00, 0x00};
 
   //
@@ -465,31 +475,46 @@ UnlockSlideSupportForSafeMode (
   //
   CONST UINTN MaxDist = 0x10;
 
-  UINT8 *StartOff = ImageBase;
-  UINT8 *EndOff   = StartOff + ImageSize - sizeof(SearchSeq) - MaxDist;
+  UINT8      *StartOff = ImageBase;
+  UINT8      *EndOff   = StartOff + ImageSize - sizeof (SearchSeq) - MaxDist;
 
-  UINTN FirstOff = 0;
-  UINTN SecondOff = 0;
+  UINTN       FirstOff = 0;
+  UINTN       SecondOff = 0;
+
+  BOOLEAN     NewWay = FALSE;
 
   do {
-    while (
-      StartOff + FirstOff <= EndOff &&
-      CompareMem (StartOff + FirstOff, SearchSeq, sizeof(SearchSeq))) {
+    while (StartOff + FirstOff <= EndOff) {
+      if (!CompareMem (StartOff + FirstOff, SearchSeqNew, sizeof (SearchSeqNew))) {
+        NewWay = TRUE;
+        break;
+      } else if (!CompareMem (StartOff + FirstOff, SearchSeq, sizeof (SearchSeq))) {
+        break;
+      }
       FirstOff++;
     }
 
-    DEBUG ((DEBUG_VERBOSE, "Found first at off %X\n", (UINT32)FirstOff));
+    DEBUG ((DEBUG_VERBOSE, "Found first %d at off %X\n", (UINT32)NewWay, (UINT32)FirstOff));
 
     if (StartOff + FirstOff > EndOff) {
       DEBUG ((DEBUG_WARN, "Failed to find first BOOT_MODE_SAFE | BOOT_MODE_ASLR sequence\n"));
       break;
     }
 
-    SecondOff = FirstOff + sizeof(SearchSeq);
+    if (NewWay) {
+      //
+      // Here we just patch the comparison code and the check by straight nopping.
+      //
+      DEBUG ((DEBUG_VERBOSE, "Patching new safe mode aslr check...\n"));
+      SetMem (StartOff + FirstOff, sizeof (SearchSeqNew) + 1, 0x90);
+      return;
+    }
+
+    SecondOff = FirstOff + sizeof (SearchSeq);
 
     while (
       StartOff + SecondOff <= EndOff && FirstOff + MaxDist >= SecondOff &&
-      CompareMem (StartOff + SecondOff, SearchSeq, sizeof(SearchSeq))) {
+      CompareMem (StartOff + SecondOff, SearchSeq, sizeof (SearchSeq))) {
       SecondOff++;
     }
 
@@ -498,17 +523,19 @@ UnlockSlideSupportForSafeMode (
     if (FirstOff + MaxDist < SecondOff) {
       DEBUG ((DEBUG_VERBOSE, "Trying next match...\n"));
       SecondOff = 0;
-      FirstOff += sizeof(SearchSeq);
+      FirstOff += sizeof (SearchSeq);
     }
   } while (SecondOff == 0);
 
   if (SecondOff != 0) {
+    //
     // Here we use 0xFFFFFFFF constant as a replacement value.
     // Since the state values are contradictive (e.g. safe & single at the same time)
     // We are allowed to use this instead of to simulate if (false).
+    //
     DEBUG ((DEBUG_VERBOSE, "Patching safe mode aslr check...\n"));
-    SetMem (StartOff + FirstOff, sizeof(SearchSeq), 0xFF);
-    SetMem (StartOff + SecondOff, sizeof(SearchSeq), 0xFF);
+    SetMem (StartOff + FirstOff, sizeof (SearchSeq), 0xFF);
+    SetMem (StartOff + SecondOff, sizeof (SearchSeq), 0xFF);
   }
 }
 
