@@ -1,6 +1,8 @@
 AptioFix
 ========
 
+[![Build Status](https://travis-ci.org/acidanthera/AptioFixPkg.svg?branch=master)](https://travis-ci.org/acidanthera/AptioFixPkg)
+
 AptioFixPkg drivers fixing certain UEFI APTIO Firmware issues relevant to booting macOS.
 
 **WARNING**: The code in this repository should be considered to be a proof of concept draft quality, and is only intended to be used as a software implementation guide. Due to the lack of time, this codebase may contain partially understood reverse-engineering samples, almost no documentation, hacks, and absolute ignorance of EDK2 codestyle.
