@@ -35,14 +35,14 @@ typedef EFI_STATUS (EFIAPI *AMI_READ_EFI_KEY) (
   OUT AMI_EFI_KEY_DATA        *KeyData
 );
 
-typedef struct _AMI_EFIKEYCODE_PROTOCOL {
+struct _AMI_EFIKEYCODE_PROTOCOL {
   EFI_INPUT_RESET_EX                Reset;
   AMI_READ_EFI_KEY                  ReadEfikey;
   EFI_EVENT                         WaitForKeyEx;
   EFI_SET_STATE                     SetState;
   EFI_REGISTER_KEYSTROKE_NOTIFY     RegisterKeyNotify;
   EFI_UNREGISTER_KEYSTROKE_NOTIFY   UnregisterKeyNotify;
-} AMI_EFIKEYCODE_PROTOCOL;
+};
 
 #endif
 
