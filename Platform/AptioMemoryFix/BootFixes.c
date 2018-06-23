@@ -109,7 +109,7 @@ UpdateEnvironmentForHibernateWake (
   // will not be unmapped and this will result in a memory leak if some new runtime pages are added.
   // But even that should not cause crashes.
   //
-  Handoff = (IOHibernateHandoff *)(UINTN)(ImageHeader->handoffPages << EFI_PAGE_SHIFT);
+  Handoff = (IOHibernateHandoff *)((UINTN)ImageHeader->handoffPages << EFI_PAGE_SHIFT);
   while (Handoff->type != kIOHibernateHandoffTypeEnd) {
     if (Handoff->type == kIOHibernateHandoffTypeMemoryMap) {
       if (gHasBrokenS4MemoryMap) {

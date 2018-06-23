@@ -203,7 +203,7 @@ MOStartImage (
 
   if (!EFI_ERROR (Status) && LoadedImage->FilePath) {
     for (CurrNode = LoadedImage->FilePath; !IsDevicePathEnd (CurrNode); CurrNode = NextDevicePathNode (CurrNode)) {
-      if (CurrNode && CurrNode->Type == MEDIA_DEVICE_PATH && CurrNode->SubType == MEDIA_FILEPATH_DP) {
+      if (CurrNode->Type == MEDIA_DEVICE_PATH && CurrNode->SubType == MEDIA_FILEPATH_DP) {
         LastNode = (FILEPATH_DEVICE_PATH *)CurrNode;
       }
     }

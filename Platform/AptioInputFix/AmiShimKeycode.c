@@ -496,6 +496,7 @@ AmiShimKeycodeInstall (
 
   DEBUG ((EFI_D_ERROR, "Found %d keycode handles\n", NoHandles));
 
+  Installed = FALSE;
   for (Index = 0; Index < NoHandles; Index++) {
     Status = gBS->HandleProtocol (Handles[Index], &gAmiEfiKeycodeProtocolGuid, (VOID **)&EfiKeycode);
     if (EFI_ERROR(Status)) {

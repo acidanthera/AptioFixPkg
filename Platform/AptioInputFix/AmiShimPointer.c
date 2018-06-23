@@ -353,11 +353,15 @@ AmiShimPointerTimerSetup (
   if (mAmiShimPointer.TimerProtocol == NULL) {
     Status = gBS->LocateProtocol(&gEfiTimerArchProtocolGuid, NULL, (VOID **)&mAmiShimPointer.TimerProtocol);
     if (!EFI_ERROR (Status)) {
-      Status = mAmiShimPointer.TimerProtocol->GetTimerPeriod(mAmiShimPointer.TimerProtocol, &mAmiShimPointer.OriginalTimerPeriod);
+      Status = mAmiShimPointer.TimerProtocol->GetTimerPeriod (mAmiShimPointer.TimerProtocol, &mAmiShimPointer.OriginalTimerPeriod);
       if (!EFI_ERROR (Status)) {
         if (mAmiShimPointer.OriginalTimerPeriod > AMI_SHIM_TIMER_PERIOD) {
-          Status = mAmiShimPointer.TimerProtocol->SetTimerPeriod(mAmiShimPointer.TimerProtocol, AMI_SHIM_TIMER_PERIOD);
-          DEBUG((EFI_D_ERROR, "AmiShimPointerTimerSetup changed period %d to %d, error %d\n", mAmiShimPointer.OriginalTimerPeriod, AMI_SHIM_TIMER_PERIOD, Status));
+          Status = mAmiShimPointer.TimerProtocol->SetTimerPeriod (mAmiShimPointer.TimerProtocol, AMI_SHIM_TIMER_PERIOD);
+          if (!EFI_ERROR (Status)) {
+            DEBUG((EFI_D_ERROR, "AmiShimPointerTimerSetup changed period %d to %d\n", mAmiShimPointer.OriginalTimerPeriod, AMI_SHIM_TIMER_PERIOD));
+          } else {
+            DEBUG((EFI_D_ERROR, "AmiShimPointerTimerSetup failed to change period %d to %d, error %d\n", mAmiShimPointer.OriginalTimerPeriod, AMI_SHIM_TIMER_PERIOD, Status));
+          }
         }
       } else {
         DEBUG((EFI_D_ERROR, "AmiShimPointerTimerSetup failed to obtain previous period %d\n", Status));
@@ -400,11 +404,15 @@ AmiShimPointerTimerUninstall (
   }
 
   if (mAmiShimPointer.TimerProtocol != NULL) {
-    Status = mAmiShimPointer.TimerProtocol->GetTimerPeriod(mAmiShimPointer.TimerProtocol, &mAmiShimPointer.OriginalTimerPeriod);
+    Status = mAmiShimPointer.TimerProtocol->GetTimerPeriod (mAmiShimPointer.TimerProtocol, &mAmiShimPointer.OriginalTimerPeriod);
     if (!EFI_ERROR (Status)) {
       if (mAmiShimPointer.OriginalTimerPeriod > AMI_SHIM_TIMER_PERIOD) {
-        Status = mAmiShimPointer.TimerProtocol->SetTimerPeriod(mAmiShimPointer.TimerProtocol, AMI_SHIM_TIMER_PERIOD);
-        DEBUG((EFI_D_ERROR, "AmiShimPointerTimerUninstall changed period %d to %d, error %d\n", mAmiShimPointer.OriginalTimerPeriod, AMI_SHIM_TIMER_PERIOD, Status));
+        Status = mAmiShimPointer.TimerProtocol->SetTimerPeriod (mAmiShimPointer.TimerProtocol, AMI_SHIM_TIMER_PERIOD);
+        if (!EFI_ERROR (Status)) {
+          DEBUG((EFI_D_ERROR, "AmiShimPointerTimerUninstall changed period %d to %d\n", mAmiShimPointer.OriginalTimerPeriod, AMI_SHIM_TIMER_PERIOD));
+        } else {
+          DEBUG((EFI_D_ERROR, "AmiShimPointerTimerUninstall failed to change period %d to %d, error %d\n", mAmiShimPointer.OriginalTimerPeriod, AMI_SHIM_TIMER_PERIOD, Status));
+        }
       }
       mAmiShimPointer.TimerProtocol = NULL;
     } else {

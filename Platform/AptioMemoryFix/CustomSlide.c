@@ -126,12 +126,12 @@ GenerateRandomSlideValue (
   RdRandSupport = (Ecx & 0x40000000) != 0;
 
   do {
-    if (RdRandSupport && GetRandomNumber16 (&Value) == EFI_SUCCESS && Slide != 0) {
-      break;
+    if (RdRandSupport && GetRandomNumber16 (&Value) == EFI_SUCCESS && (UINT8) Value != 0) {
+      Slide = (UINT8) Value;
+    } else {
+      Clock = (UINT32) AsmReadTsc ();
+      Slide = (Clock & 0xFF) ^ ((Clock >> 8) & 0xFF);
     }
-
-    Clock = (UINT32)AsmReadTsc ();
-    Slide = (Clock & 0xFF) ^ ((Clock >> 8) & 0xFF);
   } while (Slide == 0);
 
   DEBUG ((DEBUG_VERBOSE, "Generated slide index %d value %d\n", Slide, mValidSlides[Slide % mValidSlidesNum]));
@@ -403,6 +403,9 @@ GetVariableBootArgs (
   if (!mStoredBootArgsVarSet) {
     Slide  = GenerateRandomSlideValue ();
     Status = OrgGetVariable (VariableName, VendorGuid, Attributes, &StoredBootArgsSize, mStoredBootArgsVar);
+    if (EFI_ERROR (Status)) {
+      mStoredBootArgsVar[0] = '\0';
+    }
 
     //
     // Note, the point is to always pass 3 characters to avoid side attacks on value length.
