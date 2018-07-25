@@ -216,7 +216,7 @@ MOStartImage (
       PathLen = StrLen (LastNode->PathName);
       BootPathName = LastNode->PathName + PathLen - BootPathLen;
       if (PathLen >= BootPathLen) {
-        IsMacOS = (PathLen == BootPathLen || *(BootPathName - 1) == '\\')
+        IsMacOS = (PathLen == BootPathLen || *(BootPathName - 1) == L'\\')
           && !StrCmp (BootPathName, L"boot.efi");
       }
     }
