@@ -192,7 +192,8 @@ MOStartImage (
   FILEPATH_DEVICE_PATH        *LastNode     = NULL;
   BOOLEAN                     IsMacOS       = FALSE;
   UINTN                       PathLen       = 0;
-
+  UINTN                       BootPathLen   = LITERAL_STRLEN (L"boot.efi");
+  CONST CHAR16                *BootPathName = NULL;
 
   DEBUG ((DEBUG_VERBOSE, "StartImage (%lx)\n", ImageHandle));
 
@@ -212,9 +213,11 @@ MOStartImage (
       //
       // Detect macOS by boot.efi in the bootloader name.
       //
-      PathLen = StrLen(LastNode->PathName);
-      if (PathLen > LITERAL_STRLEN(L"boot.efi")) {
-        IsMacOS = !StrCmp(LastNode->PathName + PathLen - LITERAL_STRLEN(L"boot.efi"), L"boot.efi");
+      PathLen = StrLen (LastNode->PathName);
+      BootPathName = LastNode->PathName + PathLen - BootPathLen;
+      if (PathLen >= BootPathLen) {
+        IsMacOS = (PathLen == BootPathLen || *(BootPathName - 1) == '\\')
+          && !StrCmp (BootPathName, L"boot.efi");
       }
     }
   } else {
