@@ -36,6 +36,8 @@ extern UINTN gGetNextHighMonoCount;
 extern UINTN gResetSystem;
 extern UINTN gGetVariableOverride;
 
+extern UINTN gRequiresWriteUnprotect;
+
 extern EFI_GUID gReadOnlyVariableGuid;
 extern EFI_GUID gWriteOnlyVariableGuid;
 
@@ -313,4 +315,12 @@ RestoreProtectedRtMemoryTypes (
       MemoryMap = NEXT_MEMORY_DESCRIPTOR (MemoryMap, DescriptorSize);
     }
   }
+}
+
+VOID
+SetWriteUnprotectorMode (
+  IN     BOOLEAN                Enable
+  )
+{
+  *(UINTN *)((UINTN)gRtShims + ((UINTN)&gRequiresWriteUnprotect - (UINTN)&gRtShimsDataStart)) = Enable;
 }

@@ -237,6 +237,14 @@ MOStartImage (
     gMacOSBootNestedCount++;
 
     //
+    // Latest Windows brings Virtualization-based security and monitors
+    // CR0 by launching itself under a hypevisor. Since we need WP disable
+    // on macOS to let NVRAM work, and for the time being no other OS
+    // requires it, here we decide to use it for macOS exclusively.
+    //
+    SetWriteUnprotectorMode (TRUE);
+
+    //
     // This is reverse engineered from boot.efi.
     // To cancel hibernate wake it is enough to delete the variables.
     // Starting with 10.13.6 boot-switch-vars is no longer supported.
@@ -273,7 +281,7 @@ MOStartImage (
       //
       // Read options
       //
-      ReadBooterArguments ((CHAR16*)LoadedImage->LoadOptions, LoadedImage->LoadOptionsSize/sizeof(CHAR16));
+      ReadBooterArguments ((CHAR16*)LoadedImage->LoadOptions, LoadedImage->LoadOptionsSize/sizeof (CHAR16));
     }
   }
 
@@ -285,6 +293,7 @@ MOStartImage (
     // We failed but other operating systems should be loadable.
     //
     gMacOSBootNestedCount--;
+    SetWriteUnprotectorMode (FALSE);
   }
 
   return Status;

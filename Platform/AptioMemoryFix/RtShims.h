@@ -65,4 +65,9 @@ RestoreProtectedRtMemoryTypes (
   IN OUT EFI_MEMORY_DESCRIPTOR  *MemoryMap
   );
 
+VOID
+SetWriteUnprotectorMode (
+  IN     BOOLEAN                Enable
+  );
+
 #endif // APTIOFIX_RT_SHIMS_H

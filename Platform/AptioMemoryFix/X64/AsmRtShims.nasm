@@ -16,6 +16,8 @@ DEFAULT  REL
 %if %1 > 5
     %error "At Most 5 Args Supported."
 %endif
+    cmp        qword [ASM_PFX(gRequiresWriteUnprotect)], 0
+    jz         .SKIP_WRITE_UNPROTECT
     push       rsi
     push       rbx
     sub        rsp, 0x28
@@ -45,6 +47,8 @@ DEFAULT  REL
     sti
 .SKIP_RESTORE_INTR:
     ret
+.SKIP_WRITE_UNPROTECT
+    jmp        rax
 %endmacro
 
 SECTION .text
@@ -203,6 +207,9 @@ FourArgsShim:
     ConstructShim 4
 
 ALIGN          8
+
+global ASM_PFX(gRequiresWriteUnprotect)
+ASM_PFX(gRequiresWriteUnprotect): dq  0
 
 global ASM_PFX(gGetNextVariableName)
 ASM_PFX(gGetNextVariableName):    dq  0
