@@ -47,7 +47,7 @@ DEFAULT  REL
     sti
 .SKIP_RESTORE_INTR:
     ret
-.SKIP_WRITE_UNPROTECT
+.SKIP_WRITE_UNPROTECT:
     jmp        rax
 %endmacro
 
