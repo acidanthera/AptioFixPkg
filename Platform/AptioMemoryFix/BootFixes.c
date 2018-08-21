@@ -25,9 +25,6 @@
 #include "RtShims.h"
 #include "VMem.h"
 
-#include "HashServices/HashServices.h"
-#include "UnicodeCollation/UnicodeCollationEng.h"
-
 EFI_PHYSICAL_ADDRESS         gSysTableRtArea;
 EFI_PHYSICAL_ADDRESS         gRelocatedSysTableRtArea;
 
@@ -139,37 +136,6 @@ ApplyFirmwareQuirks (
   IN EFI_SYSTEM_TABLE  *SystemTable
   )
 {
-  //
-  // Broken Unicode collation protocol will make some programs
-  // (e.g. UEFI Shell) unloadable.
-  //
-#if APTIOFIX_UNICODE_COLLATION_FIX == 1
-  {
-    EFI_STATUS  Status = InitializeUnicodeCollationEng (ImageHandle, SystemTable);
-    if (EFI_ERROR (Status)) {
-      PrintScreen (L"AMF: collation install failure - %r\n", Status);
-    }
-  }
-#endif
-
-  //
-  // Functioning hash services (SHA-1) are used by boot.efi
-  // for accessing external files.
-  //
-#if APTIOFIX_HASH_SERVICES_FIX == 1
-  {
-    EFI_STATUS Status = InitializeHashServices (ImageHandle, SystemTable);
-    if (EFI_ERROR (Status)) {
-      PrintScreen (L"AMF: hash install failure - %r\n", Status);
-    }
-#if APTIOFIX_HASH_SERVICES_TEST == 1
-    if (!EFI_ERROR (Status)) { {
-      HSTestImpl ();
-    }
-#endif // APTIOFIX_HASH_SERVICES_TEST == 1
-  }
-#endif // APTIOFIX_HASH_SERVICES_FIX == 1
-
   //
   // Detect broken firmwares.
   //
