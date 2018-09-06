@@ -65,4 +65,3 @@ struct _AMI_EFIPOINTER_PROTOCOL {
 };
 
 #endif
-

@@ -349,6 +349,11 @@ AmiShimPointerTimerSetup (
     return EFI_ALREADY_STARTED;
   }
 
+  //
+  //FIXME: This code breaks AppleEvent functioning by making some of the key presses miss.
+  // Should try to find a better workaround, because without timer boost mouse values overflow. 
+  //
+#if 0
   // Refresh rate needs to be increased to poll the mouse frequently enough
   if (mAmiShimPointer.TimerProtocol == NULL) {
     Status = gBS->LocateProtocol(&gEfiTimerArchProtocolGuid, NULL, (VOID **)&mAmiShimPointer.TimerProtocol);
@@ -370,6 +375,7 @@ AmiShimPointerTimerSetup (
       DEBUG((EFI_D_ERROR, "AmiShimPointerTimerSetup gEfiTimerArchProtocolGuid not found %d\n", Status));
     }
   }
+#endif
 
   Status = gBS->CreateEvent (EVT_TIMER | EVT_NOTIFY_SIGNAL, TPL_NOTIFY, AmiShimPointerPositionHandler, NULL, &mAmiShimPointer.PositionEvent);
 

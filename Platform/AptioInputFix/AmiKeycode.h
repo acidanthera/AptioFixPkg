@@ -45,4 +45,3 @@ struct _AMI_EFIKEYCODE_PROTOCOL {
 };
 
 #endif
-

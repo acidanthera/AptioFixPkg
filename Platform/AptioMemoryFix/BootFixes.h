@@ -9,6 +9,8 @@
 #ifndef APTIOFIX_BOOT_FIXES_H
 #define APTIOFIX_BOOT_FIXES_H
 
+#include <Protocol/LoadedImage.h>
+
 //
 // Original and relocated new area for EFI System Table.
 // XNU requires gST pointers to be passed relative to boot.efi.
@@ -81,6 +83,11 @@ ExecSetVirtualAddressesToMemMap (
 VOID
 CopyEfiSysTableToRtArea (
   IN OUT UINT32  *EfiSystemTable
+  );
+
+EFI_LOADED_IMAGE_PROTOCOL *
+GetAppleBootLoadedImage (
+  EFI_HANDLE  ImageHandle
   );
 
 #endif // APTIOFIX_BOOT_FIXES_H

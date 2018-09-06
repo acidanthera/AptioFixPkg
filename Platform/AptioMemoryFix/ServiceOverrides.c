@@ -10,7 +10,6 @@
 #include <Library/BaseLib.h>
 #include <Library/BaseMemoryLib.h>
 #include <Library/DebugLib.h>
-#include <Library/DevicePathLib.h>
 #include <Library/UefiLib.h>
 #include <Library/UefiBootServicesTableLib.h>
 #include <Library/UefiRuntimeServicesTableLib.h>
@@ -186,43 +185,12 @@ MOStartImage (
   )
 {
   EFI_STATUS                  Status;
-  EFI_LOADED_IMAGE_PROTOCOL   *LoadedImage  = NULL;
-  UINTN                       ValueSize     = 0;
-  EFI_DEVICE_PATH_PROTOCOL    *CurrNode     = NULL;
-  FILEPATH_DEVICE_PATH        *LastNode     = NULL;
-  BOOLEAN                     IsMacOS       = FALSE;
-  UINTN                       PathLen       = 0;
-  UINTN                       BootPathLen   = LITERAL_STRLEN (L"boot.efi");
-  CONST CHAR16                *BootPathName = NULL;
+  EFI_LOADED_IMAGE_PROTOCOL   *AppleLoadedImage = NULL;
+  UINTN                       ValueSize = 0;
 
   DEBUG ((DEBUG_VERBOSE, "StartImage (%lx)\n", ImageHandle));
 
-  //
-  // Find out image name from EfiLoadedImageProtocol
-  //
-  Status = gBS->HandleProtocol (ImageHandle, &gEfiLoadedImageProtocolGuid, (VOID **)&LoadedImage);
-
-  if (!EFI_ERROR (Status) && LoadedImage->FilePath) {
-    for (CurrNode = LoadedImage->FilePath; !IsDevicePathEnd (CurrNode); CurrNode = NextDevicePathNode (CurrNode)) {
-      if (CurrNode->Type == MEDIA_DEVICE_PATH && CurrNode->SubType == MEDIA_FILEPATH_DP) {
-        LastNode = (FILEPATH_DEVICE_PATH *)CurrNode;
-      }
-    }
-
-    if (LastNode) {
-      //
-      // Detect macOS by boot.efi in the bootloader name.
-      //
-      PathLen = StrLen (LastNode->PathName);
-      BootPathName = LastNode->PathName + PathLen - BootPathLen;
-      if (PathLen >= BootPathLen) {
-        IsMacOS = (PathLen == BootPathLen || *(BootPathName - 1) == L'\\')
-          && !StrCmp (BootPathName, L"boot.efi");
-      }
-    }
-  } else {
-    DEBUG ((DEBUG_WARN, "StartImage: OpenProtocol(gEfiLoadedImageProtocolGuid) = %r\n", Status));
-  }
+  AppleLoadedImage = GetAppleBootLoadedImage (ImageHandle);
 
   //
   // Clear monitoring vars
@@ -230,7 +198,7 @@ MOStartImage (
   mMinAllocatedAddr = 0;
   mMaxAllocatedAddr = 0;
 
-  if (IsMacOS) {
+  if (AppleLoadedImage) {
     //
     // Report about macOS being loaded.
     //
@@ -272,23 +240,23 @@ MOStartImage (
       //
       // Force boot.efi to use our copy of system table
       //
-      LoadedImage->SystemTable = (EFI_SYSTEM_TABLE *)(UINTN)gSysTableRtArea;
+      AppleLoadedImage->SystemTable = (EFI_SYSTEM_TABLE *)(UINTN)gSysTableRtArea;
 
   #if APTIOFIX_ALLOW_ASLR_IN_SAFE_MODE == 1
-      UnlockSlideSupportForSafeMode ((UINT8 *)LoadedImage->ImageBase, LoadedImage->ImageSize);
+      UnlockSlideSupportForSafeMode ((UINT8 *)AppleLoadedImage->ImageBase, AppleLoadedImage->ImageSize);
   #endif
 
       //
       // Read options
       //
-      ReadBooterArguments ((CHAR16*)LoadedImage->LoadOptions, LoadedImage->LoadOptionsSize/sizeof (CHAR16));
+      ReadBooterArguments ((CHAR16*)AppleLoadedImage->LoadOptions, AppleLoadedImage->LoadOptionsSize/sizeof (CHAR16));
     }
   }
 
 
   Status = mStoredStartImage (ImageHandle, ExitDataSize, ExitData);
 
-  if (IsMacOS) {
+  if (AppleLoadedImage) {
     //
     // We failed but other operating systems should be loadable.
     //

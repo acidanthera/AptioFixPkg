@@ -91,4 +91,3 @@ AmiShimTranslatorEntryPoint (
 
   return EFI_SUCCESS;
 }
-
