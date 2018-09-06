@@ -40,12 +40,12 @@ AmiShimConfigureModifierMap (
 
   //TODO: This should be user-configurable, perhaps via a nvram variable.
 
-  // By default swap Alt with Gui, so that a PC keyboard gets an Apple layout
+  // You can swap Alt with Gui, to gets Apple layout on a PC keyboard
   CONST UINTN DefaultModifierConfig[AmiShimModifierMax/2] = {
     AmiShimRightShift,
     AmiShimRightControl,
-    AmiShimRightGui,
-    AmiShimRightAlt
+    AmiShimRightAlt,
+    AmiShimRightGui
   };
 
   for (Index = 0; Index < AmiShimModifierMax/2; Index++) {

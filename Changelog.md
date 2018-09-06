@@ -1,6 +1,10 @@
 AptioFix Changelog
 ==================
 
+#### R24
+- Fixed broken timer resolution in AptioInputFix
+- Disabled ALT/CMD swapping in AptioInputFix
+
 #### R23
 - Moved hash service and unicode collation code to AppleUiSupport, where they actually belong
 
