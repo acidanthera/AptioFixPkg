@@ -18,23 +18,27 @@
   FILE_GUID                      = E0E2C05D-C3BC-49F7-95F0-8A90A5646944
   MODULE_TYPE                    = UEFI_DRIVER
   VERSION_STRING                 = 1.0
-  ENTRY_POINT                    = AmiShimTranslatorEntryPoint
+  ENTRY_POINT                    = AptioInputEntryPoint
 
 [Sources]
-  AmiKeycode.h
-  AmiKeycode.c
-  AmiPointer.h
-  AmiPointer.c
-  AmiShim.h
-  AmiShim.c
-  AmiShimPs2Map.h
-  AmiShimPs2Map.c
-  AmiShimEfiMap.h
-  AmiShimEfiMap.c
-  AmiShimKeycode.h
-  AmiShimKeycode.c
-  AmiShimPointer.h
-  AmiShimPointer.c
+  AptioInput.c
+  Keycode/AIK.h
+  Keycode/AIK.c
+  Keycode/AIKData.c
+  Keycode/AIKData.h
+  Keycode/AIKMap.c
+  Keycode/AIKShim.c
+  Keycode/AIKShim.h
+  Keycode/AIKSource.c
+  Keycode/AIKSource.h
+  Keycode/AIKTarget.c
+  Keycode/AIKTarget.h
+  Keycode/AIKTranslate.c
+  Keycode/AIKTranslate.h
+  Pointer/AIM.h
+  Pointer/AIM.c
+  Timer/AIT.h
+  Timer/AIT.c
 
 # Fixme
 
@@ -83,3 +87,5 @@
   gAppleKeyMapDatabaseProtocolGuid              ## SOMETIMES_CONSUMES
   gApplePlatformInfoDatabaseProtocolGuid        ## SOMETMES_CONSUMES
   gEfiKeyboardInfoProtocolGuid                  ## SOMETIMES_PRODUCES
+  gAmiEfiPointerProtocolGuid                    ## SOMETMES_CONSUMES
+  gAmiEfiKeycodeProtocolGuid                    ## SOMETMES_CONSUMES

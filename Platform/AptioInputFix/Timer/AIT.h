@@ -1,7 +1,7 @@
 /** @file
-  AMI EfiPointer protocol definitions.
+  Timer booster
 
-Copyright (c) 2016, CupertinoNet. All rights reserved.<BR>
+Copyright (c) 2018, vit9696. All rights reserved.<BR>
 This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
 which accompanies this distribution.  The full text of the license may be found at
@@ -12,8 +12,24 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 
 **/
 
-//#include <MiscBase.h>
+#ifndef AIT_SELF_H
+#define AIT_SELF_H
 
-#include "AmiPointer.h"
+#include <Library/UefiLib.h>
 
-EFI_GUID gAmiEfiPointerProtocolGuid = AMI_EFIPOINTER_PROTOCOL_GUID;
+//
+// AMI has EFI_TIMER_PERIOD_MILLISECONDS(5) here, but we sync with AppleEvent.
+//
+#define AIT_TIMER_PERIOD  EFI_TIMER_PERIOD_MILLISECONDS(10)
+
+EFI_STATUS
+AITInit (
+  VOID
+  );
+
+EFI_STATUS
+AITExit (
+  VOID
+  );
+
+#endif

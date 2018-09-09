@@ -11,15 +11,20 @@ THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
 WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 
 **/
-#ifndef _AMI_KEYCODE_H_
-#define _AMI_KEYCODE_H_
+#ifndef AMI_KEYCODE_H
+#define AMI_KEYCODE_H
 
+// 0ADFB62D-FF74-484C-8944-F85C4BEA87A8
 #define AMI_EFIKEYCODE_PROTOCOL_GUID \
     { 0x0ADFB62D, 0xFF74, 0x484C, { 0x89, 0x44, 0xF8, 0x5C, 0x4B, 0xEA, 0x87, 0xA8 } }
     
 extern EFI_GUID gAmiEfiKeycodeProtocolGuid;
 
 typedef struct _AMI_EFIKEYCODE_PROTOCOL AMI_EFIKEYCODE_PROTOCOL;
+
+#ifndef KEY_STATE_EXPOSED
+#define KEY_STATE_EXPOSED   0x40
+#endif
 
 typedef struct {
   EFI_INPUT_KEY   Key;
@@ -31,12 +36,19 @@ typedef struct {
 } AMI_EFI_KEY_DATA;
 
 typedef EFI_STATUS (EFIAPI *AMI_READ_EFI_KEY) (
-  IN AMI_EFIKEYCODE_PROTOCOL  *This,
-  OUT AMI_EFI_KEY_DATA        *KeyData
-);
+  IN  AMI_EFIKEYCODE_PROTOCOL  *This,
+  OUT AMI_EFI_KEY_DATA          *KeyData
+  );
+
+typedef
+EFI_STATUS
+(EFIAPI *AMI_RESET_EX) (
+  IN AMI_EFIKEYCODE_PROTOCOL   *This,
+  IN BOOLEAN                   ExtendedVerification
+  );
 
 struct _AMI_EFIKEYCODE_PROTOCOL {
-  EFI_INPUT_RESET_EX                Reset;
+  AMI_RESET_EX                      Reset;
   AMI_READ_EFI_KEY                  ReadEfikey;
   EFI_EVENT                         WaitForKeyEx;
   EFI_SET_STATE                     SetState;

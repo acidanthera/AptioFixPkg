@@ -12,11 +12,11 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 
 **/
 
-#include "AmiShim.h"
-#include "AmiPointer.h"
-#include "AmiShimPointer.h"
+#include "AIM.h"
 
-//#include <MiscBase.h>
+#include <Library/BaseMemoryLib.h>
+#include <Library/DebugLib.h>
+#include <Library/UefiBootServicesTableLib.h>
 
 STATIC AMI_SHIM_POINTER mAmiShimPointer;
 
@@ -152,8 +152,8 @@ AmiShimPointerSmooth (
   *X = AmiShimPointerScale(*X, AbsX);
   *Y = AmiShimPointerScale(*Y, AbsY);
 
-  *X *= SCALE_FACTOR;
-  *Y *= SCALE_FACTOR;
+  *X *= AIM_SCALE_FACTOR;
+  *Y *= AIM_SCALE_FACTOR;
 }
 
 #else
@@ -225,7 +225,7 @@ AmiShimPointerPositionHandler (
 
   // This is important to do quickly and separately, because AMI stores positioning data in INT8.
   // If we move the mouse quickly it will overflow and return invalid data.
-  for (Index = 0; Index < MAX_POINTERS; Index++) {
+  for (Index = 0; Index < AIM_MAX_POINTERS; Index++) {
     Pointer = &mAmiShimPointer.PointerMap[Index];
     if (Pointer->DeviceHandle != NULL) {
       PositionState.Changed = 0;
@@ -310,13 +310,13 @@ AmiShimPointerGetState (
     return EFI_INVALID_PARAMETER;
   }
 
-  for (Index = 0, Pointer = mAmiShimPointer.PointerMap; Index < MAX_POINTERS; Index++, Pointer++) {
+  for (Index = 0, Pointer = mAmiShimPointer.PointerMap; Index < AIM_MAX_POINTERS; Index++, Pointer++) {
     if (Pointer->SimplePointer == This) {
       break;
     }
   }
 
-  if (Index != MAX_POINTERS) {
+  if (Index != AIM_MAX_POINTERS) {
     Status = AmiShimPointerUpdateState (Pointer, State);
 
     if (!EFI_ERROR (Status)) {
@@ -349,30 +349,6 @@ AmiShimPointerTimerSetup (
     return EFI_ALREADY_STARTED;
   }
 
-  //
-  // Refresh rate needs to be increased to poll the mouse frequently enough
-  //
-  if (mAmiShimPointer.TimerProtocol == NULL) {
-    Status = gBS->LocateProtocol(&gEfiTimerArchProtocolGuid, NULL, (VOID **)&mAmiShimPointer.TimerProtocol);
-    if (!EFI_ERROR (Status)) {
-      Status = mAmiShimPointer.TimerProtocol->GetTimerPeriod (mAmiShimPointer.TimerProtocol, &mAmiShimPointer.OriginalTimerPeriod);
-      if (!EFI_ERROR (Status)) {
-        if (mAmiShimPointer.OriginalTimerPeriod > AMI_SHIM_TIMER_PERIOD) {
-          Status = mAmiShimPointer.TimerProtocol->SetTimerPeriod (mAmiShimPointer.TimerProtocol, AMI_SHIM_TIMER_PERIOD);
-          if (!EFI_ERROR (Status)) {
-            DEBUG((EFI_D_ERROR, "AmiShimPointerTimerSetup changed period %d to %d\n", mAmiShimPointer.OriginalTimerPeriod, AMI_SHIM_TIMER_PERIOD));
-          } else {
-            DEBUG((EFI_D_ERROR, "AmiShimPointerTimerSetup failed to change period %d to %d, error %d\n", mAmiShimPointer.OriginalTimerPeriod, AMI_SHIM_TIMER_PERIOD, Status));
-          }
-        }
-      } else {
-        DEBUG((EFI_D_ERROR, "AmiShimPointerTimerSetup failed to obtain previous period %d\n", Status));
-      }
-    } else {
-      DEBUG((EFI_D_ERROR, "AmiShimPointerTimerSetup gEfiTimerArchProtocolGuid not found %d\n", Status));
-    }
-  }
-
   Status = gBS->CreateEvent (EVT_TIMER | EVT_NOTIFY_SIGNAL, TPL_NOTIFY, AmiShimPointerPositionHandler, NULL, &mAmiShimPointer.PositionEvent);
 
   if (EFI_ERROR (Status)) {
@@ -380,7 +356,7 @@ AmiShimPointerTimerSetup (
     return Status;
   }
 
-  Status = gBS->SetTimer (mAmiShimPointer.PositionEvent, TimerPeriodic, POSITION_POLL_TIMER_INTERVAL);
+  Status = gBS->SetTimer (mAmiShimPointer.PositionEvent, TimerPeriodic, AIM_POSITION_POLL_INTERVAL);
 
   if (EFI_ERROR (Status)) {
     DEBUG((EFI_D_ERROR, "AmiShimPointerPositionHandler timer setting failed %d\n", Status));
@@ -403,23 +379,6 @@ AmiShimPointerTimerUninstall (
 
   if (!mAmiShimPointer.TimersInitialised) {
     return EFI_SUCCESS;
-  }
-
-  if (mAmiShimPointer.TimerProtocol != NULL) {
-    Status = mAmiShimPointer.TimerProtocol->GetTimerPeriod (mAmiShimPointer.TimerProtocol, &mAmiShimPointer.OriginalTimerPeriod);
-    if (!EFI_ERROR (Status)) {
-      if (mAmiShimPointer.OriginalTimerPeriod > AMI_SHIM_TIMER_PERIOD) {
-        Status = mAmiShimPointer.TimerProtocol->SetTimerPeriod (mAmiShimPointer.TimerProtocol, AMI_SHIM_TIMER_PERIOD);
-        if (!EFI_ERROR (Status)) {
-          DEBUG((EFI_D_ERROR, "AmiShimPointerTimerUninstall changed period %d to %d\n", mAmiShimPointer.OriginalTimerPeriod, AMI_SHIM_TIMER_PERIOD));
-        } else {
-          DEBUG((EFI_D_ERROR, "AmiShimPointerTimerUninstall failed to change period %d to %d, error %d\n", mAmiShimPointer.OriginalTimerPeriod, AMI_SHIM_TIMER_PERIOD, Status));
-        }
-      }
-      mAmiShimPointer.TimerProtocol = NULL;
-    } else {
-      DEBUG((EFI_D_ERROR, "AmiShimPointerTimerUninstall failed to obtain current period %d\n", Status));
-    }
   }
 
   if (mAmiShimPointer.PositionEvent != NULL) {
@@ -451,7 +410,7 @@ AmiShimPointerInstallOnHandle (
   
   FreePointer = NULL;
 
-  for (Index = 0; Index < MAX_POINTERS; Index++) {
+  for (Index = 0; Index < AIM_MAX_POINTERS; Index++) {
     Pointer = &mAmiShimPointer.PointerMap[Index];
     if (Pointer->DeviceHandle == NULL && FreePointer == NULL) {
       FreePointer = Pointer;
@@ -548,7 +507,7 @@ AmiShimPointerUninstall (
 
   AmiShimPointerTimerUninstall();
 
-  for (Index = 0; Index < MAX_POINTERS; Index++) {
+  for (Index = 0; Index < AIM_MAX_POINTERS; Index++) {
     Pointer = &mAmiShimPointer.PointerMap[Index];
     if (Pointer->DeviceHandle != NULL) {
       Pointer->SimplePointer->GetState = Pointer->OriginalGetState;
@@ -571,8 +530,7 @@ AmiShimPointerArriveHandler (
 }
 
 EFI_STATUS
-EFIAPI
-AmiShimPointerInit (
+AIMInit (
   VOID
   )
 {
@@ -599,8 +557,7 @@ AmiShimPointerInit (
 }
 
 EFI_STATUS
-EFIAPI
-AmiShimPointerExit (
+AIMExit (
   VOID
   )
 {
