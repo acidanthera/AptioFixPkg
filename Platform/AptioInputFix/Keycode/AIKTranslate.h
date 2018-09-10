@@ -31,14 +31,14 @@ extern AIK_PS2_TO_USB_MAP    gAikPs2ToUsbMap[AIK_MAX_PS2_NUM];
 extern CONST CHAR8 *         gAikEfiKeyToNameMap[AIK_MAX_EFIKEY_NUM];
 
 enum {
-  AIK_RightShift,
-  AIK_LeftShift,
-  AIK_RightControl,
-  AIK_LeftControl,
-  AIK_RightAlt,
-  AIK_LeftAlt,
-  AIK_RightGui,
-  AIK_LeftGui,
+  AIK_RIGHT_SHIFT,
+  AIK_LEFT_SHIFT,
+  AIK_RIGHT_CONTROL,
+  AIK_LEFT_CONTROL,
+  AIK_RIGHT_ALT,
+  AIK_LEFT_ALT,
+  AIK_RIGHT_GUI,
+  AIK_LEFT_GUI,
   AIK_MODIFIER_MAX
 };
 

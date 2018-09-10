@@ -1,7 +1,7 @@
 /** @file
   Key mapping tables.
 
-Copyright (c) 2016, CupertinoNet. All rights reserved.<BR>
+Copyright (c) 2018, vit9696. All rights reserved.<BR>
 This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
 which accompanies this distribution.  The full text of the license may be found at
@@ -18,642 +18,642 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 AIK_PS2_TO_USB_MAP
 gAikPs2ToUsbMap[AIK_MAX_PS2_NUM] = {
   {
-    0x00,
+    UsbHidUndefined,
     NULL,
     NULL
   }, // 0x00
   {
-    0x29,
+    UsbHidUsageIdKbKpKeyEsc,
     "Esc",
     "^ Esc ^"
   }, // 0x01
   {
-    0x1E,
+    UsbHidUsageIdKbKpKeyOne,
     "1",
     "!"
   }, // 0x02
   {
-    0x1F,
+    UsbHidUsageIdKbKpKeyTwo,
     "2",
     "@"
   }, // 0x03
   {
-    0x20,
+    UsbHidUsageIdKbKpKeyThree,
     "3",
     "#"
   }, // 0x04
   {
-    0x21,
+    UsbHidUsageIdKbKpKeyFour,
     "4",
     "$"
   }, // 0x05
   {
-    0x22,
+    UsbHidUsageIdKbKpKeyFive,
     "5",
     "%"
   }, // 0x06
   {
-    0x23,
+    UsbHidUsageIdKbKpKeySix,
     "6",
     "^"
   }, // 0x07
   {
-    0x24,
+    UsbHidUsageIdKbKpKeySeven,
     "7",
     "&"
   }, // 0x08
   {
-    0x25,
+    UsbHidUsageIdKbKpKeyEight,
     "8",
     "*"
   }, // 0x09
   {
-    0x26,
+    UsbHidUsageIdKbKpKeyNine,
     "9",
     "("
   }, // 0x0A
   {
-    0x27,
+    UsbHidUsageIdKbKpKeyZero,
     "0",
     ")"
   }, // 0x0B
   {
-    0x2D,
+    UsbHidUsageIdKbKpKeyMinus,
     "-",
     "_"
   }, // 0x0C
   {
-    0x2E,
+    UsbHidUsageIdKbKpKeyEquals,
     "=",
     "+"
   }, // 0x0D
   {
-    0x2A,
+    UsbHidUsageIdKbKpKeyBackSpace,
     "Backspace",
     "^ Backspace ^"
   }, // 0x0E
   {
-    0x2B,
+    UsbHidUsageIdKbKpKeyTab,
     "Tab",
     "^ Tab ^"
   }, // 0x0F
   {
-    0x14,
+    UsbHidUsageIdKbKpKeyQ,
     "q",
     "Q"
   }, // 0x10
   {
-    0x1A,
+    UsbHidUsageIdKbKpKeyW,
     "w",
     "W"
   }, // 0x11
   {
-    0x08,
+    UsbHidUsageIdKbKpKeyE,
     "e",
     "E"
   }, // 0x12
   {
-    0x15,
+    UsbHidUsageIdKbKpKeyR,
     "r",
     "R"
   }, // 0x13
   {
-    0x17,
+    UsbHidUsageIdKbKpKeyT,
     "t",
     "T"
   }, // 0x14
   {
-    0x1C,
+    UsbHidUsageIdKbKpKeyY,
     "y",
     "Y"
   }, // 0x15
   {
-    0x18,
+    UsbHidUsageIdKbKpKeyU,
     "u",
     "U"
   }, // 0x16
   {
-    0x0C,
+    UsbHidUsageIdKbKpKeyI,
     "i",
     "I"
   }, // 0x17
   {
-    0x12,
+    UsbHidUsageIdKbKpKeyO,
     "o",
     "O"
   }, // 0x18
   {
-    0x13,
+    UsbHidUsageIdKbKpKeyP,
     "p",
     "P"
   }, // 0x19
   {
-    0x2F,
+    UsbHidUsageIdKbKpKeyLeftBracket,
     "[",
     "{"
   }, // 0x1A
   {
-    0x30,
+    UsbHidUsageIdKbKpKeyRightBracket,
     "]",
     "}"
   }, // 0x1B
   {
-    0x28,
+    UsbHidUsageIdKbKpKeyEnter,
     "Enter",
     "^ Enter ^"
   }, // 0x1C
   {
-    0x00,
+    UsbHidUndefined,
     NULL,
     NULL
   }, // 0x1D
   {
-    0x04,
+    UsbHidUsageIdKbKpKeyA,
     "a",
     "A"
   }, // 0x1E
   {
-    0x16,
+    UsbHidUsageIdKbKpKeyS,
     "s",
     "S"
   }, // 0x1F
   {
-    0x07,
+    UsbHidUsageIdKbKpKeyD,
     "d",
     "D"
   }, // 0x20
   {
-    0x09,
+    UsbHidUsageIdKbKpKeyF,
     "f",
     "F"
   }, // 0x21
   {
-    0x0A,
+    UsbHidUsageIdKbKpKeyG,
     "g",
     "G"
   }, // 0x22
   {
-    0x0B,
+    UsbHidUsageIdKbKpKeyH,
     "h",
     "H"
   }, // 0x23
   {
-    0x0D,
+    UsbHidUsageIdKbKpKeyJ,
     "j",
     "J"
   }, // 0x24
   {
-    0x0E,
+    UsbHidUsageIdKbKpKeyK,
     "k",
     "K"
   }, // 0x25
   {
-    0x0F,
+    UsbHidUsageIdKbKpKeyL,
     "l",
     "L"
   }, // 0x26
   {
-    0x33,
+    UsbHidUsageIdKbKpKeySemicolon,
     ";",
     ":"
   }, // 0x27
   {
-    0x34,
+    UsbHidUsageIdKbKpKeyQuotation,
     "'",
     "\""
   }, // 0x28
   {
-    0x35,
+    UsbHidUsageIdKbKpKeyAcute,
     "`",
     "~"
   }, // 0x29
   {
-    0x00,
+    UsbHidUndefined,
     NULL,
     NULL
   }, // 0x2A
   {
-    0x31,
+    UsbHidUsageIdKbKpKeyBackslash,
     "\\",
     "|"
   }, // 0x2B
   {
-    0x1D,
+    UsbHidUsageIdKbKpKeyZ,
     "z",
     "Z"
   }, // 0x2C
   {
-    0x1B,
+    UsbHidUsageIdKbKpKeyX,
     "x",
     "X"
   }, // 0x2D
   {
-    0x06,
+    UsbHidUsageIdKbKpKeyC,
     "c",
     "C"
   }, // 0x2E
   {
-    0x19,
+    UsbHidUsageIdKbKpKeyV,
     "v",
     "V"
   }, // 0x2F
   {
-    0x05,
+    UsbHidUsageIdKbKpKeyB,
     "b",
     "B"
   }, // 0x30
   {
-    0x11,
+    UsbHidUsageIdKbKpKeyN,
     "n",
     "N"
   }, // 0x31
   {
-    0x10,
+    UsbHidUsageIdKbKpKeyM,
     "m",
     "M"
   }, // 0x32
   {
-    0x36,
+    UsbHidUsageIdKbKpKeyComma,
     ",",
     "<"
   }, // 0x33
   {
-    0x37,
+    UsbHidUsageIdKbKpKeyPeriod,
     ".",
     ">"
   }, // 0x34
   {
-    0x38,
+    UsbHidUsageIdKbKpKeySlash,
     "/",
     "?"
   }, // 0x35
   {
-    0x00,
+    UsbHidUndefined,
     NULL,
     NULL
   }, // 0x36
   {
-    0x55,
+    UsbHidUsageIdKbKpPadKeyAsterisk,
     "*",
     "^ * ^"
   }, // 0x37
   {
-    0x00,
+    UsbHidUndefined,
     NULL,
     NULL
   }, // 0x38
   {
-    0x2C,
+    UsbHidUsageIdKbKpKeySpaceBar,
     "Spacebar",
     "^ Spacebar ^"
   }, // 0x39
   {
-    0x39,
+    UsbHidUsageIdKbKpKeyCLock,
     "CapsLock",
     "^ CapsLock ^"
   }, // 0x3A
   {
-    0x3A,
+    UsbHidUsageIdKbKpKeyF1,
     "F1",
     "^ F1 ^"
   }, // 0x3B
   {
-    0x3B,
+    UsbHidUsageIdKbKpKeyF2,
     "F2",
     "^ F2 ^"
   }, // 0x3C
   {
-    0x3C,
+    UsbHidUsageIdKbKpKeyF3,
     "F3",
     "^ F3 ^"
   }, // 0x3D
   {
-    0x3D,
+    UsbHidUsageIdKbKpKeyF4,
     "F4",
     "^ F4 ^"
   }, // 0x3E
   {
-    0x3E,
+    UsbHidUsageIdKbKpKeyF5,
     "F5",
     "^ F5 ^"
   }, // 0x3F
   {
-    0x3F,
+    UsbHidUsageIdKbKpKeyF6,
     "F6",
     "^ F6 ^"
   }, // 0x40
   {
-    0x40,
+    UsbHidUsageIdKbKpKeyF7,
     "F7",
     "^ F7 ^"
   }, // 0x41
   {
-    0x41,
+    UsbHidUsageIdKbKpKeyF8,
     "F8",
     "^ F8 ^"
   }, // 0x42
   {
-    0x42,
+    UsbHidUsageIdKbKpKeyF9,
     "F9",
     "^ F9 ^"
   }, // 0x43
   {
-    0x43,
+    UsbHidUsageIdKbKpKeyF10,
     "F10",
     "^ F10 ^"
   }, // 0x44
   {
-    0x53,
+    UsbHidUsageIdKbKpPadKeyNLck,
     "NumLock",
     "^ NumLock ^"
   }, // 0x45
   {
-    0x47,
+    UsbHidUsageIdKbKpKeySLock,
     "Scroll Lock",
     "^ Scroll Lock ^"
   }, // 0x46
   {
-    0x4A,
+    UsbHidUsageIdKbKpKeyHome,
     "Home",
     "^ Home ^"
   }, // 0x47
   {
-    0x52,
+    UsbHidUsageIdKbKpKeyUpArrow,
     "Up",
     "^ Up ^"
   }, // 0x48
   {
-    0x4B,
+    UsbHidUsageIdKbKpKeyPgUp,
     "PageUp",
     "^ PageUp ^"
   }, // 0x49
   {
-    0x56,
+    UsbHidUsageIdKbKpPadKeyMinus,
     "-",
     "^ - ^"
   }, // 0x4A
   {
-    0x50,
+    UsbHidUsageIdKbKpKeyLeftArrow,
     "Left",
     "^ Left ^"
   }, // 0x4B
   {
-    0x5D,
+    UsbHidUsageIdKbKpPadKeyFive,
     "5",
     "^ 5 ^"
   }, // 0x4C
   {
-    0x4F,
+    UsbHidUsageIdKbKpKeyRightArrow,
     "Right",
     "^ Right ^"
   }, // 0x4D
   {
-    0x57,
+    UsbHidUsageIdKbKpPadKeyPlus,
     "+",
     "^ + ^"
   }, // 0x4E
   {
-    0x4D,
+    UsbHidUsageIdKbKpKeyEnd,
     "End",
     "^ End ^"
   }, // 0x4F
   {
-    0x51,
+    UsbHidUsageIdKbKpKeyDownArrow,
     "Down",
     "^ Down ^"
   }, // 0x50
   {
-    0x4E,
+    UsbHidUsageIdKbKpKeyPgDn,
     "PageDown",
     "^ PageDown ^"
   }, // 0x51
   {
-    0x49,
+    UsbHidUsageIdKbKpKeyIns,
     "Insert",
     "^ Insert ^"
   }, // 0x52
   {
-    0x4C,
+    UsbHidUsageIdKbKpKeyDel,
     "Delete",
     "^ Delete ^"
   }, // 0x53
   {
-    0x00,
+    UsbHidUndefined,
     NULL,
     NULL
   }, // 0x54
   {
-    0x00,
+    UsbHidUndefined,
     NULL,
     NULL
   }, // 0x55
   {
-    0x00,
+    UsbHidUndefined,
     NULL,
     NULL
   }, // 0x56
   {
-    0x44,
+    UsbHidUsageIdKbKpKeyF11,
     "F11",
     "^ F11 ^"
   }, // 0x57
   {
-    0x45,
+    UsbHidUsageIdKbKpKeyF12,
     "F12",
     "^ F12 ^"
   }, // 0x58
   {
-    0x00,
+    UsbHidUndefined,
     NULL,
     NULL
   }, // 0x59
   {
-    0x00,
+    UsbHidUndefined,
     NULL,
     NULL
   }, // 0x5A
   {
-    0x00,
+    UsbHidUndefined,
     NULL,
     NULL
   }, // 0x5B
   {
-    0x00,
+    UsbHidUndefined,
     NULL,
     NULL
   }, // 0x5C
   {
-    0x00,
+    UsbHidUndefined,
     NULL,
     NULL
   }, // 0x5D
   {
-    0x00,
+    UsbHidUndefined,
     NULL,
     NULL
   }, // 0x5E
   {
-    0x00,
+    UsbHidUndefined,
     NULL,
     NULL
   }, // 0x5F
   {
-    0x00,
+    UsbHidUndefined,
     NULL,
     NULL
   }, // 0x60
   {
-    0x00,
+    UsbHidUndefined,
     NULL,
     NULL
   }, // 0x61
   {
-    0x00,
+    UsbHidUndefined,
     NULL,
     NULL
   }, // 0x62
   {
-    0x00,
+    UsbHidUndefined,
     NULL,
     NULL
   }, // 0x63
   {
-    0x00,
+    UsbHidUndefined,
     NULL,
     NULL
   }, // 0x64
   {
-    0x00,
+    UsbHidUndefined,
     NULL,
     NULL
   }, // 0x65
   {
-    0x00,
+    UsbHidUndefined,
     NULL,
     NULL
   }, // 0x66
   {
-    0x00,
+    UsbHidUndefined,
     NULL,
     NULL
   }, // 0x67
   {
-    0x00,
+    UsbHidUndefined,
     NULL,
     NULL
   }, // 0x68
   {
-    0x00,
+    UsbHidUndefined,
     NULL,
     NULL
   }, // 0x69
   {
-    0x00,
+    UsbHidUndefined,
     NULL,
     NULL
   }, // 0x6A
   {
-    0x00,
+    UsbHidUndefined,
     NULL,
     NULL
   }, // 0x6B
   {
-    0x00,
+    UsbHidUndefined,
     NULL,
     NULL
   }, // 0x6C
   {
-    0x00,
+    UsbHidUndefined,
     NULL,
     NULL
   }, // 0x6D
   {
-    0x00,
+    UsbHidUndefined,
     NULL,
     NULL
   }, // 0x6E
   {
-    0x00,
+    UsbHidUndefined,
     NULL,
     NULL
   }, // 0x6F
   {
-    0x00,
+    UsbHidUndefined,
     NULL,
     NULL
   }, // 0x70
   {
-    0x00,
+    UsbHidUndefined,
     NULL,
     NULL
   }, // 0x71
   {
-    0x00,
+    UsbHidUndefined,
     NULL,
     NULL
   }, // 0x72
   {
-    0x00,
+    UsbHidUndefined,
     NULL,
     NULL
   }, // 0x73
   {
-    0x00,
+    UsbHidUndefined,
     NULL,
     NULL
   }, // 0x74
   {
-    0x00,
+    UsbHidUndefined,
     NULL,
     NULL
   }, // 0x75
   {
-    0x00,
+    UsbHidUndefined,
     NULL,
     NULL
   }, // 0x76
   {
-    0x00,
+    UsbHidUndefined,
     NULL,
     NULL
   }, // 0x77
   {
-    0x00,
+    UsbHidUndefined,
     NULL,
     NULL
   }, // 0x78
   {
-    0x00,
+    UsbHidUndefined,
     NULL,
     NULL
   }, // 0x79
   {
-    0x00,
+    UsbHidUndefined,
     NULL,
     NULL
   }, // 0x7A
   {
-    0x00,
+    UsbHidUndefined,
     NULL,
     NULL
   }, // 0x7B
   {
-    0x00,
+    UsbHidUndefined,
     NULL,
     NULL
   }, // 0x7C
   {
-    0x00,
+    UsbHidUndefined,
     NULL,
     NULL
   }, // 0x7D
   {
-    0x00,
+    UsbHidUndefined,
     NULL,
     NULL
   }, // 0x7E
   {
-    0x00,
+    UsbHidUndefined,
     NULL,
     NULL
   } // 0x7F

@@ -227,14 +227,14 @@ AIKInit (
 
   Status = AIKInstall (&gAikSelf);
   if (EFI_ERROR (Status)) {
-    DEBUG ((EFI_D_ERROR, "AmiShim installation failed - %r\n", Status));
+    DEBUG ((EFI_D_ERROR, "AIKInstall failed - %r\n", Status));
 
     //
     // No AppleKeyMapAggregator present, install on its availability.
     //
     Status = AIKProtocolArriveInstall (&gAikSelf);
     if (EFI_ERROR (Status)) {
-      DEBUG ((EFI_D_ERROR, "AmiShim is NOT waiting for protocols - %r\n", Status));
+      DEBUG ((EFI_D_ERROR, "AIK is NOT waiting for protocols - %r\n", Status));
     }
   }
  

@@ -34,28 +34,28 @@ AIKTranslateModifiers (
 
   if (KeyShiftState & EFI_SHIFT_STATE_VALID) {
     if (KeyShiftState & EFI_RIGHT_SHIFT_PRESSED) {
-      *Modifiers |= mModifierRemap[AIK_RightShift];
+      *Modifiers |= mModifierRemap[AIK_RIGHT_SHIFT];
     }
     if (KeyShiftState & EFI_LEFT_SHIFT_PRESSED) {
-      *Modifiers |= mModifierRemap[AIK_RightShift];
+      *Modifiers |= mModifierRemap[AIK_LEFT_SHIFT];
     }
     if (KeyShiftState & EFI_RIGHT_CONTROL_PRESSED) {
-      *Modifiers |= mModifierRemap[AIK_RightControl];
+      *Modifiers |= mModifierRemap[AIK_RIGHT_CONTROL];
     }
     if (KeyShiftState & EFI_LEFT_CONTROL_PRESSED) {
-      *Modifiers |= mModifierRemap[AIK_LeftControl];
+      *Modifiers |= mModifierRemap[AIK_LEFT_CONTROL];
     }
     if (KeyShiftState & EFI_RIGHT_ALT_PRESSED) {
-      *Modifiers |= mModifierRemap[AIK_RightAlt];
+      *Modifiers |= mModifierRemap[AIK_RIGHT_ALT];
     }
     if (KeyShiftState & EFI_LEFT_ALT_PRESSED) {
-      *Modifiers |= mModifierRemap[AIK_LeftAlt];
+      *Modifiers |= mModifierRemap[AIK_LEFT_ALT];
     }
     if (KeyShiftState & EFI_RIGHT_LOGO_PRESSED) {
-      *Modifiers |= mModifierRemap[AIK_RightGui];
+      *Modifiers |= mModifierRemap[AIK_RIGHT_GUI];
     }
     if (KeyShiftState & EFI_LEFT_LOGO_PRESSED) {
-      *Modifiers |= mModifierRemap[AIK_LeftGui];
+      *Modifiers |= mModifierRemap[AIK_LEFT_GUI];
     }
   } else {
     //TODO: handle legacy EFI_SIMPLE_TEXT_INPUT_PROTOCOL
@@ -126,10 +126,10 @@ AIKTranslateConfigure (
 
   // You can swap Alt with Gui, to get Apple layout on a PC keyboard
   CONST UINTN DefaultModifierConfig[AIK_MODIFIER_MAX/2] = {
-    AIK_RightShift,
-    AIK_RightControl,
-    AIK_RightAlt,
-    AIK_RightGui
+    AIK_RIGHT_SHIFT,
+    AIK_RIGHT_CONTROL,
+    AIK_RIGHT_ALT,
+    AIK_RIGHT_GUI
   };
 
   for (Index = 0; Index < AIK_MODIFIER_MAX/2; Index++) {
@@ -149,7 +149,7 @@ AIKTranslate (
 
   AIKTranslateModifiers (KeyData, Modifiers);
 
-  *Key = 0;
+  *Key = UsbHidUndefined;
 
   //
   // This is APTIO protocol, which reported a PS/2 key to us. Best!

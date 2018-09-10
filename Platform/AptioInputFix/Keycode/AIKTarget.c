@@ -124,7 +124,7 @@ AIKTargetWriteEntry (
   Target->Modifiers = Modifiers;
   Target->ModifierCounter = Target->Counter;
 
-  if (Key == 0) {
+  if (Key == UsbHidUndefined) {
     //
     // This is just a modifier or an unsupported key.
     //

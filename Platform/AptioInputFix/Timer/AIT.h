@@ -18,9 +18,10 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 #include <Library/UefiLib.h>
 
 //
-// AMI has EFI_TIMER_PERIOD_MILLISECONDS(5) here, but we sync with AppleEvent.
+// AppleEvent prefers 10 ms, and APTIO IV Z87 needs 5 ms for mouse.
+// Pick the lower one, as they are multiple of each other.
 //
-#define AIT_TIMER_PERIOD  EFI_TIMER_PERIOD_MILLISECONDS(10)
+#define AIT_TIMER_PERIOD  EFI_TIMER_PERIOD_MILLISECONDS(5)
 
 EFI_STATUS
 AITInit (
