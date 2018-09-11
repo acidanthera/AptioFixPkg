@@ -37,7 +37,7 @@ AIKTranslateModifiers (
   // in KeyShiftState on APTIO and VMware.
   //
   if ((KeyShiftState & EFI_SHIFT_STATE_VALID) && KeyData->PS2ScanCodeIsValid == 0
-    && KeyData->Key.UnicodeChar >= 0 && KeyData->Key.UnicodeChar < AIK_MAX_EFIKEY_NUM) {
+    && KeyData->Key.UnicodeChar < AIK_MAX_EFIKEY_NUM) {
     KeyShiftState |= gAikAsciiToUsbMap[KeyData->Key.UnicodeChar].ShiftState;
   }
 
@@ -45,7 +45,7 @@ AIKTranslateModifiers (
   // Handle legacy EFI_SIMPLE_TEXT_INPUT_PROTOCOL by guessing from EfiKey
   //
   if ((KeyShiftState & EFI_SHIFT_STATE_VALID) != EFI_SHIFT_STATE_VALID
-    && KeyData->Key.UnicodeChar >= 0 && KeyData->Key.UnicodeChar < AIK_MAX_EFIKEY_NUM) {
+    && KeyData->Key.UnicodeChar < AIK_MAX_EFIKEY_NUM) {
     KeyShiftState = gAikAsciiToUsbMap[KeyData->Key.UnicodeChar].ShiftState;
   }
 
