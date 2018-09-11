@@ -32,6 +32,23 @@ AIKTranslateModifiers (
 
   *Modifiers = 0;
 
+  //
+  // Handle EFI_SIMPLE_TEXT_INPUT_EX_PROTOCOL Shift support, which is not included
+  // in KeyShiftState on APTIO and VMware.
+  //
+  if ((KeyShiftState & EFI_SHIFT_STATE_VALID) && KeyData->PS2ScanCodeIsValid == 0
+    && KeyData->Key.UnicodeChar >= 0 && KeyData->Key.UnicodeChar < AIK_MAX_EFIKEY_NUM) {
+    KeyShiftState |= gAikAsciiToUsbMap[KeyData->Key.UnicodeChar].ShiftState;
+  }
+
+  //
+  // Handle legacy EFI_SIMPLE_TEXT_INPUT_PROTOCOL by guessing from EfiKey
+  //
+  if ((KeyShiftState & EFI_SHIFT_STATE_VALID) != EFI_SHIFT_STATE_VALID
+    && KeyData->Key.UnicodeChar >= 0 && KeyData->Key.UnicodeChar < AIK_MAX_EFIKEY_NUM) {
+    KeyShiftState = gAikAsciiToUsbMap[KeyData->Key.UnicodeChar].ShiftState;
+  }
+
   if (KeyShiftState & EFI_SHIFT_STATE_VALID) {
     if (KeyShiftState & EFI_RIGHT_SHIFT_PRESSED) {
       *Modifiers |= mModifierRemap[AIK_RIGHT_SHIFT];
@@ -57,8 +74,6 @@ AIKTranslateModifiers (
     if (KeyShiftState & EFI_LEFT_LOGO_PRESSED) {
       *Modifiers |= mModifierRemap[AIK_LEFT_GUI];
     }
-  } else {
-    //TODO: handle legacy EFI_SIMPLE_TEXT_INPUT_PROTOCOL
   }
 }
 
@@ -145,30 +160,40 @@ AIKTranslate (
   OUT APPLE_KEY_CODE      *Key
   )
 {
-  AIK_PS2_TO_USB_MAP  Ps2Key;
+  AIK_PS2KEY_TO_USB  Ps2Key;
 
   AIKTranslateModifiers (KeyData, Modifiers);
 
   *Key = UsbHidUndefined;
 
   //
-  // This is APTIO protocol, which reported a PS/2 key to us. Best!
+  // Firstly check for APTIO protocol, which reported a PS/2 key to us.
+  // Otherwise try to decode UnicodeChar and Scancode from simple input.
   //
-  if (KeyData->PS2ScanCodeIsValid == 1 && KeyData->PS2ScanCode < AIK_MAX_PS2_NUM) {
-    Ps2Key = gAikPs2ToUsbMap[KeyData->PS2ScanCode];
-    if (Ps2Key.UsbCode != 0) {
+  if (KeyData->PS2ScanCodeIsValid == 1 && KeyData->PS2ScanCode < AIK_MAX_PS2KEY_NUM) {
+    Ps2Key = gAikPs2KeyToUsbMap[KeyData->PS2ScanCode];
+    if (Ps2Key.UsbCode != UsbHidUndefined) {
       //
       // We need to process numpad keys separately.
       //
       AIKTranslateNumpad (&Ps2Key.UsbCode, KeyData->EfiKey);
       *Key = APPLE_HID_USB_KB_KP_USAGE (Ps2Key.UsbCode);
     }
+  } else if (KeyData->Key.UnicodeChar >= 0
+    && KeyData->Key.UnicodeChar < AIK_MAX_ASCII_NUM
+    && gAikAsciiToUsbMap[KeyData->Key.UnicodeChar].UsbCode != UsbHidUndefined) {
+    *Key = APPLE_HID_USB_KB_KP_USAGE (gAikAsciiToUsbMap[KeyData->Key.UnicodeChar].UsbCode);
+  } else if (KeyData->Key.ScanCode < AIK_MAX_SCANCODE_NUM
+    && gAikScanCodeToUsbMap[KeyData->Key.ScanCode].UsbCode != UsbHidUndefined) {
+    *Key = APPLE_HID_USB_KB_KP_USAGE (gAikScanCodeToUsbMap[KeyData->Key.ScanCode].UsbCode);
+  }
 
-    DEBUG ((EFI_D_ERROR, "AIKTranslate USB 0x%X PS2 0x%X KeyName %a EfiKey %a Scan 0x%X Uni 0x%X\n",
-      Ps2Key.UsbCode, KeyData->PS2ScanCode, Ps2Key.KeyName, 
-      KeyData->EfiKey < AIK_MAX_EFIKEY_NUM ? gAikEfiKeyToNameMap[KeyData->EfiKey] : "<err>", 
-      KeyData->Key.ScanCode, KeyData->Key.UnicodeChar));
-  } else {
-    //TODO: Handle KeyData->Key for EFI_SIMPLE_TEXT_INPUT_PROTOCOL.
+  if (*Key != UsbHidUndefined) {
+    DEBUG ((EFI_D_ERROR, "\nAIKTranslate P1 MOD %a APPLE 0x%X (%a) PS2 0x%X Ps2Name %a\n",
+      AIK_MODIFIERS_TO_NAME (*Modifiers), *Key, AIK_APPLEKEY_TO_NAME (*Key),
+      KeyData->PS2ScanCode, AIK_PS2KEY_TO_NAME (KeyData->PS2ScanCode, *Modifiers)));
+    DEBUG ((EFI_D_ERROR, "AIKTranslate P2 AsciiName %a ScanName %a EfiKey %a Scan 0x%XUni 0x%X SState 0x%X\n",
+      AIK_ASCII_TO_NAME (KeyData->Key.UnicodeChar), AIK_SCANCODE_TO_NAME (KeyData->Key.ScanCode),
+      AIK_EFIKEY_TO_NAME (KeyData->EfiKey), KeyData->Key.ScanCode, KeyData->Key.UnicodeChar, KeyData->KeyState.KeyShiftState));
   }
 }

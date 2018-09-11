@@ -128,9 +128,9 @@ AIKPollKeyboardHandler (
       );
     if (!EFI_ERROR (Status)) {
       (VOID) Counter;
-      DEBUG ((EFI_D_ERROR, "Read key with scan 0x%X and unicode 0x%X at %Lu\n",
-        KeyData.Key.ScanCode, KeyData.Key.UnicodeChar, Counter
-        ));
+      // DEBUG ((EFI_D_ERROR, "Read key with scan 0x%X and unicode 0x%X at %Lu\n",
+      //   KeyData.Key.ScanCode, KeyData.Key.UnicodeChar, Counter
+      //   ));
       AIKDataWriteEntry (&Keycode->Data, &KeyData);
       AIKTargetWriteEntry (&Keycode->Target, &KeyData);
     }

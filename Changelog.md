@@ -3,6 +3,7 @@ AptioFix Changelog
 
 #### R24
 - Added basic APTIO V compatibility to AptioInputFix
+- Added basic generic firmware compatibility to AptioInputFix
 - Fixed broken timer resolution in AptioInputFix
 - Disabled ALT/CMD swapping in AptioInputFix
 
