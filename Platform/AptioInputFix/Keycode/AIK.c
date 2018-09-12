@@ -216,7 +216,6 @@ AIKUninstall (
 }
 
 EFI_STATUS
-EFIAPI
 AIKInit (
   VOID
   )
@@ -242,7 +241,6 @@ AIKInit (
 }
 
 EFI_STATUS
-EFIAPI
 AIKExit (
   VOID
   )
