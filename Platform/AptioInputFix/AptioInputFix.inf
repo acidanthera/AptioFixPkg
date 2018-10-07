@@ -44,7 +44,6 @@
 
 [Packages]
   AptioFixPkg/AptioFixPkg.dec
-  EfiMiscPkg/EfiMiscPkg.dec
   EfiPkg/EfiPkg.dec
   MdeModulePkg/MdeModulePkg.dec
   MdePkg/MdePkg.dec
