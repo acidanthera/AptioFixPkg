@@ -586,7 +586,7 @@ GetVariableCustomSlide (
   )
 {
   if (gMacOSBootNestedCount > 0 && VariableName && VendorGuid && DataSize &&
-    !CompareMem (VendorGuid, &gAppleBootVariableGuid, sizeof(EFI_GUID))) {
+    CompareGuid (VendorGuid, &gAppleBootVariableGuid)) {
     //
     // We override csr-active-config with CSR_ALLOW_UNRESTRICTED_NVRAM bit set
     // to allow one to pass a custom slide value even when SIP is on.
