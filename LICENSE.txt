@@ -1,5 +1,5 @@
 Copyright (c) 2009-2018, Clover Bootloader and its contributors
-Copyright (c) 2016-2018, CupertinoNet
+Copyright (c) 2016-2018, Download-Fritz
 Copyright (c) 2016-2018, vit9696
 
 All rights reserved.
