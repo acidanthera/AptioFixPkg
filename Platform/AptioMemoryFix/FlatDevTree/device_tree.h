@@ -65,7 +65,7 @@ typedef char DTEntryNameBuf[kDTMaxEntryNameLength+1];
 typedef struct DeviceTreeNodeProperty {
   char               name[kPropNameLength];     // NUL terminated property name
   UINT32             length;                    // Length (bytes) of following prop value
-//unsigned long      value[1];                  // Variable length value of property
+//unsigned long      value[];                   // Variable length value of property
                                                 // Padded to a multiple of a longword?
 } DeviceTreeNodeProperty;
 
