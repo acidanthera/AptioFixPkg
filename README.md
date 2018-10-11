@@ -10,7 +10,7 @@ AptioFixPkg drivers fixing certain UEFI APTIO Firmware issues relevant to bootin
 ## AptioInputFix 
 
 Reference driver to shim AMI APTIO proprietary mouse & keyboard protocols for File Vault 2 GUI input support.  
-Generally [modified UsbKbDxe](https://github.com/CupertinoNet/CupertinoModulePkg) by [CupertinoNet](https://github.com/CupertinoNet) team works better on APTIO V, but for Z77, Z87, and similar AptioInputFix may be the only solution. 
+Generally [modified UsbKbDxe](https://github.com/acidanthera/AppleSupportPkg/tree/master/Platform/AppleUsbKbDxe) works better on APTIO V, but for Z77, Z87, and similar AptioInputFix may be the only solution. 
 
 #### Features
 - Sends pressed keys to APPLE_KEY_MAP_DATABASE_PROTOCOL
@@ -84,7 +84,6 @@ CFG Lock option is available on most APTIO V firmwares, although it may be hidde
 - [Apple](https://www.apple.com) for macOS
 - [AMI](https://ami.com) for APTIO firmware
 - [dmazar](https://sourceforge.net/u/dmazar/profile/), [apianti](https://sourceforge.net/u/apianti/), [CodeRush](https://github.com/NikolajSchlej), [night199uk](https://github.com/night199uk), [Slice](https://sourceforge.net/u/slice2009/) for developing the original OsxAptioFix driver
-- [CupertinoNet](https://github.com/CupertinoNet) team for continuous support
 - [Download-Fritz](https://github.com/Download-Fritz) for implimenting some of this code and invaluable suggestions
 - [vit9696](https://github.com/vit9696) for all the mess
 - Big thanks go to all the contributors and researchers involved in AMI APTIO exploration!
