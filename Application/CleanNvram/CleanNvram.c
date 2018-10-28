@@ -1,5 +1,5 @@
 /** @file
-  Verify MSR 0xE2 status on all the processors.
+  Clean several important nvram variables to recover from issues.
 
 Copyright (c) 2018, vit9696. All rights reserved.<BR>
 This program and the accompanying materials
@@ -103,7 +103,7 @@ DeleteVariables (
   UINTN        BufferSize = 0;
   UINTN        RequestedSize = 1024;
   BOOLEAN      Restart = TRUE;
-  BOOLEAN      ForceRescan = FALSE;
+  BOOLEAN      CriticalFailure = FALSE;
 
   do {
     if (RequestedSize > BufferSize) {
@@ -142,9 +142,9 @@ DeleteVariables (
         }
       }
     } else if (Status != EFI_BUFFER_TOO_SMALL && Status != EFI_NOT_FOUND) {
-      if (!ForceRescan) {
+      if (!CriticalFailure) {
         Print (L"Unexpected error (%r), trying to rescan\n", Status);
-        ForceRescan = TRUE;
+        CriticalFailure = TRUE;
       } else {
         Print (L"Unexpected error (%r), aborting\n", Status);
         break;
