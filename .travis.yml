@@ -24,7 +24,6 @@ matrix:
         secure: j+PIYM2H3mtpwdAov4CLg6waz+pJVIpQo/jPgVMp730OAaS2Ypk7OuHlXxvRQDUE79AO6vxNSfhqsR77O/ZxK5xZTSBGTVe2xBJEuaYsYn+pWFOAmFd91hk4kl7Av3XqCSj2BF1eiJW/lAHoY9aZX489re4c4LGaX5tbpK0xAXK3q1Ps0IDLQem6SUK2o6LLYc/tjNAoeRtOXqPY2qW6Xre2iSWCnoTYWZpHr5L3VT/nWq29Xc7MaiDmAO40WK+5hVqqRCPcMYm/N3VmY1SxOznUMjxD472yJUo1QeTX3QhNdSwSbRaIDyRLGQQdV1ZUBIeHMIBaVDbfjm5z2SrORRu7xhrgnDDyManvOGuQkxuoztidr2Bm3RxdkOxkPf4JE/7LIJKkTEUWJks7ieRhe+50WC3AHHnoaKQbaDwlXxyWWl4Uvs2DzRegVq8RXoFfNKuQkFmv8FJuABA+ZQp1ZEaBxVJn5nh/KuUXS1xjgokhtlmgXQgW1M8kafiq/4U1QWILWetAyFPfZmqI0CTBC9bU/1P2klrhCOHpm8jxwncN7pY/IoyjIoZpAGkV1nQlE4QlXKJkrIA24/mgfy+oL+4V7IjIoWtcFQrIWwfVHE/5SEQ1zW2Ur9U2/AoEG5oPf+0ijYLaPAoKLrustwYkDL7L9Me/fZY01yPIjGKrMPw=
 
   - os: osx
-    osx_image: xcode6.4
     compiler: clang
 
     script:
@@ -36,6 +35,6 @@ matrix:
           name: "acidanthera/AptioFixPkg"
           description: "AptioFixPkg"
         notification_email: $NOTIFICATION_EMAIL
-        build_command_prepend: "./macbuild.tool --skip-build --skip-package && cd UDK"
+        build_command_prepend: "./macbuild.tool --skip-build --skip-package && cd UDK ; src=$(/usr/bin/curl -Lfs https://raw.githubusercontent.com/acidanthera/Lilu/master/Lilu/Scripts/covstrap.sh) && eval \"$src\" || exit 1"
         build_command: "../macbuild.tool --skip-tests --skip-package RELEASE"
         branch_pattern: master
