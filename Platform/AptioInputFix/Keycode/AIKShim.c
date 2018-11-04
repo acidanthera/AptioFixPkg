@@ -47,8 +47,8 @@ AIKShimAmiKeycodeReadEfikey (
   OUT AMI_EFI_KEY_DATA         *KeyData
   )
 {
-  // DEBUG ((EFI_D_ERROR, "AIKAmiKeycodeReadEfikey %p %p ours %p event %d",
-  //  This, KeyData, gAikSelf.Source.AmiKeycode, gAikSelf.InPollKeyboardEvent));
+  DEBUG ((DEBUG_VERBOSE, "AIKAmiKeycodeReadEfikey %p %p ours %p event %d",
+    This, KeyData, gAikSelf.Source.AmiKeycode, gAikSelf.InPollKeyboardEvent));
 
   if (This == NULL || KeyData == NULL || gAikSelf.OurJobIsDone) {
     return EFI_INVALID_PARAMETER;
@@ -95,8 +95,8 @@ AIKShimTextInputReadKeyStroke (
   EFI_STATUS        Status;
   AMI_EFI_KEY_DATA  AmiKeyData;
 
-  // DEBUG ((EFI_D_ERROR, "AIKTextInputReadKeyStroke %p %p ours %p event %d",
-  //   This, Key, gAikSelf.Source.TextInput, gAikSelf.InPollKeyboardEvent));
+  DEBUG ((DEBUG_VERBOSE, "AIKTextInputReadKeyStroke %p %p ours %p event %d",
+    This, Key, gAikSelf.Source.TextInput, gAikSelf.InPollKeyboardEvent));
 
   if (This == NULL || Key == NULL || gAikSelf.OurJobIsDone) {
     return EFI_INVALID_PARAMETER;
@@ -156,8 +156,8 @@ AIKShimTextInputReadKeyStrokeEx (
   EFI_STATUS        Status;
   AMI_EFI_KEY_DATA  AmiKeyData;
 
-  // DEBUG ((EFI_D_ERROR, "AIKTextInputReadKeyStrokeEx %p %p ours %p event %d",
-  //   This, KeyData, gAikSelf.Source.TextInputEx, gAikSelf.InPollKeyboardEvent));
+  DEBUG ((DEBUG_VERBOSE, "AIKTextInputReadKeyStrokeEx %p %p ours %p event %d",
+    This, KeyData, gAikSelf.Source.TextInputEx, gAikSelf.InPollKeyboardEvent));
 
   if (This == NULL || KeyData == NULL || gAikSelf.OurJobIsDone) {
     return EFI_INVALID_PARAMETER;
@@ -187,12 +187,12 @@ AIKShimWaitForKeyHandler (
   )
 {
   if (gAikSelf.OurJobIsDone) {
-    DEBUG ((EFI_D_ERROR, "AIKShimWaitForKeyHandler got null handler or called when done\n"));
+    DEBUG ((DEBUG_INFO, "AIKShimWaitForKeyHandler got null handler or called when done\n"));
     return;
   }
 
   if (!AIKDataEmpty (&gAikSelf.Data)) {
-    // DEBUG ((EFI_D_ERROR, "Caught KeyBufferSize non-zero\n"));
+    DEBUG ((DEBUG_VERBOSE, "Caught KeyBufferSize non-zero\n"));
     gBS->SignalEvent (Event);
   }
 }

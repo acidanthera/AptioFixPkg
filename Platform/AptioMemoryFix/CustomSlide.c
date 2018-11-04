@@ -362,7 +362,7 @@ GetVariableCsrActiveConfig (
   //
   Status = OrgGetVariable (VariableName, VendorGuid, Attributes, DataSize, Data);
   if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_WARN, "GetVariable csr-active-config returned %r\n", Status));
+    DEBUG ((DEBUG_INFO, "GetVariable csr-active-config returned %r\n", Status));
 
     *Config = 0;
     Status = EFI_SUCCESS;
@@ -500,7 +500,7 @@ UnlockSlideSupportForSafeMode (
     DEBUG ((DEBUG_VERBOSE, "Found first %d at off %X\n", (UINT32)NewWay, (UINT32)FirstOff));
 
     if (StartOff + FirstOff > EndOff) {
-      DEBUG ((DEBUG_WARN, "Failed to find first BOOT_MODE_SAFE | BOOT_MODE_ASLR sequence\n"));
+      DEBUG ((DEBUG_INFO, "Failed to find first BOOT_MODE_SAFE | BOOT_MODE_ASLR sequence\n"));
       break;
     }
 

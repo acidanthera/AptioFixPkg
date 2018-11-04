@@ -32,7 +32,7 @@ AIKTargetInstall (
     Status = gBS->LocateProtocol (&gAppleKeyMapDatabaseProtocolGuid, NULL, (VOID **) &Target->KeyMapDb);
 
     if (EFI_ERROR (Status)) {
-      DEBUG ((EFI_D_ERROR, "AppleKeyMapDatabaseProtocol is unavailable - %r\n", Status));
+      DEBUG ((DEBUG_INFO, "AppleKeyMapDatabaseProtocol is unavailable - %r\n", Status));
       return EFI_NOT_FOUND;
     }
 
@@ -41,7 +41,7 @@ AIKTargetInstall (
       );
 
     if (EFI_ERROR (Status)) {
-      DEBUG ((EFI_D_ERROR, "CreateKeyStrokesBuffer failed - %r\n", Status));
+      DEBUG ((DEBUG_INFO, "CreateKeyStrokesBuffer failed - %r\n", Status));
       Target->KeyMapDb = NULL;
     }
   }
@@ -186,6 +186,6 @@ AIKTargetSubmit (
   }
 
   if (EFI_ERROR (Status)) {
-    DEBUG ((EFI_D_ERROR, "Failed to submit keys to AppleMapDb - %r", Status));
+    DEBUG ((DEBUG_INFO, "Failed to submit keys to AppleMapDb - %r", Status));
   }
 }

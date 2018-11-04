@@ -235,7 +235,7 @@ GetMemoryMapAlloc (
     );
 
   if (Status != EFI_BUFFER_TOO_SMALL) {
-    DEBUG ((DEBUG_WARN, "Insane GetMemoryMap %r\n", Status));
+    DEBUG ((DEBUG_INFO, "Insane GetMemoryMap %r\n", Status));
     return Status;
   }
 
@@ -259,14 +259,14 @@ GetMemoryMapAlloc (
         FALSE
         );
       if (EFI_ERROR (Status)) {
-        DEBUG ((DEBUG_WARN, "Temp memory map allocation from top failure %r\n", Status));
+        DEBUG ((DEBUG_INFO, "Temp memory map allocation from top failure %r\n", Status));
         *MemoryMap = NULL;
         return Status;
       }
     } else {
       *MemoryMap = AllocatePool (*MemoryMapSize);
       if (!*MemoryMap) {
-        DEBUG ((DEBUG_WARN, "Temp memory map direct allocation failure\n"));
+        DEBUG ((DEBUG_INFO, "Temp memory map direct allocation failure\n"));
         return EFI_OUT_OF_RESOURCES;
       }
     }
@@ -290,7 +290,7 @@ GetMemoryMapAlloc (
   } while (Status == EFI_BUFFER_TOO_SMALL);
 
   if (Status != EFI_SUCCESS) {
-    DEBUG ((DEBUG_WARN, "Failed to obtain memory map %r\n", Status));
+    DEBUG ((DEBUG_INFO, "Failed to obtain memory map %r\n", Status));
   }
 
   return Status;

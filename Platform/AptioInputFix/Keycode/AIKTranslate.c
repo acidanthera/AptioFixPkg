@@ -189,10 +189,10 @@ AIKTranslate (
   }
 
   if (*Key != UsbHidUndefined) {
-    DEBUG ((EFI_D_ERROR, "\nAIKTranslate P1 MOD %a APPLE 0x%X (%a) PS2 0x%X Ps2Name %a\n",
+    DEBUG ((DEBUG_VERBOSE, "\nAIKTranslate P1 MOD %a APPLE 0x%X (%a) PS2 0x%X Ps2Name %a\n",
       AIK_MODIFIERS_TO_NAME (*Modifiers), *Key, AIK_APPLEKEY_TO_NAME (*Key),
       KeyData->PS2ScanCode, AIK_PS2KEY_TO_NAME (KeyData->PS2ScanCode, *Modifiers)));
-    DEBUG ((EFI_D_ERROR, "AIKTranslate P2 AsciiName %a ScanName %a EfiKey %a Scan 0x%X Uni 0x%X SState 0x%X\n",
+    DEBUG ((DEBUG_VERBOSE, "AIKTranslate P2 AsciiName %a ScanName %a EfiKey %a Scan 0x%X Uni 0x%X SState 0x%X\n",
       AIK_ASCII_TO_NAME (KeyData->Key.UnicodeChar), AIK_SCANCODE_TO_NAME (KeyData->Key.ScanCode),
       AIK_EFIKEY_TO_NAME (KeyData->EfiKey), KeyData->Key.ScanCode, KeyData->Key.UnicodeChar, KeyData->KeyState.KeyShiftState));
   }

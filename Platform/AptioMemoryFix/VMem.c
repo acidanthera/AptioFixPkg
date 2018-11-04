@@ -180,7 +180,7 @@ GetPhysicalAddr (
   // print it
   DEBUG ((DEBUG_VERBOSE, "PML4[%03x] at %p = %lx Region: %lx - %lx\n", VA.Pg4K.PML4Offset, PML4, PML4->Uint64, VAStart.Uint64, VAEnd.Uint64));
   if (!PML4->Bits.Present) {
-    DEBUG ((DEBUG_WARN, "-> Mapping not present!\n"));
+    DEBUG ((DEBUG_INFO, "-> Mapping not present!\n"));
     return EFI_NO_MAPPING;
   }
   DEBUG ((DEBUG_VERBOSE, "-> Nx:%x|A:%x|PCD:%x|PWT:%x|US:%x|RW:%x|P:%x -> %lx\n",
@@ -197,7 +197,7 @@ GetPhysicalAddr (
   VAEnd.Pg4K.PDPOffset = VA.Pg4K.PDPOffset;
   DEBUG ((DEBUG_VERBOSE, "PDPE[%03x] at %p = %lx Region: %lx - %lx\n", VA.Pg4K.PDPOffset, PDPE, PDPE->Uint64, VAStart.Uint64, VAEnd.Uint64));
   if (!PDPE->Bits.Present) {
-    DEBUG ((DEBUG_WARN, "-> Mapping not present!\n"));
+    DEBUG ((DEBUG_INFO, "-> Mapping not present!\n"));
     return EFI_NO_MAPPING;
   }
   if (PDPE->Bits.MustBeZero & 0x1) {
@@ -228,7 +228,7 @@ GetPhysicalAddr (
   VAEnd.Pg4K.PDOffset = VA.Pg4K.PDOffset;
   DEBUG ((DEBUG_VERBOSE, "PDE[%03x] at %p = %lx Region: %lx - %lx\n", VA.Pg4K.PDOffset, PDE, PDE->Uint64, VAStart.Uint64, VAEnd.Uint64));
   if (!PDE->Bits.Present) {
-    DEBUG ((DEBUG_WARN, "-> Mapping not present!\n"));
+    DEBUG ((DEBUG_INFO, "-> Mapping not present!\n"));
     return EFI_NO_MAPPING;
   }
   if (PDE->Bits.MustBeZero & 0x1) {
@@ -259,7 +259,7 @@ GetPhysicalAddr (
   VAEnd.Pg4K.PTOffset = VA.Pg4K.PTOffset;
   DEBUG ((DEBUG_VERBOSE, "PTE[%03x] at %p = %lx Region: %lx - %lx\n", VA.Pg4K.PTOffset, PTE4K, PTE4K->Uint64, VAStart.Uint64, VAEnd.Uint64));
   if (!PTE4K->Bits.Present) {
-    DEBUG ((DEBUG_WARN, "-> Mapping not present!\n"));
+    DEBUG ((DEBUG_INFO, "-> Mapping not present!\n"));
     return EFI_NO_MAPPING;
   }
   DEBUG ((DEBUG_VERBOSE, "-> Nx:%x|G:%x|PAT:%x|D:%x|A:%x|PCD:%x|PWT:%x|US:%x|RW:%x|P:%x -> %lx\n",
@@ -355,7 +355,7 @@ VmMapVirtualPage (
   // since we may mess the mapping of first virtual region (happens in VBox and probably DUET).
   // check for this on first call and if true, just clear our PML4 - we'll rebuild it in later step
   if (PML4 != PageTable && PML4->Bits.Present && PageTable->Bits.PageTableBaseAddress == PML4->Bits.PageTableBaseAddress) {
-    DEBUG ((DEBUG_WARN, "PML4 points to the same table as first PML4 - releasing it and rebuiding in a separate table\n"));
+    DEBUG ((DEBUG_INFO, "PML4 points to the same table as first PML4 - releasing it and rebuiding in a separate table\n"));
     PML4->Uint64 = 0;
   }
 
@@ -369,10 +369,10 @@ VmMapVirtualPage (
   // print it
   DEBUG ((DEBUG_VERBOSE, "PML4[%03x] at %p = %lx Region: %lx - %lx\n", VA.Pg4K.PML4Offset, PML4, PML4->Uint64, VAStart.Uint64, VAEnd.Uint64));
   if (!PML4->Bits.Present) {
-    DEBUG ((DEBUG_WARN, "-> Mapping not present, creating new PML4 entry and page with PDPE entries!\n"));
+    DEBUG ((DEBUG_INFO, "-> Mapping not present, creating new PML4 entry and page with PDPE entries!\n"));
     PDPE = (PAGE_MAP_AND_DIRECTORY_POINTER *)VmAllocatePages(1);
     if (PDPE == NULL) {
-      DEBUG ((DEBUG_WARN, "No memory - exiting.\n"));
+      DEBUG ((DEBUG_INFO, "No memory - exiting.\n"));
       return EFI_NO_MAPPING;
     }
 
@@ -410,10 +410,10 @@ VmMapVirtualPage (
   VAEnd.Pg4K.PDPOffset = VA.Pg4K.PDPOffset;
   DEBUG ((DEBUG_VERBOSE, "PDPE[%03x] at %p = %lx Region: %lx - %lx\n", VA.Pg4K.PDPOffset, PDPE, PDPE->Uint64, VAStart.Uint64, VAEnd.Uint64));
   if (!PDPE->Bits.Present || (PDPE->Bits.MustBeZero & 0x1)) {
-    DEBUG ((DEBUG_WARN, "-> Mapping not present or mapped as 1GB page, creating new PDPE entry and page with PDE entries!\n"));
+    DEBUG ((DEBUG_INFO, "-> Mapping not present or mapped as 1GB page, creating new PDPE entry and page with PDE entries!\n"));
     PDE = (PAGE_MAP_AND_DIRECTORY_POINTER *)VmAllocatePages(1);
     if (PDE == NULL) {
-      DEBUG ((DEBUG_WARN, "No memory - exiting.\n"));
+      DEBUG ((DEBUG_INFO, "No memory - exiting.\n"));
       return EFI_NO_MAPPING;
     }
     ZeroMem(PDE, EFI_PAGE_SIZE);
@@ -454,10 +454,10 @@ VmMapVirtualPage (
   VAEnd.Pg4K.PDOffset = VA.Pg4K.PDOffset;
   DEBUG ((DEBUG_VERBOSE, "PDE[%03x] at %p = %lx Region: %lx - %lx\n", VA.Pg4K.PDOffset, PDE, PDE->Uint64, VAStart.Uint64, VAEnd.Uint64));
   if (!PDE->Bits.Present || (PDE->Bits.MustBeZero & 0x1)) {
-    DEBUG ((DEBUG_WARN, "-> Mapping not present or mapped as 2MB page, creating new PDE entry and page with PTE4K entries!\n"));
+    DEBUG ((DEBUG_INFO, "-> Mapping not present or mapped as 2MB page, creating new PDE entry and page with PTE4K entries!\n"));
     PTE4K = (PAGE_TABLE_4K_ENTRY *)VmAllocatePages(1);
     if (PTE4K == NULL) {
-      DEBUG ((DEBUG_WARN, "No memory - exiting.\n"));
+      DEBUG ((DEBUG_INFO, "No memory - exiting.\n"));
       return EFI_NO_MAPPING;
     }
     ZeroMem(PTE4K, EFI_PAGE_SIZE);
@@ -497,7 +497,7 @@ VmMapVirtualPage (
   VAEnd.Pg4K.PTOffset = VA.Pg4K.PTOffset;
   DEBUG ((DEBUG_VERBOSE, "PTE[%03x] at %p = %lx Region: %lx - %lx\n", VA.Pg4K.PTOffset, PTE4K, PTE4K->Uint64, VAStart.Uint64, VAEnd.Uint64));
   if (PTE4K->Bits.Present) {
-    DEBUG ((DEBUG_WARN, "mapping already present - remapping!\n"));
+    DEBUG ((DEBUG_INFO, "mapping already present - remapping!\n"));
   }
   DEBUG ((DEBUG_VERBOSE, "-> Nx:%x|G:%x|PAT:%x|D:%x|A:%x|PCD:%x|PWT:%x|US:%x|RW:%x|P:%x -> %lx\n",
     PTE4K->Bits.Nx, PTE4K->Bits.Global, PTE4K->Bits.PAT,

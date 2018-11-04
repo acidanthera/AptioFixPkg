@@ -135,7 +135,7 @@ AppendArgumentToCommandLine (
   // Account for extra space.
   //
   if (Len + (Len > 0 ? 1 : 0) + ArgumentLength >= BOOT_LINE_LENGTH) {
-    DEBUG ((DEBUG_WARN, "boot-args are invalid, ignoring\n"));
+    DEBUG ((DEBUG_INFO, "boot-args are invalid, ignoring\n"));
     return FALSE;
   }
 

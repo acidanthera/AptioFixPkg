@@ -277,7 +277,7 @@ ProtectRtMemoryFromRelocation (
         ++RelocInfo;
         ++mRelocInfoData.NumEntries;
       } else {
-        DEBUG ((DEBUG_WARN, "WARNING: Cannot save mem type for entry: %lx (type 0x%x)\n", Desc->PhysicalStart, (UINTN)Desc->Type));
+        DEBUG ((DEBUG_INFO, "WARNING: Cannot save mem type for entry: %lx (type 0x%x)\n", Desc->PhysicalStart, (UINTN)Desc->Type));
       }
 
       DEBUG ((DEBUG_VERBOSE, "RT mem %lx (0x%x) -> MemMapIO\n", Desc->PhysicalStart, Desc->NumberOfPages));

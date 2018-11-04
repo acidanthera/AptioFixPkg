@@ -33,7 +33,7 @@ AIKProtocolArriveHandler (
   Keycode = (AIK_SELF *) Context;
 
   if (Keycode == NULL || Keycode->OurJobIsDone) {
-    DEBUG ((EFI_D_ERROR, "AIKProtocolArriveHandler got null handler or called when done\n"));
+    DEBUG ((DEBUG_INFO, "AIKProtocolArriveHandler got null handler or called when done\n"));
     return;
   }
 
@@ -44,7 +44,7 @@ AIKProtocolArriveHandler (
     //
     AIKProtocolArriveUninstall (Keycode);
   } else {
-    DEBUG ((EFI_D_ERROR, "AIKProtocolArriveHandler AIKInstall failed - %r\n", Status));
+    DEBUG ((DEBUG_INFO, "AIKProtocolArriveHandler AIKInstall failed - %r\n", Status));
   }
 }
 
@@ -62,12 +62,12 @@ AIKProtocolArriveInstall (
     Status = gBS->CreateEvent (EVT_NOTIFY_SIGNAL, TPL_NOTIFY, AIKProtocolArriveHandler, Keycode, &Keycode->KeyMapDbArriveEvent);
 
     if (EFI_ERROR (Status)) {
-      DEBUG ((EFI_D_ERROR, "KeyMapDbArriveEvent creation failed - %r\n", Status));
+      DEBUG ((DEBUG_INFO, "KeyMapDbArriveEvent creation failed - %r\n", Status));
     } else {
       Status = gBS->RegisterProtocolNotify (&gAppleKeyMapDatabaseProtocolGuid, Keycode->KeyMapDbArriveEvent, &Registration);
 
       if (EFI_ERROR (Status)) {
-        DEBUG ((EFI_D_ERROR, "KeyMapDbArriveEvent registration failed - %r\n", Status));
+        DEBUG ((DEBUG_INFO, "KeyMapDbArriveEvent registration failed - %r\n", Status));
         gBS->CloseEvent (Keycode->KeyMapDbArriveEvent);
         Keycode->KeyMapDbArriveEvent = NULL;
       }
@@ -103,7 +103,7 @@ AIKPollKeyboardHandler (
 
   Keycode = (AIK_SELF *) Context;
   if (Keycode == NULL || Keycode->OurJobIsDone) {
-    DEBUG ((EFI_D_ERROR, "AIKPollKeyboardHandler got null handler or called when done\n"));
+    DEBUG ((DEBUG_INFO, "AIKPollKeyboardHandler got null handler or called when done\n"));
     return;
   }
 
@@ -128,9 +128,9 @@ AIKPollKeyboardHandler (
       );
     if (!EFI_ERROR (Status)) {
       (VOID) Counter;
-      // DEBUG ((EFI_D_ERROR, "Read key with scan 0x%X and unicode 0x%X at %Lu\n",
-      //   KeyData.Key.ScanCode, KeyData.Key.UnicodeChar, Counter
-      //   ));
+      DEBUG ((DEBUG_VERBOSE, "Read key with scan 0x%X and unicode 0x%X at %Lu\n",
+        KeyData.Key.ScanCode, KeyData.Key.UnicodeChar, Counter
+        ));
       AIKDataWriteEntry (&Keycode->Data, &KeyData);
       AIKTargetWriteEntry (&Keycode->Target, &KeyData);
     }
@@ -180,12 +180,12 @@ AIKInstall (
   if (!EFI_ERROR (Status)) {
     Status = gBS->SetTimer (Keycode->PollKeyboardEvent, TimerPeriodic, AIK_KEY_POLL_INTERVAL);
     if (EFI_ERROR (Status)) {
-      DEBUG ((EFI_D_ERROR, "AIKPollKeyboardHandler timer setting failed - %r\n", Status));
+      DEBUG ((DEBUG_INFO, "AIKPollKeyboardHandler timer setting failed - %r\n", Status));
       gBS->CloseEvent (Keycode->PollKeyboardEvent);
       Keycode->PollKeyboardEvent = NULL;
     }
   } else {
-    DEBUG ((EFI_D_ERROR, "AIKPollKeyboardHandler event creation failed - %r\n", Status));
+    DEBUG ((DEBUG_INFO, "AIKPollKeyboardHandler event creation failed - %r\n", Status));
   }
 
   if (EFI_ERROR (Status)) {
@@ -226,14 +226,14 @@ AIKInit (
 
   Status = AIKInstall (&gAikSelf);
   if (EFI_ERROR (Status)) {
-    DEBUG ((EFI_D_ERROR, "AIKInstall failed - %r\n", Status));
+    DEBUG ((DEBUG_INFO, "AIKInstall failed - %r\n", Status));
 
     //
     // No AppleKeyMapAggregator present, install on its availability.
     //
     Status = AIKProtocolArriveInstall (&gAikSelf);
     if (EFI_ERROR (Status)) {
-      DEBUG ((EFI_D_ERROR, "AIK is NOT waiting for protocols - %r\n", Status));
+      DEBUG ((DEBUG_INFO, "AIK is NOT waiting for protocols - %r\n", Status));
     }
   }
  

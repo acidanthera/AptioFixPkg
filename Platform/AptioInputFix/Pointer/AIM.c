@@ -232,8 +232,8 @@ AmiShimPointerPositionHandler (
       Pointer->EfiPointer->GetPositionState (Pointer->EfiPointer, &PositionState);
       if (PositionState.Changed == 1) {
         if (PositionState.Absolute == 0) {
-          //DEBUG ((EFI_D_ERROR, "Position: %d %d %d %d\n",
-          //       PositionState.Changed, PositionState.PositionX, PositionState.PositionY, PositionState.PositionZ));
+          DEBUG ((DEBUG_VERBOSE, "Position: %d %d %d %d\n",
+                 PositionState.Changed, PositionState.PositionX, PositionState.PositionY, PositionState.PositionZ));
           AmiShimPointerSmooth(&PositionState.PositionX, &PositionState.PositionY, &PositionState.PositionZ);
           if (PositionState.PositionX != 0 || PositionState.PositionY != 0 || PositionState.PositionZ != 0) {
             Pointer->PositionX += PositionState.PositionX;
@@ -270,9 +270,9 @@ AmiShimPointerUpdateState (
     return EFI_NOT_READY;
   }
 
-  //DEBUG ((EFI_D_ERROR, "Button: %d %d %d %d, Position: %d %d %d %d\n",
-  //  ButtonState.Changed, ButtonState.LeftButton, ButtonState.MiddleButton, ButtonState.RightButton,
-  //  Pointer->PositionChanged, Pointer->PositionX, Pointer->PositionY, Pointer->PositionZ));
+  DEBUG ((DEBUG_VERBOSE, "Button: %d %d %d %d, Position: %d %d %d %d\n",
+    ButtonState.Changed, ButtonState.LeftButton, ButtonState.MiddleButton, ButtonState.RightButton,
+    Pointer->PositionChanged, Pointer->PositionX, Pointer->PositionY, Pointer->PositionZ));
 
   if (ButtonState.Changed) {
     State->LeftButton = ButtonState.LeftButton;
@@ -323,14 +323,14 @@ AmiShimPointerGetState (
       if (State->RelativeMovementX != 0 ||
           State->RelativeMovementY != 0 ||
           State->RelativeMovementZ != 0) {
-        //DEBUG ((EFI_D_ERROR, "Received[%p] %d %d %d <%d, %d>\n", This, State->RelativeMovementX, State->RelativeMovementY, State->RelativeMovementZ,
-        //        State->LeftButton, State->RightButton));
+        DEBUG ((DEBUG_VERBOSE, "Received[%p] %d %d %d <%d, %d>\n", This, State->RelativeMovementX, State->RelativeMovementY, State->RelativeMovementZ,
+                State->LeftButton, State->RightButton));
       } else {
-        //DEBUG ((EFI_D_ERROR, "Received[%p] %d %d %d\n", This, State->RelativeMovementX, State->RelativeMovementY, State->RelativeMovementZ));
+        DEBUG ((DEBUG_VERBOSE, "Received[%p] %d %d %d\n", This, State->RelativeMovementX, State->RelativeMovementY, State->RelativeMovementZ));
       }
     }
   } else {
-    //DEBUG ((EFI_D_ERROR, "Received unknown this %p\n", This));
+    DEBUG ((DEBUG_VERBOSE, "Received unknown this %p\n", This));
     Status = EFI_INVALID_PARAMETER;
   }
 
@@ -352,14 +352,14 @@ AmiShimPointerTimerSetup (
   Status = gBS->CreateEvent (EVT_TIMER | EVT_NOTIFY_SIGNAL, TPL_NOTIFY, AmiShimPointerPositionHandler, NULL, &mAmiShimPointer.PositionEvent);
 
   if (EFI_ERROR (Status)) {
-    DEBUG((EFI_D_ERROR, "AmiShimPointerPositionHandler event creation failed %d\n", Status));
+    DEBUG ((DEBUG_INFO, "AmiShimPointerPositionHandler event creation failed %d\n", Status));
     return Status;
   }
 
   Status = gBS->SetTimer (mAmiShimPointer.PositionEvent, TimerPeriodic, AIM_POSITION_POLL_INTERVAL);
 
   if (EFI_ERROR (Status)) {
-    DEBUG((EFI_D_ERROR, "AmiShimPointerPositionHandler timer setting failed %d\n", Status));
+    DEBUG ((DEBUG_INFO, "AmiShimPointerPositionHandler timer setting failed %d\n", Status));
     gBS->CloseEvent (mAmiShimPointer.PositionEvent);
     return Status;
   }
@@ -387,7 +387,7 @@ AmiShimPointerTimerUninstall (
       gBS->CloseEvent (mAmiShimPointer.PositionEvent);
       mAmiShimPointer.PositionEvent = NULL;
     } else {
-      DEBUG((EFI_D_ERROR, "AmiShimPointerPositionHandler timer unsetting failed %d\n", Status));
+      DEBUG((DEBUG_INFO, "AmiShimPointerPositionHandler timer unsetting failed %d\n", Status));
     }
   }
 
@@ -423,13 +423,13 @@ AmiShimPointerInstallOnHandle (
     return EFI_OUT_OF_RESOURCES;
   }
 
-  DEBUG ((EFI_D_ERROR, "Installed onto %X\n", DeviceHandle));
+  DEBUG ((DEBUG_INFO, "Installed onto %X\n", DeviceHandle));
   FreePointer->DeviceHandle = DeviceHandle;
   FreePointer->EfiPointer = EfiPointer;
   FreePointer->SimplePointer = SimplePointer;
   if (FreePointer->SimplePointer->GetState == AmiShimPointerGetState) {
     FreePointer->OriginalGetState = NULL;
-    DEBUG ((EFI_D_ERROR, "Function is already hooked\n"));
+    DEBUG ((DEBUG_INFO, "Function is already hooked\n"));
   } else {
     FreePointer->OriginalGetState = FreePointer->SimplePointer->GetState;
     FreePointer->SimplePointer->GetState = AmiShimPointerGetState;
@@ -457,26 +457,26 @@ AmiShimPointerInstall (
     return EFI_NOT_FOUND;
   }
   
-  DEBUG ((EFI_D_ERROR, "Found %d Handles located by protocol\n", NoHandles));
+  DEBUG ((DEBUG_INFO, "Found %d Handles located by protocol\n", NoHandles));
 
   Installed = FALSE;
 
   for (Index = 0; Index < NoHandles; Index++) {
     Status = gBS->HandleProtocol (Handles[Index], &gAmiEfiPointerProtocolGuid, (VOID **)&EfiPointer);
     if (EFI_ERROR(Status)) {
-      DEBUG ((EFI_D_ERROR, "Handle %d has no AmiEfiPointerl %d\n", Index, Status));
+      DEBUG ((DEBUG_INFO, "Handle %d has no AmiEfiPointerl %d\n", Index, Status));
       continue;
     }
 
     Status = gBS->HandleProtocol (Handles[Index], &gEfiSimplePointerProtocolGuid, (VOID **)&SimplePointer);
     if (EFI_ERROR(Status)) {
-      DEBUG ((EFI_D_ERROR, "Handle %d has no EfiSimplePointer %d\n", Index, Status));
+      DEBUG ((DEBUG_INFO, "Handle %d has no EfiSimplePointer %d\n", Index, Status));
       continue;
     }
 
     Status = AmiShimPointerInstallOnHandle (Handles[Index], EfiPointer, SimplePointer);
     if (EFI_ERROR(Status)) {
-      DEBUG ((EFI_D_ERROR, "Handle %d failed to get installed %d\n", Index, Status));
+      DEBUG ((DEBUG_INFO, "Handle %d failed to get installed %d\n", Index, Status));
       continue;
     }
 
@@ -540,7 +540,7 @@ AIMInit (
   Status = gBS->CreateEvent (EVT_NOTIFY_SIGNAL, TPL_NOTIFY, AmiShimPointerArriveHandler, NULL, &mAmiShimPointer.ProtocolArriveEvent);
 
   if (EFI_ERROR (Status)) {
-    DEBUG((EFI_D_ERROR, "AmiShimPointerArriveHandler event creation failed %d\n", Status));
+    DEBUG ((DEBUG_INFO, "AmiShimPointerArriveHandler event creation failed %d\n", Status));
     return Status;
   }
 
@@ -548,7 +548,7 @@ AIMInit (
   Status = gBS->RegisterProtocolNotify (&gEfiSimplePointerProtocolGuid, mAmiShimPointer.ProtocolArriveEvent, &Registration);
 
   if (EFI_ERROR (Status)) {
-    DEBUG((EFI_D_ERROR, "AmiShimProtocolArriveHandler protocol registration failed %d\n", Status));
+    DEBUG ((DEBUG_INFO, "AmiShimProtocolArriveHandler protocol registration failed %d\n", Status));
     gBS->CloseEvent (mAmiShimPointer.ProtocolArriveEvent);
     return Status;
   }

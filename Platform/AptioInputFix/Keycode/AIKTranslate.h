@@ -68,7 +68,7 @@ extern AIK_SCANCODE_TO_USB  gAikScanCodeToUsbMap[AIK_MAX_SCANCODE_NUM];
 extern CONST CHAR8 *        gAikModifiersToNameMap[AIK_MAX_MODIFIERS_NUM];
 extern CONST CHAR8 *        gAikAppleKeyToNameMap[AIK_MAX_APPLEKEY_NUM];
 
-#ifdef MDEPKG_NDEBUG
+#ifndef APTIOFIX_DEBUG_TARGET
 #define AIK_DEBUG_STR(x) (NULL)
 #else
 #define AIK_DEBUG_STR(x) (x)

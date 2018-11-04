@@ -322,7 +322,7 @@ KernelEntryPatchJump (
   //
   mOrigKernelCodeSize = (UINT8*)&EntryPatchCodeEnd - (UINT8*)&EntryPatchCode;
   if (mOrigKernelCodeSize > sizeof(mOrigKernelCode)) {
-    DEBUG ((DEBUG_WARN, "KernelEntryPatchJump: not enough space for orig. kernel entry code: size needed: %d\n", mOrigKernelCodeSize));
+    DEBUG ((DEBUG_INFO, "KernelEntryPatchJump: not enough space for orig. kernel entry code: size needed: %d\n", mOrigKernelCodeSize));
     return EFI_NOT_FOUND;
   }
 
@@ -467,7 +467,7 @@ ExecSetVirtualAddressesToMemMap (
       // Check if there is enough space in mVirtualMemoryMap.
       //
       if (mVirtualMapSize + DescriptorSize > sizeof(mVirtualMemoryMap)) {
-        DEBUG ((DEBUG_WARN, "ERROR: too much mem map RT areas\n"));
+        DEBUG ((DEBUG_INFO, "ERROR: too much mem map RT areas\n"));
         return EFI_OUT_OF_RESOURCES;
       }
 

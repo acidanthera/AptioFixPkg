@@ -60,7 +60,7 @@ AptioInputEntryPoint (
 
   Status = gBS->CreateEvent (EVT_SIGNAL_EXIT_BOOT_SERVICES, TPL_NOTIFY, AmiShimTranslatorExitBootServicesHandler, NULL, &mExitBootServicesEvent);
   if (EFI_ERROR(Status)) {
-    DEBUG((EFI_D_ERROR, "Failed to create exit bs event %d", Status));
+    DEBUG ((DEBUG_INFO, "Failed to create exit bs event %d", Status));
   }
 
   return EFI_SUCCESS;

@@ -34,14 +34,14 @@ AITInit (
   if (!EFI_ERROR (Status)) {
     Status = mTimerProtocol->GetTimerPeriod (mTimerProtocol, &mOriginalTimerPeriod);
     if (!EFI_ERROR (Status)) {
-      DEBUG ((EFI_D_ERROR, "AIFTimerBoostInit Current timer is %u\n", mOriginalTimerPeriod));
+      DEBUG ((DEBUG_INFO, "AIFTimerBoostInit Current timer is %u\n", mOriginalTimerPeriod));
       if (mOriginalTimerPeriod > AIT_TIMER_PERIOD) {
         Status = mTimerProtocol->SetTimerPeriod (mTimerProtocol, AIT_TIMER_PERIOD);
         if (!EFI_ERROR (Status)) {
-          DEBUG ((EFI_D_ERROR, "AIFTimerBoostInit changed period %d to %d\n",
+          DEBUG ((DEBUG_INFO, "AIFTimerBoostInit changed period %d to %d\n",
             mOriginalTimerPeriod, AIT_TIMER_PERIOD));
         } else {
-          DEBUG ((EFI_D_ERROR, "AIFTimerBoostInit failed to change period %d to %d, error - %r\n",
+          DEBUG ((DEBUG_INFO, "AIFTimerBoostInit failed to change period %d to %d, error - %r\n",
             mOriginalTimerPeriod, AIT_TIMER_PERIOD, Status));
           mTimerProtocol = NULL;
         }
@@ -49,10 +49,10 @@ AITInit (
         mTimerProtocol = NULL;
       }
     } else {
-      DEBUG((EFI_D_ERROR, "AIFTimerBoostInit failed to obtain previous period - %r\n", Status));
+      DEBUG ((DEBUG_INFO, "AIFTimerBoostInit failed to obtain previous period - %r\n", Status));
     }
   } else {
-    DEBUG((EFI_D_ERROR, "AIFTimerBoostInit gEfiTimerArchProtocolGuid not found - %r\n", Status));
+    DEBUG ((DEBUG_INFO, "AIFTimerBoostInit gEfiTimerArchProtocolGuid not found - %r\n", Status));
   }
 
   return Status;
@@ -74,10 +74,10 @@ AITExit (
     //
     // Status = mTimerProtocol->SetTimerPeriod (mTimerProtocol, mOriginalTimerPeriod);
     // if (!EFI_ERROR (Status)) {
-    //   DEBUG ((EFI_D_ERROR, "AmiShimTimerBoostExit changed period %d to %d\n",
+    //   DEBUG ((DEBUG_INFO, "AmiShimTimerBoostExit changed period %d to %d\n",
     //     AIT_TIMER_PERIOD, mOriginalTimerPeriod));
     // } else {
-    //   DEBUG ((EFI_D_ERROR, "AmiShimTimerBoostExit failed to change period %d to %d, error - %r\n",
+    //   DEBUG ((DEBUG_INFO, "AmiShimTimerBoostExit failed to change period %d to %d, error - %r\n",
     //     AIT_TIMER_PERIOD, mOriginalTimerPeriod, Status));
     // }
     mTimerProtocol = NULL;
