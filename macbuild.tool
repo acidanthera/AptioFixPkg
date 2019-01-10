@@ -143,6 +143,10 @@ if [ "$SKIP_BUILD" != "1" ]; then
     build -a X64 -b DEBUG -t XCODE5 -p AptioFixPkg/AptioFixPkg.dsc || exit 1
   fi
 
+  if [ "$MODE" = "" ] || [ "$MODE" = "NOOPT" ]; then
+    build -a X64 -b NOOPT -t XCODE5 -p AptioFixPkg/AptioFixPkg.dsc || exit 1
+  fi
+
   if [ "$MODE" = "" ] || [ "$MODE" = "RELEASE" ]; then
     build -a X64 -b RELEASE -t XCODE5 -p AptioFixPkg/AptioFixPkg.dsc || exit 1
   fi
