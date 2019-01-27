@@ -95,6 +95,7 @@ if [ ! -d "Binaries" ]; then
   cd Binaries || exit 1
   ln -s ../UDK/Build/AptioFixPkg/RELEASE_XCODE5/X64 RELEASE || exit 1
   ln -s ../UDK/Build/AptioFixPkg/DEBUG_XCODE5/X64 DEBUG || exit 1
+  ln -s ../UDK/Build/AptioFixPkg/NOOPT_XCODE5/X64 NOOPT || exit 1
   cd .. || exit 1
 fi
 

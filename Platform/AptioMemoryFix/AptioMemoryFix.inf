@@ -98,7 +98,7 @@
   gAppleFramebufferInfoProtocolGuid           ## SOMETIMES_CONSUMES
   gAppleKeyMapAggregatorProtocolGuid          ## SOMETIMES_CONSUMES
   gAppleNetBootProtocolGuid                   ## SOMETIMES_CONSUMES
-  gAppleImageCodecProtocolGuid                ## SOMETIMES_CONSUMES
+  gAppleImageConversionProtocolGuid           ## SOMETIMES_CONSUMES
   gEfiDataHubProtocolGuid                     ## SOMETIMES_CONSUMES
   gEfiLegacy8259ProtocolGuid                  ## SOMETIMES_CONSUMES
 
