@@ -57,7 +57,7 @@ IsDeletableVariable (
   //
   if (CompareGuid (Guid, &gAppleVendorVariableGuid)
     || CompareGuid (Guid, &gAppleBootVariableGuid)
-    || CompareGuid (Guid, &gAppleTrbSecureVariableGuid)) {
+    || CompareGuid (Guid, &gAppleTamperResistantBootSecureVariableGuid)) {
     return TRUE;
   //
   // Global variable boot options

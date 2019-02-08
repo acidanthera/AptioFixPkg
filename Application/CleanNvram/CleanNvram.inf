@@ -45,7 +45,7 @@
   gEfiGlobalVariableGuid                      ## CONSUMES
   gAppleBootVariableGuid                      ## CONSUMES
   gAppleVendorVariableGuid                    ## CONSUMES
-  gAppleTrbSecureVariableGuid                 ## CONSUMES
+  gAppleTamperResistantBootSecureVariableGuid ## CONSUMES
 
 [Protocols]
 

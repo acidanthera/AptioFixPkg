@@ -77,7 +77,6 @@
   gEfiGlobalVariableGuid                      ## CONSUMES
   gAppleBootVariableGuid                      ## SOMETIMES_CONSUMES
   gAppleVendorVariableGuid                    ## SOMETIMES_CONSUMES
-  gAppleTrbSecureVariableGuid                 ## SOMETIMES_CONSUMES
   gEfiMiscSubClassGuid                        ## SOMETIMES_CONSUMES
   gEfiProcessorSubClassGuid                   ## SOMETIMES_CONSUMES
   gEfiMemorySubClassGuid                      ## SOMETIMES_CONSUMES
