@@ -122,7 +122,6 @@ InstallBsOverrides (
   gBS->AllocatePages      = MOAllocatePages;
   gBS->GetMemoryMap       = MOGetMemoryMap;
   gBS->ExitBootServices   = MOExitBootServices;
-  gBS->HandleProtocol     = MOHandleProtocol;
   gBS->StartImage         = MOStartImage;
 
   gBS->Hdr.CRC32 = 0;

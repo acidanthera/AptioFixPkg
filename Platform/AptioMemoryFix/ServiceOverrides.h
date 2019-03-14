@@ -55,14 +55,6 @@ MOStartImage (
 
 EFI_STATUS
 EFIAPI
-MOHandleProtocol (
-  IN     EFI_HANDLE  Handle,
-  IN     EFI_GUID    *Protocol,
-     OUT VOID        **Interface
-  );
-
-EFI_STATUS
-EFIAPI
 MOAllocatePages (
   IN     EFI_ALLOCATE_TYPE     Type,
   IN     EFI_MEMORY_TYPE       MemoryType,
