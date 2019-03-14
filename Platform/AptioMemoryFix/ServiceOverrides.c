@@ -486,14 +486,10 @@ MOExitBootServices (
     Status = ForceExitBootServices (mStoredExitBootServices, ImageHandle, MapKey);
   }
 
-  DEBUG ((DEBUG_VERBOSE, "ExitBootServices %r\n", Status));
-
   if (EFI_ERROR (Status))
     return Status;
 
   if (!gHibernateWake) {
-    DEBUG ((DEBUG_VERBOSE, "ExitBootServices: mMinAllocatedAddr: %lx, mMaxAllocatedAddr: %lx\n", mMinAllocatedAddr, mMaxAllocatedAddr));
-
     SlideAddr  = mMinAllocatedAddr - 0x100000;
     MachOImage = (VOID*)(UINTN)(SlideAddr + SLIDE_GRANULARITY);
     KernelEntryFromMachOPatchJump (MachOImage, SlideAddr);
