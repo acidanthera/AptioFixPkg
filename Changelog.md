@@ -1,6 +1,9 @@
 AptioFix Changelog
 ==================
 
+#### R25
+- Reworked GOP protocol installation to be Apple-only
+
 #### R24
 - Added basic APTIO V compatibility to AptioInputFix
 - Added basic generic firmware compatibility to AptioInputFix

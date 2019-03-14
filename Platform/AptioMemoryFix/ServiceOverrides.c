@@ -35,7 +35,6 @@ STATIC EFI_ALLOCATE_POOL           mStoredAllocatePool;
 STATIC EFI_FREE_POOL               mStoredFreePool;
 STATIC EFI_GET_MEMORY_MAP          mStoredGetMemoryMap;
 STATIC EFI_EXIT_BOOT_SERVICES      mStoredExitBootServices;
-STATIC EFI_HANDLE_PROTOCOL         mStoredHandleProtocol;
 STATIC EFI_SET_VIRTUAL_ADDRESS_MAP mStoredSetVirtualAddressMap;
 STATIC EFI_IMAGE_START             mStoredStartImage;
 
@@ -118,7 +117,6 @@ InstallBsOverrides (
   mStoredAllocatePages    = gBS->AllocatePages;
   mStoredGetMemoryMap     = gBS->GetMemoryMap;
   mStoredExitBootServices = gBS->ExitBootServices;
-  mStoredHandleProtocol   = gBS->HandleProtocol;
   mStoredStartImage       = gBS->StartImage;
 
   gBS->AllocatePages      = MOAllocatePages;
@@ -188,6 +186,7 @@ MOStartImage (
   EFI_STATUS                  Status;
   EFI_LOADED_IMAGE_PROTOCOL   *AppleLoadedImage = NULL;
   UINTN                       ValueSize = 0;
+  VOID                        *Gop;
 
   DEBUG ((DEBUG_VERBOSE, "StartImage (%lx)\n", ImageHandle));
 
@@ -212,6 +211,26 @@ MOStartImage (
     // requires it, here we decide to use it for macOS exclusively.
     //
     SetWriteUnprotectorMode (TRUE);
+
+    //
+    // Boot.efi requires EfiGraphicsOutputProtocol on ConOutHandle, but it is not present
+    // there on Aptio 2.0. EfiGraphicsOutputProtocol exists on some other handle.
+    // If this is the case, we'll intercept that call and return EfiGraphicsOutputProtocol
+    // from that other handle.
+    //
+    Gop = NULL;
+    Status = gBS->HandleProtocol (gST->ConsoleOutHandle, &gEfiGraphicsOutputProtocolGuid, &Gop);
+    if (EFI_ERROR (Status)) {
+      Status = gBS->LocateProtocol (&gEfiGraphicsOutputProtocolGuid, NULL, &Gop);
+      if (!EFI_ERROR (Status)) {
+        gBS->InstallMultipleProtocolInterfaces (
+          &gST->ConsoleOutHandle,
+          &gEfiGraphicsOutputProtocolGuid,
+          Gop,
+          NULL
+          );
+      }
+    }
 
     //
     // This is reverse engineered from boot.efi.
@@ -263,39 +282,6 @@ MOStartImage (
     //
     gMacOSBootNestedCount--;
     SetWriteUnprotectorMode (FALSE);
-  }
-
-  return Status;
-}
-
-/** gBS->HandleProtocol override:
- * Boot.efi requires EfiGraphicsOutputProtocol on ConOutHandle, but it is not present
- * there on Aptio 2.0. EfiGraphicsOutputProtocol exists on some other handle.
- * If this is the case, we'll intercept that call and return EfiGraphicsOutputProtocol
- * from that other handle.
- */
-EFI_STATUS
-EFIAPI
-MOHandleProtocol (
-  IN     EFI_HANDLE  Handle,
-  IN     EFI_GUID    *Protocol,
-     OUT VOID        **Interface
-  )
-{
-  EFI_STATUS                    Status;
-  EFI_GRAPHICS_OUTPUT_PROTOCOL  *GraphicsOutput;
-
-  Status = mStoredHandleProtocol (Handle, Protocol, Interface);
-
-  if (EFI_ERROR (Status) && CompareGuid (Protocol, &gEfiGraphicsOutputProtocolGuid)) {
-    //
-    // Let's find it on some other handle
-    //
-    Status = gBS->LocateProtocol (&gEfiGraphicsOutputProtocolGuid, NULL, (VOID**)&GraphicsOutput);
-    if (Status == EFI_SUCCESS) {
-      *Interface = GraphicsOutput;
-      DEBUG ((DEBUG_VERBOSE, "HandleProtocol(%p, %g, %p) = %r (from other handle)\n", Handle, Protocol, *Interface, Status));
-    }
   }
 
   return Status;
