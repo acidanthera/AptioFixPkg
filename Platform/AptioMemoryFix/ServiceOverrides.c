@@ -544,13 +544,11 @@ ForceExitBootServices (
     // in the first place, and for older firmwares, where it was necessary (?), it worked just fine.
     //
     Status = GetMemoryMapAlloc (NULL, &MemoryMapSize, &MemoryMap, &MapKey, &DescriptorSize, &DescriptorVersion);
-    DEBUG ((DEBUG_VERBOSE, "ExitBootServices: GetMemoryMapKey = %r\n", Status));
     if (Status == EFI_SUCCESS) {
       //
       // We have the latest memory map and its key, try again!
       //
       Status = ExitBs (ImageHandle, MapKey);
-      DEBUG ((DEBUG_VERBOSE, "ExitBootServices: 2nd try = %r\n", Status));
       if (EFI_ERROR (Status))
         PrintScreen (L"AMF: ExitBootServices failed twice - %r\n", Status);
     } else {

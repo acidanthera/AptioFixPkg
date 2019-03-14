@@ -30,7 +30,7 @@ MachOGetEntryAddress (
   UINTN                   Address;
 
   Address = 0;
-  MHdr = (MACH_HEADER_ANY *) MachOImage;
+  MHdr    = (MACH_HEADER_ANY *) MachOImage;
 
   if (MHdr->Signature == MACH_HEADER_SIGNATURE) {
     //

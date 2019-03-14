@@ -69,8 +69,8 @@ UpdateEnvironmentForBooting (
   //
   RestoreCustomSlideOverrides (BA);
 
-  MemoryMapSize = *BA->MemoryMapSize;
-  MemoryMap = (EFI_MEMORY_DESCRIPTOR *)(UINTN)(*BA->MemoryMap);
+  MemoryMapSize  = *BA->MemoryMapSize;
+  MemoryMap      = (EFI_MEMORY_DESCRIPTOR *)(UINTN)(*BA->MemoryMap);
   DescriptorSize = *BA->MemoryMapDescriptorSize;
 
   //
@@ -312,22 +312,13 @@ KernelEntryPatchJump (
   UINT32  KernelEntry
   )
 {
-  EFI_STATUS  Status;
-
-  Status = EFI_SUCCESS;
-
-  DEBUG ((DEBUG_VERBOSE, "KernelEntryPatchJump KernelEntry %lx\n", KernelEntry));
-
   //
   // Size of EntryPatchCode code
   //
   mOrigKernelCodeSize = (UINT8*)&EntryPatchCodeEnd - (UINT8*)&EntryPatchCode;
-  if (mOrigKernelCodeSize > sizeof(mOrigKernelCode)) {
-    DEBUG ((DEBUG_INFO, "KernelEntryPatchJump: not enough space for orig. kernel entry code: size needed: %d\n", mOrigKernelCodeSize));
+  if (mOrigKernelCodeSize > sizeof (mOrigKernelCode)) {
     return EFI_NOT_FOUND;
   }
-
-  DEBUG ((DEBUG_VERBOSE, "EntryPatchCode: %p, Size: %d, AsmJumpFromKernel: %p\n", &EntryPatchCode, mOrigKernelCodeSize, &AsmJumpFromKernel));
 
   //
   // Save original kernel entry code
@@ -345,7 +336,7 @@ KernelEntryPatchJump (
   //
   AsmKernelEntry = KernelEntry;
 
-  return Status;
+  return EFI_SUCCESS;
 }
 
 /** Reads kernel entry from Mach-O load command and patches it with jump to AsmJumpFromKernel. */
@@ -357,18 +348,13 @@ KernelEntryFromMachOPatchJump (
 {
   UINTN  KernelEntry;
 
-  DEBUG ((DEBUG_VERBOSE, "KernelEntryFromMachOPatchJump: MachOImage = %p, SlideAddr = %x\n", MachOImage, SlideAddr));
-
   KernelEntry = MachOGetEntryAddress (MachOImage);
-  DEBUG ((DEBUG_VERBOSE, "KernelEntryFromMachOPatchJump: KernelEntry = %x\n", KernelEntry));
-
   if (KernelEntry == 0) {
     return EFI_NOT_FOUND;
   }
 
   if (SlideAddr > 0) {
     KernelEntry += SlideAddr;
-    DEBUG ((DEBUG_VERBOSE, "KernelEntryFromMachOPatchJump: slid KernelEntry = %x\n", KernelEntry));
   }
 
   return KernelEntryPatchJump ((UINT32)KernelEntry);

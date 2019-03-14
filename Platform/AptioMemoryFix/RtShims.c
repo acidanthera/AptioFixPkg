@@ -284,7 +284,7 @@ ProtectRtMemoryFromRelocation (
       Desc->Type = EfiMemoryMappedIO;
     }
 
-    Desc = NEXT_MEMORY_DESCRIPTOR(Desc, DescriptorSize);
+    Desc = NEXT_MEMORY_DESCRIPTOR (Desc, DescriptorSize);
   }
 }
 
