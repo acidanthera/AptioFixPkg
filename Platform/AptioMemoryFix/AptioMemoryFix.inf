@@ -43,12 +43,10 @@
   BootFixes.c
   BootFixes.h
   Config.h
-  CsrConfig.h
   CustomSlide.c
   CustomSlide.h
   FlatDevTree/device_tree.c
   FlatDevTree/device_tree.h
-  Hibernate.h
   Mach-O/loader.h
   Mach-O/Mach-O.c
   Mach-O/Mach-O.h

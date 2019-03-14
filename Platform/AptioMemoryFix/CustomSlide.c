@@ -13,13 +13,13 @@
 #include <Library/PrintLib.h>
 #include <Library/RngLib.h>
 #include <Library/UefiBootServicesTableLib.h>
+#include <IndustryStandard/AppleCsrConfig.h>
 #include <Register/Microcode.h>
 
 #include "Config.h"
 #include "CustomSlide.h"
 #include "BootArgs.h"
 #include "BootFixes.h"
-#include "CsrConfig.h"
 #include "FlatDevTree/device_tree.h"
 #include "MemoryMap.h"
 #include "RtShims.h"

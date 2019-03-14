@@ -7,6 +7,8 @@
 
 **/
 
+#include <IndustryStandard/AppleHibernate.h>
+
 #include <Library/BaseLib.h>
 #include <Library/BaseMemoryLib.h>
 #include <Library/DebugLib.h>
@@ -21,7 +23,6 @@
 #include "BootArgs.h"
 #include "BootFixes.h"
 #include "CustomSlide.h"
-#include "Hibernate.h"
 #include "MemoryMap.h"
 #include "RtShims.h"
 #include "UmmMalloc/UmmMalloc.h"

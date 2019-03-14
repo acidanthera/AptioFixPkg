@@ -6,6 +6,8 @@
 
 **/
 
+#include <IndustryStandard/AppleHibernate.h>
+
 #include <Library/UefiLib.h>
 #include <Library/BaseMemoryLib.h>
 #include <Library/DebugLib.h>
@@ -18,7 +20,6 @@
 #include "AsmFuncs.h"
 #include "BootArgs.h"
 #include "CustomSlide.h"
-#include "Hibernate.h"
 #include "Mach-O/Mach-O.h"
 #include "MemoryMap.h"
 #include "Utils.h"
