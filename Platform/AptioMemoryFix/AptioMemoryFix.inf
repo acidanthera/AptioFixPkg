@@ -47,10 +47,8 @@
   CustomSlide.h
   FlatDevTree/device_tree.c
   FlatDevTree/device_tree.h
-  Mach-O/loader.h
   Mach-O/Mach-O.c
   Mach-O/Mach-O.h
-  Mach-O/UefiLoader.h
   MemoryMap.c
   MemoryMap.h
   RtShims.c

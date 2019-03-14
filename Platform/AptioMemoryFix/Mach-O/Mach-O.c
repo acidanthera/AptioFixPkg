@@ -6,11 +6,12 @@
 
 **/
 
+#include <IndustryStandard/AppleMachoImage.h>
+
 #include <Library/UefiBootServicesTableLib.h>
 #include <Library/UefiLib.h>
 #include <Library/DebugLib.h>
 
-#include "UefiLoader.h"
 #include "Mach-O.h"
 
 /** Adds Offset bytes to SourcePtr and returns new pointer as ReturnType. */
@@ -18,44 +19,42 @@
 
 /** Returns Mach-O entry point from LC_UNIXTHREAD loader command. */
 UINTN
-MachOGetEntryAddress(
+MachOGetEntryAddress (
   IN VOID  *MachOImage
   )
 {
-  struct mach_header      *MHdr;
-  struct mach_header_64   *MHdr64;
+  MACH_HEADER_ANY         *MHdr;
   BOOLEAN                 Is64Bit;
   UINT32                  NCmds;
-  struct load_command     *LCmd;
+  MACH_LOAD_COMMAND       *LCmd;
   UINTN                   Index;
-  i386_thread_state_t     *ThreadState;
-  x86_thread_state64_t    *ThreadState64;
+  MACH_THREAD_COMMAND     *ThreadCmd;
+  MACH_X86_THREAD_STATE   *ThreadState;
   UINTN                   Address;
 
   Address = 0;
-  MHdr = (struct mach_header *)MachOImage;
-  MHdr64 = (struct mach_header_64 *)MachOImage;
-  DEBUG ((DEBUG_VERBOSE, "Mach-O image: %p, magic: %x", MachOImage, MHdr->magic));
+  MHdr = (MACH_HEADER_ANY *) MachOImage;
+  DEBUG ((DEBUG_VERBOSE, "Mach-O image: %p, magic: %x", MachOImage, MHdr->Signature));
 
-  if (MHdr->magic == MH_MAGIC || MHdr->magic == MH_CIGAM) {
+  if (MHdr->Signature == MACH_HEADER_SIGNATURE || MHdr->Signature == MACH_HEADER_INVERT_SIGNATURE) {
     //
-    // 32-bit header
+    // 32-bit header.
     //
     DEBUG ((DEBUG_VERBOSE, " -> 32 bit\n"));
     Is64Bit = FALSE;
-    NCmds = MHdr->ncmds;
-    LCmd = PTR_OFFSET (MachOImage, sizeof(struct mach_header), struct load_command *);
-  } else if (MHdr64->magic == MH_MAGIC_64 || MHdr64->magic == MH_CIGAM_64) {
+    NCmds   = MHdr->Header32.NumCommands;
+    LCmd    = &MHdr->Header32.Commands[0];
+  } else if (MHdr->Signature == MACH_HEADER_64_SIGNATURE || MHdr->Signature == MACH_HEADER_64_INVERT_SIGNATURE) {
     //
-    // 64-bit header
+    // 64-bit header.
     //
     DEBUG ((DEBUG_VERBOSE, " -> 64 bit\n"));
     Is64Bit = TRUE;
-    NCmds = MHdr64->ncmds;
-    LCmd = PTR_OFFSET (MachOImage, sizeof(struct mach_header_64), struct load_command *);
+    NCmds   = MHdr->Header64.NumCommands;
+    LCmd    = &MHdr->Header64.Commands[0];
   } else {
     //
-    // Invalid Mach-O image
+    // Invalid Mach-O image.
     //
     return Address;
   }
@@ -63,39 +62,30 @@ MachOGetEntryAddress(
   DEBUG ((DEBUG_VERBOSE, "Number of cmds: %d, address: %p\n", NCmds, LCmd));
 
   //
-  // Iterate over load commands
+  // Iterate over load commands.
   //
   for (Index = 0; Index < NCmds; Index++) {
+    DEBUG ((DEBUG_VERBOSE, "%d. LCmd: %p, cmd: %x, size: %d\n", Index, LCmd, LCmd->CommandType, LCmd->CommandSize));
 
-    DEBUG ((DEBUG_VERBOSE, "%d. LCmd: %p, cmd: %x, size: %d\n", Index, LCmd, LCmd->cmd, LCmd->cmdsize));
-
-    if (LCmd->cmd == LC_UNIXTHREAD) {
-
+    if (LCmd->CommandType == MACH_LOAD_COMMAND_UNIX_THREAD) {
       DEBUG ((DEBUG_VERBOSE, "LC_UNIXTHREAD\n"));
+      
       //
-      // extract thread state
-      // LCmd =
-      //  struct load_command {
-      //   uint32_t cmd
-      //   uint32_t cmdsize
-      //  }
-      //  uint32_t flavor        flavor of thread state */
-      //  uint32_t count         count of longs in thread state */
-      //  struct XXX_thread_state state   thread state for this flavor */
+      // Extract thread state.
       //
-      ThreadState = PTR_OFFSET (LCmd, sizeof(struct load_command) + 2 * sizeof(UINT32), i386_thread_state_t *);
-      ThreadState64 = (x86_thread_state64_t *)ThreadState;
+      ThreadCmd     = (MACH_THREAD_COMMAND *) LCmd;
+      ThreadState   = (MACH_X86_THREAD_STATE *) &ThreadCmd->ThreadState[0];
 
       if (Is64Bit) {
-        Address = (UINTN)ThreadState64->rip;
+        Address = ThreadState->State64->rip;
       } else {
-        Address = (UINTN)ThreadState->eip;
+        Address = ThreadState->State32->eip;
       }
+
       break;
     }
 
-    LCmd = PTR_OFFSET (LCmd, LCmd->cmdsize, struct load_command *);
-
+    LCmd = NEXT_MACH_LOAD_COMMAND (LCmd);
   }
 
   DEBUG ((DEBUG_VERBOSE, "Address: %lx\n", Address));
