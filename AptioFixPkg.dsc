@@ -42,6 +42,13 @@
   UefiRuntimeServicesTableLib|MdePkg/Library/UefiRuntimeServicesTableLib/UefiRuntimeServicesTableLib.inf
   UefiUsbLib|MdePkg/Library/UefiUsbLib/UefiUsbLib.inf
   IoLib|MdePkg/Library/BaseIoLibIntrinsic/BaseIoLibIntrinsic.inf
+  PciCf8Lib|MdePkg/Library/BasePciCf8Lib/BasePciCf8Lib.inf
+  PciLib|MdePkg/Library/BasePciLibCf8/BasePciLibCf8.inf
+  OcMiscLib|OcSupportPkg/Library/OcMiscLib/OcMiscLib.inf
+  OcStringLib|OcSupportPkg/Library/OcStringLib/OcStringLib.inf
+  OcDataHubLib|OcSupportPkg/Library/OcDataHubLib/OcDataHubLib.inf
+  SerialPortLib|MdeModulePkg/Library/BaseSerialPortLib16550/BaseSerialPortLib16550.inf
+  PlatformHookLib|MdeModulePkg/Library/BasePlatformHookLibNull/BasePlatformHookLibNull.inf
 
 [Components]
   AptioFixPkg/Platform/AptioInputFix/AptioInputFix.inf
