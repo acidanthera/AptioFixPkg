@@ -75,7 +75,7 @@ CFG Lock option is available on most APTIO V firmwares, although it may be hidde
 3. Extract the Setup.bin PE32 Image Section that UEFITool found via Extract Body.
 4. Run IFR-Extractor on the extracted file (e.g. `./ifrextract Setup.bin Setup.txt`).
 5. Find `CFG Lock, VarStoreInfo (VarOffset/VarName):` in `Setup.txt` and remember the offset right after it (e.g. `0x123`).
-6. Download and run a [modified GRUB Shell](http://brains.by/posts/bootx64.7z), thx to [brainsucker](https://geektimes.com/post/258090/) for the binary.
+6. Download and run a [modified GRUB Shell](http://brains.by/posts/bootx64.7z), thx to [brainsucker](https://geektimes.com/post/258090/) for the binary. A more up to date version may be found in [grub-mod-setup_var](https://github.com/datasone/grub-mod-setup_var) repo.
 7. Enter `setup_var 0x123 0x00` command, where `0x123` should be replaced by your actual offset and reboot.
 
 **WARNING**: variable offsets are unique not only to each motherboard but even to its firmware version. Never ever try to use an offset without checking.
