@@ -32,6 +32,7 @@
   DevicePathLib
   MemoryAllocationLib
   OcDeviceTreeLib
+  OcMachoLib
   OcStringLib
   UefiBootServicesTableLib
   UefiDriverEntryPoint
@@ -48,8 +49,6 @@
   Config.h
   CustomSlide.c
   CustomSlide.h
-  Mach-O/Mach-O.c
-  Mach-O/Mach-O.h
   MemoryMap.c
   MemoryMap.h
   RtShims.c

@@ -45,6 +45,8 @@
   PciCf8Lib|MdePkg/Library/BasePciCf8Lib/BasePciCf8Lib.inf
   PciLib|MdePkg/Library/BasePciLibCf8/BasePciLibCf8.inf
   OcDeviceTreeLib|OcSupportPkg/Library/OcDeviceTreeLib/OcDeviceTreeLib.inf
+  OcGuardLib|OcSupportPkg/Library/OcGuardLib/OcGuardLib.inf
+  OcMachoLib|OcSupportPkg/Library/OcMachoLib/OcMachoLib.inf
   OcMiscLib|OcSupportPkg/Library/OcMiscLib/OcMiscLib.inf
   OcStringLib|OcSupportPkg/Library/OcStringLib/OcStringLib.inf
   OcDataHubLib|OcSupportPkg/Library/OcDataHubLib/OcDataHubLib.inf

@@ -11,6 +11,7 @@
 #include <Library/UefiLib.h>
 #include <Library/BaseMemoryLib.h>
 #include <Library/DebugLib.h>
+#include <Library/OcMachoLib.h>
 #include <Library/UefiBootServicesTableLib.h>
 #include <Library/UefiRuntimeServicesTableLib.h>
 #include <Library/DevicePathLib.h>
@@ -20,7 +21,6 @@
 #include "AsmFuncs.h"
 #include "BootArgs.h"
 #include "CustomSlide.h"
-#include "Mach-O/Mach-O.h"
 #include "MemoryMap.h"
 #include "Utils.h"
 #include "RtShims.h"
@@ -348,7 +348,7 @@ KernelEntryFromMachOPatchJump (
 {
   UINTN  KernelEntry;
 
-  KernelEntry = MachOGetEntryAddress (MachOImage);
+  KernelEntry = MachoRuntimeGetEntryAddress (MachOImage);
   if (KernelEntry == 0) {
     return EFI_NOT_FOUND;
   }
