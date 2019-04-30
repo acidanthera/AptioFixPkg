@@ -7,8 +7,8 @@
  **/
 
 #include <Library/BaseMemoryLib.h>
-#include <Library/DebugLib.h>
 #include <Library/MemoryAllocationLib.h>
+#include <Library/OcDebugLogLib.h>
 #include <Library/UefiBootServicesTableLib.h>
 #include <Library/UefiLib.h>
 #include <Library/UefiRuntimeServicesTableLib.h>
@@ -67,7 +67,7 @@ AptioMemoryFixEntrypoint (
     );
 
   if (EFI_ERROR (Status)) {
-    PrintScreen (L"AMF: protocol install failure - %r\n", Status);
+    OcPrintScreen (L"AMF: protocol install failure - %r\n", Status);
     return Status;
   }
 

@@ -10,8 +10,10 @@
 
 #include <Library/UefiLib.h>
 #include <Library/BaseMemoryLib.h>
-#include <Library/DebugLib.h>
+#include <Library/OcDebugLogLib.h>
 #include <Library/OcMachoLib.h>
+#include <Library/OcMiscLib.h>
+#include <Library/OcStringLib.h>
 #include <Library/UefiBootServicesTableLib.h>
 #include <Library/UefiRuntimeServicesTableLib.h>
 #include <Library/DevicePathLib.h>
@@ -22,7 +24,6 @@
 #include "BootArgs.h"
 #include "CustomSlide.h"
 #include "MemoryMap.h"
-#include "Utils.h"
 #include "RtShims.h"
 #include "VMem.h"
 
@@ -181,14 +182,14 @@ ReadBooterArguments (
     Last = Options[LastIndex];
     Options[LastIndex] = '\0';
 
-    ConvertUnicodeStrToAsciiStr (Options, BootArgsVar, BOOT_LINE_LENGTH);
+    UnicodeStrToAsciiStrS (Options, BootArgsVar, BOOT_LINE_LENGTH);
 
-    if (GetArgumentFromCommandLine (BootArgsVar, "slide=", LITERAL_STRLEN ("slide="))) {
+    if (GetArgumentFromCommandLine (BootArgsVar, "slide=", L_STR_LEN ("slide="))) {
       gSlideArgPresent = TRUE;
     }
 
 #if APTIOFIX_ALLOW_MEMORY_DUMP_ARG == 1
-    if (GetArgumentFromCommandLine (BootArgsVar, "-aptiodump", LITERAL_STRLEN ("-aptiodump"))) {
+    if (GetArgumentFromCommandLine (BootArgsVar, "-aptiodump", L_STR_LEN ("-aptiodump"))) {
       gDumpMemArgPresent = TRUE;
     }
 #endif
@@ -215,12 +216,12 @@ ReadBooterArguments (
     //
     BootArgsVar[BootArgsVarLen-1] = '\0';
 
-    if (GetArgumentFromCommandLine (BootArgsVar, "slide=", LITERAL_STRLEN ("slide="))) {
+    if (GetArgumentFromCommandLine (BootArgsVar, "slide=", L_STR_LEN ("slide="))) {
       gSlideArgPresent = TRUE;
     }
 
 #if APTIOFIX_ALLOW_MEMORY_DUMP_ARG == 1
-    if (GetArgumentFromCommandLine (BootArgsVar, "-aptiodump", LITERAL_STRLEN ("-aptiodump"))) {
+    if (GetArgumentFromCommandLine (BootArgsVar, "-aptiodump", L_STR_LEN ("-aptiodump"))) {
       gDumpMemArgPresent = TRUE;
     }
 #endif
@@ -259,7 +260,7 @@ PrepareJumpFromKernel (
   HigherMem = BASE_4GB;
   Status = AllocatePagesFromTop (EfiBootServicesCode, 1, &HigherMem, FALSE);
   if (Status != EFI_SUCCESS) {
-    PrintScreen (L"AMF: Failed to allocate JumpToKernel memory - %r\n", Status);
+    OcPrintScreen (L"AMF: Failed to allocate JumpToKernel memory - %r\n", Status);
     return Status;
   }
 
@@ -271,7 +272,7 @@ PrepareJumpFromKernel (
 
   Size = (UINT8 *)&JumpToKernelEnd - (UINT8 *)&JumpToKernel;
   if (Size > EFI_PAGES_TO_SIZE (1)) {
-    PrintScreen (L"AMF: JumpToKernel32 size is too big - %ld\n", Size);
+    OcPrintScreen (L"AMF: JumpToKernel32 size is too big - %ld\n", Size);
     return EFI_BUFFER_TOO_SMALL;
   }
 
@@ -292,7 +293,7 @@ PrepareJumpFromKernel (
   gSysTableRtArea = BASE_4GB;
   Status = AllocatePagesFromTop (EfiRuntimeServicesData, 1, &gSysTableRtArea, FALSE);
   if (Status != EFI_SUCCESS) {
-    PrintScreen (L"AMF: Failed to allocate system table memory - %r\n", Status);
+    OcPrintScreen (L"AMF: Failed to allocate system table memory - %r\n", Status);
     return Status;
   }
 

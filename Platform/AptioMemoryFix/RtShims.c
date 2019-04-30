@@ -10,6 +10,7 @@
 #include <Library/BaseMemoryLib.h>
 #include <Library/DebugLib.h>
 #include <Library/MemoryAllocationLib.h>
+#include <Library/OcMiscLib.h>
 #include <Library/UefiLib.h>
 #include <Library/UefiBootServicesTableLib.h>
 #include <Library/UefiRuntimeServicesTableLib.h>
@@ -20,7 +21,6 @@
 #include "RtShims.h"
 #include "BootFixes.h"
 #include "MemoryMap.h"
-#include "Utils.h"
 
 extern UINTN gRtShimsDataStart;
 extern UINTN gRtShimsDataEnd;

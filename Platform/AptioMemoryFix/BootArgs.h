@@ -10,8 +10,8 @@
 #define APTIOFIX_BOOT_ARGS_H
 
 #include <IndustryStandard/AppleBootArgs.h>
+#include <Library/OcMiscLib.h>
 
-#include "Utils.h"
 
 /** Our internal structure to hold boot args params to make the code independent of the boot args version. */
 typedef struct {

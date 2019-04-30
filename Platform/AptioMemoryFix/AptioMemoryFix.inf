@@ -59,8 +59,6 @@
   VMem.h
   UmmMalloc/UmmMalloc.h
   UmmMalloc/UmmMalloc.c
-  Utils.c
-  Utils.h
 
 [Sources.X64]
   X64/AsmFuncs.nasm

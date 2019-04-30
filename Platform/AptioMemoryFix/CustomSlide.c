@@ -9,8 +9,9 @@
 
 #include <Library/UefiLib.h>
 #include <Library/BaseMemoryLib.h>
-#include <Library/DebugLib.h>
+#include <Library/OcDebugLogLib.h>
 #include <Library/OcDeviceTreeLib.h>
+#include <Library/OcMiscLib.h>
 #include <Library/PrintLib.h>
 #include <Library/RngLib.h>
 #include <Library/UefiBootServicesTableLib.h>
@@ -24,7 +25,6 @@
 #include "MemoryMap.h"
 #include "RtShims.h"
 #include "ServiceOverrides.h"
-#include "Utils.h"
 
 //
 // Modified boot-args buffer with an additional slide parameter, when custom slide is used.
@@ -212,7 +212,7 @@ DecideOnCustomSlideImplementation (
     );
 
   if (Status != EFI_SUCCESS) {
-    PrintScreen (L"AMF: Failed to obtain memory map for KASLR - %r\n", Status);
+    OcPrintScreen (L"AMF: Failed to obtain memory map for KASLR - %r\n", Status);
     return;
   }
 
@@ -302,28 +302,28 @@ DecideOnCustomSlideImplementation (
 
   if (mValidSlidesNum != TOTAL_SLIDE_NUM) {
     if (mValidSlidesNum == 0) {
-      PrintScreen (L"AMF: No slide values are usable! Falling back to %d with 0x%08X bytes!\n", FallbackSlide, MaxAvailableSize);
+      OcPrintScreen (L"AMF: No slide values are usable! Falling back to %d with 0x%08X bytes!\n", FallbackSlide, MaxAvailableSize);
       mValidSlides[mValidSlidesNum++] = (UINT8)FallbackSlide;
     } else {
       //
       // Pretty-print valid slides as ranges.
       // For example, 1, 2, 3, 4, 5 will become 1-5.
       //
-      PrintScreen (L"AMF: Only %d/%d slide values are usable!\n", mValidSlidesNum, TOTAL_SLIDE_NUM);
+      OcPrintScreen (L"AMF: Only %d/%d slide values are usable!\n", mValidSlidesNum, TOTAL_SLIDE_NUM);
       NumEntries = 0;
       for (Index = 0; Index <= mValidSlidesNum; Index++) {
         if (Index == 0) {
-          PrintScreen (L"Valid slides: %d", mValidSlides[Index]);
+          OcPrintScreen (L"Valid slides: %d", mValidSlides[Index]);
         } else if (Index == mValidSlidesNum || mValidSlides[Index - 1] + 1 != mValidSlides[Index]) {
           if (NumEntries == 1) {
-            PrintScreen (L", %d", mValidSlides[Index - 1]);
+            OcPrintScreen (L", %d", mValidSlides[Index - 1]);
           } else if (NumEntries > 1) {
-            PrintScreen (L"-%d", mValidSlides[Index - 1]);
+            OcPrintScreen (L"-%d", mValidSlides[Index - 1]);
           }
           if (Index == mValidSlidesNum) {
-            PrintScreen (L"\n");
+            OcPrintScreen (L"\n");
           } else {
-            PrintScreen (L", %d", mValidSlides[Index]);
+            OcPrintScreen (L", %d", mValidSlides[Index]);
           }
           NumEntries = 0;
         } else {

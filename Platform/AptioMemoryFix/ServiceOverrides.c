@@ -11,7 +11,8 @@
 
 #include <Library/BaseLib.h>
 #include <Library/BaseMemoryLib.h>
-#include <Library/DebugLib.h>
+#include <Library/OcDebugLogLib.h>
+#include <Library/OcMiscLib.h>
 #include <Library/UefiLib.h>
 #include <Library/UefiBootServicesTableLib.h>
 #include <Library/UefiRuntimeServicesTableLib.h>
@@ -109,7 +110,7 @@ InstallBsOverrides (
       // This is undesired, but technically less fatal than attempting to reduce the number
       // of slides available when no memory map dumping is necessary, for example.
       //
-      PrintScreen (L"AMF: Not using custom memory pool - %r\n", Status);
+      OcPrintScreen (L"AMF: Not using custom memory pool - %r\n", Status);
     }
   }
 #endif
@@ -337,7 +338,7 @@ MOAllocatePages (
 
 /** gBS->AllocatePool override:
  * Allows us to use a custom allocator that uses a preallocated memory pool
- * for certain types of memory. See details in PrintScreen function.
+ * for certain types of memory. See details in OcPrintScreen function.
  */
 EFI_STATUS
 EFIAPI
@@ -470,7 +471,7 @@ MOExitBootServices (
   // We need hibernate image address for wake
   //
   if (gHibernateWake && mHibernateImageAddress == 0) {
-    PrintScreen (L"AMF: Failed to find hibernate image address\n");
+    OcPrintScreen (L"AMF: Failed to find hibernate image address\n");
     gBS->Stall (SECONDS_TO_MICROSECONDS (5));
     return EFI_INVALID_PARAMETER;
   }
@@ -550,14 +551,14 @@ ForceExitBootServices (
       //
       Status = ExitBs (ImageHandle, MapKey);
       if (EFI_ERROR (Status))
-        PrintScreen (L"AMF: ExitBootServices failed twice - %r\n", Status);
+        OcPrintScreen (L"AMF: ExitBootServices failed twice - %r\n", Status);
     } else {
-      PrintScreen (L"AMF: Failed to get MapKey for ExitBootServices - %r\n", Status);
+      OcPrintScreen (L"AMF: Failed to get MapKey for ExitBootServices - %r\n", Status);
       Status = EFI_INVALID_PARAMETER;
     }
 
     if (EFI_ERROR (Status)) {
-      PrintScreen (L"Waiting 10 secs...\n");
+      OcPrintScreen (L"Waiting 10 secs...\n");
       gBS->Stall (SECONDS_TO_MICROSECONDS (10));
     }
   }

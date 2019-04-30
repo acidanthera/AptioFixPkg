@@ -8,12 +8,11 @@
 
 #include <Library/UefiLib.h>
 #include <Library/BaseMemoryLib.h>
-#include <Library/DebugLib.h>
+#include <Library/OcDebugLogLib.h>
 
 #include "Config.h"
 #include "VMem.h"
 #include "MemoryMap.h"
-#include "Utils.h"
 
 /** Memory allocation for VM map pages that we will create with VmMapVirtualPage.
   * We need to have it preallocated during boot services.
@@ -294,7 +293,7 @@ VmAllocateMemoryPool (
 
   Status = AllocatePagesFromTop (EfiBootServicesData, VmMemoryPoolFreePages, &Addr, FALSE);
   if (EFI_ERROR (Status)) {
-    PrintScreen (L"AMF: vm memory pool allocation failure - %r\n", Status);
+    OcPrintScreen (L"AMF: vm memory pool allocation failure - %r\n", Status);
   } else {
     VmMemoryPool = (UINT8*)Addr;
     DEBUG ((DEBUG_VERBOSE, "VmMemoryPool = %lx - %lx\n", VmMemoryPool, VmMemoryPool + EFI_PAGES_TO_SIZE(VmMemoryPoolFreePages) - 1));
