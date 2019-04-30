@@ -11,7 +11,6 @@
 #include <Library/MemoryAllocationLib.h>
 #include <Library/UefiBootServicesTableLib.h>
 #include <Library/UefiRuntimeServicesTableLib.h>
-#include <Library/DebugLib.h>
 #include <Library/OcDebugLogLib.h>
 #include <Library/OcMiscLib.h>
 #include <Library/PrintLib.h>

@@ -13,25 +13,13 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 **/
 
 #include <Uefi.h>
-#include <Guid/LiluVariables.h>
+#include <Guid/OcVariables.h>
 #include <Library/UefiLib.h>
 #include <Library/BaseMemoryLib.h>
 #include <Library/MemoryAllocationLib.h>
 #include <Library/UefiBootServicesTableLib.h>
 #include <Library/UefiRuntimeServicesTableLib.h>
 #include <Library/UefiApplicationEntryPoint.h>
-
-STATIC
-EFI_GUID
-mLiluNormalVariableGuid     = LILU_NORMAL_VARIABLE_GUID;
-
-STATIC
-EFI_GUID
-mLiluReadOnlyVariableGuid   = LILU_READ_ONLY_VARIABLE_GUID;
-
-STATIC
-EFI_GUID
-mLiluWriteOnlyVariableGuid  = LILU_WRITE_ONLY_VARIABLE_GUID;
 
 STATIC
 EFI_GUID
@@ -72,11 +60,11 @@ IsDeletableVariable (
       return TRUE;
     }
   //
-  // Lilu extensions if present
+  // Lilu & OpenCore extensions if present
   //
-  } else if (CompareGuid (Guid, &mLiluNormalVariableGuid)
-    || CompareGuid (Guid, &mLiluReadOnlyVariableGuid)
-    || CompareGuid (Guid, &mLiluWriteOnlyVariableGuid)) {
+  } else if (CompareGuid (Guid, &gOcVendorVariableGuid)
+    || CompareGuid (Guid, &gOcReadOnlyVariableGuid)
+    || CompareGuid (Guid, &gOcWriteOnlyVariableGuid)) {
     return TRUE;
   //
   // Ozmozis extensions if present

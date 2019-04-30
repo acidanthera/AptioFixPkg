@@ -39,6 +39,7 @@
   EfiPkg/EfiPkg.dec
   MdePkg/MdePkg.dec
   MdeModulePkg/MdeModulePkg.dec
+  OcSupportPkg/OcSupportPkg.dec
   UefiCpuPkg/UefiCpuPkg.dec
 
 [Guids]
@@ -46,8 +47,9 @@
   gAppleBootVariableGuid                      ## CONSUMES
   gAppleVendorVariableGuid                    ## CONSUMES
   gAppleTamperResistantBootSecureVariableGuid ## CONSUMES
-
-[Protocols]
+  gOcVendorVariableGuid                       ## CONSUMES
+  gOcReadOnlyVariableGuid                     ## CONSUMES
+  gOcWriteOnlyVariableGuid                    ## CONSUMES
 
 [LibraryClasses]
   UefiApplicationEntryPoint
