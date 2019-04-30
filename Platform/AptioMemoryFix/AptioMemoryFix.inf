@@ -21,6 +21,7 @@
   IntelFrameworkPkg/IntelFrameworkPkg.dec
   MdeModulePkg/MdeModulePkg.dec
   MdePkg/MdePkg.dec
+  OcSupportPkg/OcSupportPkg.dec
   UefiCpuPkg/UefiCpuPkg.dec
 
 [LibraryClasses]
@@ -30,6 +31,8 @@
   CpuLib
   DevicePathLib
   MemoryAllocationLib
+  OcDeviceTreeLib
+  OcStringLib
   UefiBootServicesTableLib
   UefiDriverEntryPoint
   UefiLib
@@ -45,8 +48,6 @@
   Config.h
   CustomSlide.c
   CustomSlide.h
-  FlatDevTree/device_tree.c
-  FlatDevTree/device_tree.h
   Mach-O/Mach-O.c
   Mach-O/Mach-O.h
   MemoryMap.c

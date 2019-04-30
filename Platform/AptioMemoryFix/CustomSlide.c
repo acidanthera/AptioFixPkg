@@ -10,6 +10,7 @@
 #include <Library/UefiLib.h>
 #include <Library/BaseMemoryLib.h>
 #include <Library/DebugLib.h>
+#include <Library/OcDeviceTreeLib.h>
 #include <Library/PrintLib.h>
 #include <Library/RngLib.h>
 #include <Library/UefiBootServicesTableLib.h>
@@ -20,7 +21,6 @@
 #include "CustomSlide.h"
 #include "BootArgs.h"
 #include "BootFixes.h"
-#include "FlatDevTree/device_tree.h"
 #include "MemoryMap.h"
 #include "RtShims.h"
 #include "ServiceOverrides.h"
@@ -149,10 +149,10 @@ HideSlideFromOS (
   AMF_BOOT_ARGUMENTS  *BootArgs
   )
 {
-  DTEntry     DevTree;
+  EFI_STATUS  Status;
   DTEntry     Chosen;
   CHAR8       *ArgsStr;
-  UINTN       ArgsSize;
+  UINT32      ArgsSize;
 
   //
   // First, there is a BootArgs entry for XNU
@@ -162,12 +162,12 @@ HideSlideFromOS (
   //
   // Second, there is a DT entry
   //
-  DevTree = (DTEntry)(UINTN)(*BootArgs->deviceTreeP);
-
-  DTInit (DevTree);
-  if (DTLookupEntry (NULL, "/chosen", &Chosen) == kSuccess) {
+  DTInit ((VOID *)(UINTN)(*BootArgs->deviceTreeP), BootArgs->deviceTreeLength);
+  Status = DTLookupEntry (NULL, "/chosen", &Chosen);
+  if (!EFI_ERROR (Status)) {
     DEBUG ((DEBUG_VERBOSE, "Found /chosen\n"));
-    if (DTGetProperty (Chosen, "boot-args", (VOID **)&ArgsStr, &ArgsSize) == kSuccess && ArgsSize > 0) {
+    Status = DTGetProperty (Chosen, "boot-args", (VOID **)&ArgsStr, &ArgsSize);
+    if (!EFI_ERROR (Status) && ArgsSize > 0) {
       DEBUG ((DEBUG_VERBOSE, "Found boot-args in /chosen\n"));
       RemoveArgumentFromCommandLine (ArgsStr, "slide=");
     }
