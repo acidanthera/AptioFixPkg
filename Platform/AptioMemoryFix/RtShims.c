@@ -15,7 +15,7 @@
 #include <Library/UefiBootServicesTableLib.h>
 #include <Library/UefiRuntimeServicesTableLib.h>
 
-#include <Guid/LiluVariables.h>
+#include <Guid/OcVariables.h>
 
 #include "Config.h"
 #include "RtShims.h"
@@ -37,9 +37,12 @@ extern UINTN gResetSystem;
 extern UINTN gGetVariableOverride;
 
 extern UINTN gRequiresWriteUnprotect;
+extern UINTN gBootVariableRedirect;
 
 extern EFI_GUID gReadOnlyVariableGuid;
 extern EFI_GUID gWriteOnlyVariableGuid;
+extern EFI_GUID gBootVariableGuid;
+extern EFI_GUID gRedirectVariableGuid;
 
 extern UINTN RtShimGetVariable;
 extern UINTN RtShimGetNextVariableName;
@@ -69,9 +72,6 @@ STATIC RT_SHIM_PTRS mShimPtrArray[] = {
 
 STATIC RT_RELOC_PROTECT_DATA mRelocInfoData;
 
-STATIC EFI_GUID mLiluReadOnlyVariableGuid   = LILU_READ_ONLY_VARIABLE_GUID;
-STATIC EFI_GUID mLiluWriteOnlyVariableGuid  = LILU_WRITE_ONLY_VARIABLE_GUID;
-
 VOID InstallRtShims (
   EFI_GET_VARIABLE GetVariableOverride
   )
@@ -83,8 +83,10 @@ VOID InstallRtShims (
   //
   // Support read-only and write-only variables from runtime-services.
   //
-  CopyMem(&gReadOnlyVariableGuid, &mLiluReadOnlyVariableGuid, sizeof(EFI_GUID));
-  CopyMem(&gWriteOnlyVariableGuid, &mLiluWriteOnlyVariableGuid, sizeof(EFI_GUID));
+  CopyGuid (&gReadOnlyVariableGuid, &gOcReadOnlyVariableGuid);
+  CopyGuid (&gWriteOnlyVariableGuid, &gOcWriteOnlyVariableGuid);
+  CopyGuid (&gBootVariableGuid, &gEfiGlobalVariableGuid);
+  CopyGuid (&gRedirectVariableGuid, &gOcVendorVariableGuid);
 
   if (gHasBrokenS4Allocator) {
     //
@@ -323,4 +325,30 @@ SetWriteUnprotectorMode (
   )
 {
   *(UINTN *)((UINTN)gRtShims + ((UINTN)&gRequiresWriteUnprotect - (UINTN)&gRtShimsDataStart)) = Enable;
+}
+
+VOID
+SetBootVariableRedirect (
+  IN     BOOLEAN                Enable
+  )
+{
+  UINTN       DataSize;
+  EFI_STATUS  Status;
+
+  if (Enable) {
+    DataSize = sizeof (Enable);
+    Status = gRT->GetVariable (
+      OC_BOOT_REDIRECT_VARIABLE_NAME,
+      &gOcVendorVariableGuid,
+      NULL,
+      &DataSize,
+      &Enable
+      );
+
+    if (EFI_ERROR (Status)) {
+      Enable = FALSE;
+    }
+  }
+
+  *(UINTN *)((UINTN)gRtShims + ((UINTN)&gBootVariableRedirect - (UINTN)&gRtShimsDataStart)) = Enable;
 }

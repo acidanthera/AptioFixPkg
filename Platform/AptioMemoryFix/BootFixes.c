@@ -176,7 +176,8 @@ ReadBooterArguments (
 
   if (Options && OptionsSize > 0) {
     //
-    // Just in case we do not have 0-termination
+    // Just in case we do not have 0-termination.
+    // This may cut some data with unexpected options, but it is not like we care.
     //
     LastIndex = OptionsSize - 1;
     Last = Options[LastIndex];

@@ -51,6 +51,42 @@ DEFAULT  REL
     jmp        rax
 %endmacro
 
+; Redirects Boot prefixed variables from gBootVariableGuid
+; to gRedirectVariableGuid.
+; Variable name is assumed to be in %rcx.
+; Guid is assumed to be in %rdx.
+; Temporary registers: %rax.
+%macro        PerformBootVariableRedirect 0
+    ; Check if we have variable redirection enabled.
+    mov        rax, qword [ASM_PFX(gBootVariableRedirect)]
+    test       rax, rax
+    jz         .SKIP_BOOT_VARIABLE_REDIRECT
+    ; Compare whether GUID matches gBootVariableGuid
+    mov        rax, qword [rdx]
+    cmp        qword [ASM_PFX(gBootVariableGuid)], rax
+    jnz        .SKIP_BOOT_VARIABLE_REDIRECT
+    mov        rax, qword [rdx+8]
+    cmp        qword [ASM_PFX(gBootVariableGuid)+8], rax
+    jnz        .SKIP_BOOT_VARIABLE_REDIRECT
+    ; Compare whether variable prefix matches Boot
+    mov        ax, word [rcx]
+    cmp        ax, 'B'
+    jnz        .SKIP_BOOT_VARIABLE_REDIRECT
+    mov        ax, word [rcx+2]
+    cmp        ax, 'o'
+    jnz        .SKIP_BOOT_VARIABLE_REDIRECT
+    mov        ax, word [rcx+4]
+    cmp        ax, 'o'
+    jnz        .SKIP_BOOT_VARIABLE_REDIRECT
+    mov        ax, word [rcx+6]
+    cmp        ax, 't'
+    jnz        .SKIP_BOOT_VARIABLE_REDIRECT
+    ; This is a Boot prefixed variable from gBootVariableGuid.
+    ; Redirect it to gRedirectVariableGuid.
+    lea        rdx, [ASM_PFX(gRedirectVariableGuid)]
+.SKIP_BOOT_VARIABLE_REDIRECT:
+%endmacro
+
 SECTION .text
 
 ALIGN          8         ; to align the dqs
@@ -76,6 +112,7 @@ ASM_PFX(RtShimSetVariable):
     test       rdx, rdx
     jz         ASM_PFX(RtShimsReturnInvalidParameter)     ; VendorGuid is NULL
 .INITIAL_VALIDATION_OVER:
+    PerformBootVariableRedirect
     ; Once boot.efi virtualizes the pointers we should protect read-only
     ; variables from writing.
     mov        rax, qword [ASM_PFX(gGetVariableOverride)]
@@ -92,7 +129,7 @@ ASM_PFX(RtShimSetVariable):
     jz         ASM_PFX(RtShimsReturnSecurityViolation)
 .SKIP_ACCESS_CHECK:
     mov        rax, qword [ASM_PFX(gSetVariable)]
-    jmp        short FiveArgsShim
+    jmp        FiveArgsShim
 
 global ASM_PFX(RtShimGetVariable)
 ASM_PFX(RtShimGetVariable):
@@ -109,6 +146,7 @@ ASM_PFX(RtShimGetVariable):
     test       rax, rax
     jnz        ASM_PFX(RtShimsReturnInvalidParameter)     ; Data is NULL and *DataSize is not 0
 .INITIAL_VALIDATION_OVER:
+    PerformBootVariableRedirect
     ; Once boot.efi virtualizes the pointers we should protect write-only
     ; variables from reading. Prior to that a custom wrapper is used.
     mov        rax, qword [ASM_PFX(gGetVariableOverride)]
@@ -134,6 +172,8 @@ FiveArgsShim:
 
 global ASM_PFX(RtShimGetNextVariableName)
 ASM_PFX(RtShimGetNextVariableName):
+    ; TODO: I am not sure whether we need GetNextVariableName support
+    ; for boot variable routing... Probably good enough without it.
     mov        rax, qword [ASM_PFX(gGetNextVariableName)]
     jmp        short FourArgsShim
 
@@ -211,6 +251,9 @@ ALIGN          8
 global ASM_PFX(gRequiresWriteUnprotect)
 ASM_PFX(gRequiresWriteUnprotect): dq  0
 
+global ASM_PFX(gBootVariableRedirect)
+ASM_PFX(gBootVariableRedirect):   dq  0
+
 global ASM_PFX(gGetNextVariableName)
 ASM_PFX(gGetNextVariableName):    dq  0
 
@@ -240,6 +283,12 @@ ASM_PFX(gResetSystem):            dq  0
 
 global ASM_PFX(gGetVariableOverride)
 ASM_PFX(gGetVariableOverride):    dq  0
+
+global ASM_PFX(gBootVariableGuid)
+ASM_PFX(gBootVariableGuid):       times 2 dq 0
+
+global ASM_PFX(gRedirectVariableGuid)
+ASM_PFX(gRedirectVariableGuid):   times 2 dq 0
 
 global ASM_PFX(gReadOnlyVariableGuid)
 ASM_PFX(gReadOnlyVariableGuid):   times 2 dq 0

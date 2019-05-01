@@ -1,6 +1,10 @@
 AptioFix Changelog
 ==================
 
+#### R26
+- Added support for OpenCore `RequestBootVarRouting` quirk
+- Serious code cleanup
+
 #### R25
 - Reworked GOP protocol installation to be Apple-only
 - Fixed DEBUG build

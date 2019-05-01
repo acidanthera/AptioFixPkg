@@ -198,6 +198,11 @@ MOStartImage (
   mMinAllocatedAddr = 0;
   mMaxAllocatedAddr = 0;
 
+  //
+  // Request boot variable redirection if enabled.
+  //
+  SetBootVariableRedirect (TRUE);
+
   if (AppleLoadedImage) {
     //
     // Report about macOS being loaded.
@@ -283,6 +288,11 @@ MOStartImage (
     gMacOSBootNestedCount--;
     SetWriteUnprotectorMode (FALSE);
   }
+
+  //
+  // Disable redirect on failure, this is cleaner design-wise.
+  //
+  SetBootVariableRedirect (FALSE);
 
   return Status;
 }

@@ -70,4 +70,9 @@ SetWriteUnprotectorMode (
   IN     BOOLEAN                Enable
   );
 
+VOID
+SetBootVariableRedirect (
+  IN     BOOLEAN                Enable
+  );
+
 #endif // APTIOFIX_RT_SHIMS_H
