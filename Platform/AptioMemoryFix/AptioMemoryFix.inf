@@ -98,10 +98,6 @@
   gEfiDataHubProtocolGuid                     ## SOMETIMES_CONSUMES
   gEfiLegacy8259ProtocolGuid                  ## SOMETIMES_CONSUMES
 
-# if built as runtime driver
-[Depex]
-  TRUE
-
 [BuildOptions]
 # To generate assembled listings
 #  MSFT:*_*_*_ASM_FLAGS = /Fl
