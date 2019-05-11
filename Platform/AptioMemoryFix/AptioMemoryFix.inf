@@ -18,7 +18,6 @@
 [Packages]
   AptioFixPkg/AptioFixPkg.dec
   EfiPkg/EfiPkg.dec
-  IntelFrameworkPkg/IntelFrameworkPkg.dec
   MdeModulePkg/MdeModulePkg.dec
   MdePkg/MdePkg.dec
   OcSupportPkg/OcSupportPkg.dec
@@ -96,7 +95,6 @@
   gAppleNetBootProtocolGuid                   ## SOMETIMES_CONSUMES
   gAppleImageConversionProtocolGuid           ## SOMETIMES_CONSUMES
   gEfiDataHubProtocolGuid                     ## SOMETIMES_CONSUMES
-  gEfiLegacy8259ProtocolGuid                  ## SOMETIMES_CONSUMES
 
 [BuildOptions]
 # To generate assembled listings
