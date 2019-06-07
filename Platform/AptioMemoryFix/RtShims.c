@@ -327,13 +327,15 @@ SetWriteUnprotectorMode (
   *(UINTN *)((UINTN)gRtShims + ((UINTN)&gRequiresWriteUnprotect - (UINTN)&gRtShimsDataStart)) = Enable;
 }
 
-VOID
+BOOLEAN
+EFIAPI
 SetBootVariableRedirect (
   IN     BOOLEAN                Enable
   )
 {
   UINTN       DataSize;
   EFI_STATUS  Status;
+  BOOLEAN     Previous;
 
   if (Enable) {
     DataSize = sizeof (Enable);
@@ -350,5 +352,7 @@ SetBootVariableRedirect (
     }
   }
 
-  *(UINTN *)((UINTN)gRtShims + ((UINTN)&gBootVariableRedirect - (UINTN)&gRtShimsDataStart)) = Enable;
+  Previous = *(BOOLEAN *)((UINTN)gRtShims + ((UINTN)&gBootVariableRedirect - (UINTN)&gRtShimsDataStart));
+  *(BOOLEAN *)((UINTN)gRtShims + ((UINTN)&gBootVariableRedirect - (UINTN)&gRtShimsDataStart)) = Enable;
+  return Previous;
 }

@@ -20,6 +20,7 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 #include <Library/UefiBootServicesTableLib.h>
 #include <Library/UefiRuntimeServicesTableLib.h>
 #include <Library/UefiApplicationEntryPoint.h>
+#include <Protocol/AptioMemoryFix.h>
 
 STATIC
 EFI_GUID
@@ -45,7 +46,14 @@ IsDeletableVariable (
   //
   if (CompareGuid (Guid, &gAppleVendorVariableGuid)
     || CompareGuid (Guid, &gAppleBootVariableGuid)
-    || CompareGuid (Guid, &gAppleTamperResistantBootSecureVariableGuid)) {
+    || CompareGuid (Guid, &gAppleCoreStorageVariableGuid)
+    || CompareGuid (Guid, &gAppleTamperResistantBootVariableGuid)
+    || CompareGuid (Guid, &gAppleWirelessNetworkVariableGuid)
+    || CompareGuid (Guid, &gApplePersonalizationVariableGuid)
+    || CompareGuid (Guid, &gAppleNetbootVariableGuid)
+    || CompareGuid (Guid, &gAppleSecureBootVariableGuid)
+    || CompareGuid (Guid, &gAppleTamperResistantBootSecureVariableGuid)
+    || CompareGuid (Guid, &gAppleTamperResistantBootEfiUserVariableGuid)) {
     return TRUE;
   //
   // Global variable boot options
@@ -55,17 +63,23 @@ IsDeletableVariable (
     // Only erase boot and driver entries for BDS
     // I.e. BootOrder, Boot####, DriverOrder, Driver####
     //
-    if (!StrnCmp (Name, L"Boot", StrLen(L"Boot"))
-      || !StrnCmp (Name, L"Driver", StrLen(L"Driver"))) {
+    if (StrnCmp (Name, L"Boot", StrLen(L"Boot") == 0)
+      || StrnCmp (Name, L"Driver", StrLen(L"Driver")) == 0) {
       return TRUE;
     }
   //
   // Lilu & OpenCore extensions if present
   //
-  } else if (CompareGuid (Guid, &gOcVendorVariableGuid)
-    || CompareGuid (Guid, &gOcReadOnlyVariableGuid)
-    || CompareGuid (Guid, &gOcWriteOnlyVariableGuid)) {
+  } else if (CompareGuid (Guid, &gOcVendorVariableGuid)) {
     return TRUE;
+  } else if (CompareGuid (Guid, &gOcReadOnlyVariableGuid)
+    || CompareGuid (Guid, &gOcWriteOnlyVariableGuid)) {
+    //
+    // Do not remove NVRAM redirection variable.
+    //
+    if (StrCmp (Name, OC_BOOT_REDIRECT_VARIABLE_NAME) != 0) {
+      return TRUE;
+    }
   //
   // Ozmozis extensions if present
   //
@@ -153,9 +167,25 @@ UefiMain (
   IN EFI_SYSTEM_TABLE  *SystemTable
   )
 {
+  EFI_STATUS               Status;
+  APTIOMEMORYFIX_PROTOCOL  *Amf;
+  BOOLEAN                  Redirect;
+
   Print (L"Performing quick NVRAM cleanup...\n");
 
+  Status = gBS->LocateProtocol (&gAptioMemoryFixProtocolGuid, NULL, (VOID **)&Amf);
+
+  if (!EFI_ERROR (Status) && Amf->Revision >= APTIOMEMORYFIX_PROTOCOL_REVISION) {
+    Redirect = Amf->SetNvram (FALSE);
+  } else {
+    Redirect = FALSE;
+  }
+
   DeleteVariables ();
+
+  if (Redirect) {
+    Amf->SetNvram (TRUE);
+  }
 
   Print (L"Done quick NVRAM cleanup, please reboot!\n");
 

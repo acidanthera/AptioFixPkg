@@ -15,7 +15,7 @@
 
 #include <Guid/GlobalVariable.h>
 
-#include <Protocol/AptioMemoryFixProtocol.h>
+#include <Protocol/AptioMemoryFix.h>
 
 #include "Config.h"
 #include "BootArgs.h"
@@ -29,10 +29,12 @@
 // One could discover AptioMemoryFix with this protocol
 //
 STATIC APTIOMEMORYFIX_PROTOCOL mAptioMemoryFixProtocol = {
-  APTIOMEMORYFIX_PROTOCOL_REVISION
+  APTIOMEMORYFIX_PROTOCOL_REVISION,
+  SetBootVariableRedirect
 };
 
-/** Entry point. Installs our StartImage override.
+/**
+ * Entry point. Installs our StartImage override.
  * All other stuff will be installed from there when boot.efi is started.
  */
 EFI_STATUS

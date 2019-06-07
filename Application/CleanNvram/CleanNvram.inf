@@ -43,13 +43,23 @@
   UefiCpuPkg/UefiCpuPkg.dec
 
 [Guids]
-  gEfiGlobalVariableGuid                      ## CONSUMES
-  gAppleBootVariableGuid                      ## CONSUMES
-  gAppleVendorVariableGuid                    ## CONSUMES
-  gAppleTamperResistantBootSecureVariableGuid ## CONSUMES
-  gOcVendorVariableGuid                       ## CONSUMES
-  gOcReadOnlyVariableGuid                     ## CONSUMES
-  gOcWriteOnlyVariableGuid                    ## CONSUMES
+  gEfiGlobalVariableGuid                        ## CONSUMES
+  gAppleVendorVariableGuid                      ## CONSUMES
+  gAppleBootVariableGuid                        ## CONSUMES
+  gAppleCoreStorageVariableGuid                 ## CONSUMES
+  gAppleTamperResistantBootVariableGuid         ## CONSUMES
+  gAppleWirelessNetworkVariableGuid             ## CONSUMES
+  gApplePersonalizationVariableGuid             ## CONSUMES
+  gAppleNetbootVariableGuid                     ## CONSUMES
+  gAppleSecureBootVariableGuid                  ## CONSUMES
+  gAppleTamperResistantBootSecureVariableGuid   ## CONSUMES
+  gAppleTamperResistantBootEfiUserVariableGuid  ## CONSUMES
+  gOcVendorVariableGuid                         ## CONSUMES
+  gOcReadOnlyVariableGuid                       ## CONSUMES
+  gOcWriteOnlyVariableGuid                      ## CONSUMES
+
+[Protocols]
+  gAptioMemoryFixProtocolGuid
 
 [LibraryClasses]
   UefiApplicationEntryPoint

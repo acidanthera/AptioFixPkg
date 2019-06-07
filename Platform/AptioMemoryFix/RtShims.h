@@ -70,7 +70,8 @@ SetWriteUnprotectorMode (
   IN     BOOLEAN                Enable
   );
 
-VOID
+BOOLEAN
+EFIAPI
 SetBootVariableRedirect (
   IN     BOOLEAN                Enable
   );
