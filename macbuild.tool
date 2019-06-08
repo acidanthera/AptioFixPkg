@@ -39,7 +39,7 @@ package() {
     exit 1
   fi
 
-  local ver=$(cat Include/Protocol/AptioMemoryFixProtocol.h | grep APTIOMEMORYFIX_PROTOCOL_REVISION | cut -f4 -d' ')
+  local ver=$(cat Include/Protocol/AptioMemoryFix.h | grep APTIOMEMORYFIX_PROTOCOL_REVISION | cut -f4 -d' ')
   if [ "$(echo $ver | grep -E '^[0-9]+$')" = "" ]; then
     echo "Invalid version $ver"
   fi
