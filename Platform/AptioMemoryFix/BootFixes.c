@@ -11,6 +11,7 @@
 #include <Library/UefiLib.h>
 #include <Library/BaseMemoryLib.h>
 #include <Library/OcDebugLogLib.h>
+#include <Library/OcDevicePathLib.h>
 #include <Library/OcMachoLib.h>
 #include <Library/OcMiscLib.h>
 #include <Library/OcStringLib.h>
@@ -529,8 +530,8 @@ GetAppleBootLoadedImage (
   FILEPATH_DEVICE_PATH        *LastNode     = NULL;
   BOOLEAN                     IsMacOS       = FALSE;
   UINTN                       PathLen       = 0;
-  UINTN                       BootPathLen   = sizeof ("boot.efi") - 1;
-  CONST CHAR16                *BootPathName = NULL;
+  UINTN                       BootPathLen   = L_STR_LEN ("boot.efi");
+  UINTN                       Index;
 
   Status = gBS->HandleProtocol (ImageHandle, &gEfiLoadedImageProtocolGuid, (VOID **)&LoadedImage);
 
@@ -545,11 +546,11 @@ GetAppleBootLoadedImage (
       //
       // Detect macOS by boot.efi in the bootloader name.
       //
-      PathLen = StrLen (LastNode->PathName);
-      BootPathName = LastNode->PathName + PathLen - BootPathLen;
+      PathLen = OcFileDevicePathNameLen (LastNode);
       if (PathLen >= BootPathLen) {
-        IsMacOS = (PathLen == BootPathLen || *(BootPathName - 1) == L'\\')
-          && !StrCmp (BootPathName, L"boot.efi");
+        Index = PathLen - BootPathLen;
+        IsMacOS = (Index == 0 || LastNode->PathName[Index - 1] == L'\\')
+          && !CompareMem (&LastNode->PathName[Index], L"boot.efi", L_STR_SIZE (L"boot.efi"));
       }
     }
   }
