@@ -4,6 +4,7 @@ AptioFix Changelog
 #### R27
 - Improved compatibility with OpenCore tool section
 - Advanced CleanNvram removal features
+- Fixed rare freezes in CleanNvram
 
 #### R26
 - Added support for OpenCore `RequestBootVarRouting` quirk

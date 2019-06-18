@@ -13,7 +13,10 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 **/
 
 #include <Uefi.h>
+
+#include <Guid/GlobalVariable.h>
 #include <Guid/OcVariables.h>
+
 #include <Library/UefiLib.h>
 #include <Library/BaseMemoryLib.h>
 #include <Library/MemoryAllocationLib.h>
@@ -102,18 +105,38 @@ DeleteVariables (
 {
   EFI_GUID     CurrentGuid;
   EFI_STATUS   Status;
-  CHAR16       *Buffer = NULL;
+  CHAR16       *Buffer;
   CHAR16       *TmpBuffer;
-  UINTN        BufferSize = 0;
-  UINTN        RequestedSize = 1024;
-  BOOLEAN      Restart = TRUE;
-  BOOLEAN      CriticalFailure = FALSE;
+  UINTN        BufferSize;
+  UINTN        RequestedSize;
+  BOOLEAN      Restart;
+  BOOLEAN      CriticalFailure;
+
+  //
+  // Request 1024 byte buffer.
+  //
+  Buffer = NULL;
+  BufferSize = 0;
+  RequestedSize = 1024;
+
+  //
+  // Force starting from 0th GUID.
+  //
+  Restart = TRUE;
+
+  //
+  // Assume we have not failed yet.
+  //
+  CriticalFailure = FALSE;
 
   do {
+    //
+    // Allocate new buffer if needed.
+    //
     if (RequestedSize > BufferSize) {
       TmpBuffer = AllocateZeroPool (RequestedSize);
-      if (TmpBuffer) {
-        if (Buffer) {
+      if (TmpBuffer != NULL) {
+        if (Buffer != NULL) {
           CopyMem (TmpBuffer, Buffer, BufferSize);
           FreePool (Buffer);
         }
@@ -125,12 +148,19 @@ DeleteVariables (
       }
     }
 
+    //
+    // To start the search variable name should be L"".
+    //
     if (Restart) {
-      ZeroMem (&CurrentGuid, sizeof(CurrentGuid));
+      ZeroMem (&CurrentGuid, sizeof (CurrentGuid));
       ZeroMem (Buffer, BufferSize);
       Restart = FALSE;
     }
 
+    //
+    // Always pass maximum variable name size to reduce reallocations.
+    //
+    RequestedSize = BufferSize;
     Status = gRT->GetNextVariableName (&RequestedSize, Buffer, &CurrentGuid);
 
     if (!EFI_ERROR (Status)) {
@@ -139,11 +169,17 @@ DeleteVariables (
         Status = gRT->SetVariable (Buffer, &CurrentGuid, 0, 0, NULL);
         if (!EFI_ERROR (Status)) {
           Print (L"OK\n");
+          //
+          // Calls to SetVariable() between calls to GetNextVariableName()
+          // may produce unpredictable results, so we restart.
+          //
           Restart = TRUE;
         } else {
           Print (L"FAIL (%r)\n", Status);
           break;
         }
+      } else {
+        // Print (L"Skipping %g:%s\n", &CurrentGuid, Buffer);
       }
     } else if (Status != EFI_BUFFER_TOO_SMALL && Status != EFI_NOT_FOUND) {
       if (!CriticalFailure) {
@@ -154,10 +190,9 @@ DeleteVariables (
         break;
       }
     }
-
   } while (Status != EFI_NOT_FOUND);
 
-  if (Buffer) {
+  if (Buffer != NULL) {
     FreePool (Buffer);
   }
 }
@@ -173,23 +208,26 @@ UefiMain (
   APTIOMEMORYFIX_PROTOCOL  *Amf;
   BOOLEAN                  Redirect;
 
-  Print (L"Performing quick NVRAM cleanup...\n");
+  Print (L"NVRAM cleanup R%d\n", APTIOMEMORYFIX_PROTOCOL_REVISION);
 
   Status = gBS->LocateProtocol (&gAptioMemoryFixProtocolGuid, NULL, (VOID **)&Amf);
 
   if (!EFI_ERROR (Status) && Amf->Revision >= APTIOMEMORYFIX_PROTOCOL_REVISION) {
     Redirect = Amf->SetNvram (FALSE);
+    Print (L"Found AMF NVRAM, full access %d\n", Redirect);
   } else {
     Redirect = FALSE;
+    Print (L"Missing AMF NVRAM\n");
   }
 
   DeleteVariables ();
 
   if (Redirect) {
+    Print (L"Restoring AMF NVRAM...\n");
     Amf->SetNvram (TRUE);
   }
 
-  Print (L"Done quick NVRAM cleanup, please reboot!\n");
+  Print (L"NVRAM cleanup completed, please reboot!\n");
 
   return EFI_SUCCESS;
 }
