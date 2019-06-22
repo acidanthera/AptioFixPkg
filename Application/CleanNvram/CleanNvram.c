@@ -174,6 +174,8 @@ DeleteVariables (
           // may produce unpredictable results, so we restart.
           //
           Restart = TRUE;
+        } else if (Status == EFI_NOT_FOUND) {
+          Print (L"SKIP (%r)\n", Status);
         } else {
           Print (L"FAIL (%r)\n", Status);
           break;
