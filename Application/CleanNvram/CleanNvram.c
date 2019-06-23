@@ -74,9 +74,6 @@ IsDeletableVariable (
   // Lilu & OpenCore extensions if present
   //
   } else if (CompareGuid (Guid, &gOcVendorVariableGuid)) {
-    return TRUE;
-  } else if (CompareGuid (Guid, &gOcReadOnlyVariableGuid)
-    || CompareGuid (Guid, &gOcWriteOnlyVariableGuid)) {
     //
     // Do not remove OpenCore critical variables.
     //
@@ -85,6 +82,9 @@ IsDeletableVariable (
       && StrCmp (Name, OC_SCAN_POLICY_VARIABLE_NAME) != 0) {
       return TRUE;
     }
+  } else if (CompareGuid (Guid, &gOcReadOnlyVariableGuid)
+    || CompareGuid (Guid, &gOcWriteOnlyVariableGuid)) {
+    return TRUE;
   //
   // Ozmozis extensions if present
   //
