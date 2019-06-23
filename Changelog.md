@@ -3,7 +3,7 @@ AptioFix Changelog
 
 #### R27
 - Improved compatibility with OpenCore tool section
-- Advanced CleanNvram removal features
+- Fixed CleanNvram variable removal
 - Fixed rare freezes in CleanNvram
 
 #### R26
