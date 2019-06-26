@@ -251,6 +251,7 @@ WrapGetVariable (
   EFI_STATUS  Status;
   BOOLEAN     Ints;
   BOOLEAN     Wp;
+  BOOLEAN     Routed;
 
   //
   // Perform early checks for speedup.
@@ -275,26 +276,28 @@ WrapGetVariable (
   //
   if (mBootVariableRedirect && IsEfiBootVar (VariableName, VendorGuid)) {
     VendorGuid = &gOcVendorVariableGuid;
+    Routed     = TRUE;
+  } else {
+    Routed     = FALSE;
   }
 
   WriteUnprotectorPrologue (&Ints, &Wp);
 
-  if (mCustomGetVariable != NULL) {
-    Status = mCustomGetVariable (
+  while (TRUE) {
+    Status = (mCustomGetVariable != NULL ? mCustomGetVariable : mStoredGetVariable) (
       VariableName,
       VendorGuid,
       Attributes,
       DataSize,
       Data
       );
-  } else {
-    Status = mStoredGetVariable (
-      VariableName,
-      VendorGuid,
-      Attributes,
-      DataSize,
-      Data
-      );
+
+    if (Status == EFI_NOT_FOUND && Routed) {
+      VendorGuid = &gEfiGlobalVariableGuid;
+      Routed     = FALSE;
+    } else {
+      break;
+    }
   }
 
   WriteUnprotectorEpilogue (Ints, Wp);
@@ -343,7 +346,7 @@ WrapGetNextVariableName (
   //
   // In case we do not redirect, simply do nothing.
   //
-  if (!mBootVariableRedirect) {
+  if (!mBootVariableRedirect || TRUE /* <- this is the real fix */) {
     Status = mStoredGetNextVariableName (VariableNameSize, VariableName, VendorGuid);
     WriteUnprotectorEpilogue (Ints, Wp);
     return Status;
@@ -362,7 +365,7 @@ WrapGetNextVariableName (
   // then go through the whole variable list and return
   // variables except EfiBoot.
   //
-  if (!IsEfiBootVar (TempName, &TempGuid)) {
+  if (/* !IsEfiBootVar (TempName, &TempGuid) */ TRUE) {
     while (TRUE) {
       //
       // Request for variables.
@@ -371,7 +374,7 @@ WrapGetNextVariableName (
       Status = mStoredGetNextVariableName (&Size, TempName, &TempGuid);
 
       if (!EFI_ERROR (Status)) {
-        if (!IsEfiBootVar (TempName, &TempGuid)) {
+        if (/* !IsEfiBootVar (TempName, &TempGuid) */ TRUE) {
           Size = StrSize (TempName); ///< Not guaranteed to be updated with EFI_SUCCESS.
 
           if (*VariableNameSize >= Size) {
@@ -405,7 +408,7 @@ WrapGetNextVariableName (
         //
         WriteUnprotectorEpilogue (Ints, Wp);
         return EFI_DEVICE_ERROR;
-      } else if (Status == EFI_NOT_FOUND) {
+      } else if (/* Status == EFI_NOT_FOUND */ FALSE) {
         //
         // End of normal variable list.
         // This means it is the time for boot variables to be searched
@@ -423,6 +426,8 @@ WrapGetNextVariableName (
       }
     }    
   }
+
+  ASSERT (FALSE);
 
   //
   // Handle EfiBoot variables now.
