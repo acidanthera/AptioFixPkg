@@ -36,7 +36,6 @@ PrintMemMap (
   IN UINTN                  MemoryMapSize,
   IN UINTN                  DescriptorSize,
   IN EFI_MEMORY_DESCRIPTOR  *MemoryMap,
-  IN VOID                   *Shims,
   IN EFI_PHYSICAL_ADDRESS   SysTable
   );
 

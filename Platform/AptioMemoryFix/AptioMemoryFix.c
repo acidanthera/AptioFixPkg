@@ -29,8 +29,7 @@
 // One could discover AptioMemoryFix with this protocol
 //
 STATIC APTIOMEMORYFIX_PROTOCOL mAptioMemoryFixProtocol = {
-  APTIOMEMORYFIX_PROTOCOL_REVISION,
-  SetBootVariableRedirect
+  APTIOMEMORYFIX_PROTOCOL_REVISION
 };
 
 /**

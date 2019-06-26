@@ -15,198 +15,20 @@
 #include <Library/UefiBootServicesTableLib.h>
 #include <Library/UefiRuntimeServicesTableLib.h>
 
+#include <Guid/GlobalVariable.h>
 #include <Guid/OcVariables.h>
+
+#include <Protocol/OcFirmwareRuntime.h>
 
 #include "Config.h"
 #include "RtShims.h"
 #include "BootFixes.h"
 #include "MemoryMap.h"
 
-extern UINTN gRtShimsDataStart;
-extern UINTN gRtShimsDataEnd;
-
-extern UINTN gGetVariable;
-extern UINTN gGetNextVariableName;
-extern UINTN gSetVariable;
-extern UINTN gGetTime;
-extern UINTN gSetTime;
-extern UINTN gGetWakeupTime;
-extern UINTN gSetWakeupTime;
-extern UINTN gGetNextHighMonoCount;
-extern UINTN gResetSystem;
-extern UINTN gGetVariableOverride;
-
-extern UINTN gRequiresWriteUnprotect;
-extern UINTN gBootVariableRedirect;
-
-extern EFI_GUID gReadOnlyVariableGuid;
-extern EFI_GUID gWriteOnlyVariableGuid;
-extern EFI_GUID gBootVariableGuid;
-extern EFI_GUID gRedirectVariableGuid;
-
-extern UINTN RtShimGetVariable;
-extern UINTN RtShimGetNextVariableName;
-extern UINTN RtShimSetVariable;
-extern UINTN RtShimGetTime;
-extern UINTN RtShimSetTime;
-extern UINTN RtShimGetWakeupTime;
-extern UINTN RtShimSetWakeupTime;
-extern UINTN RtShimGetNextHighMonoCount;
-extern UINTN RtShimResetSystem;
-
-VOID *gRtShims = NULL;
-
-STATIC BOOLEAN mRtShimsAddrUpdated = FALSE;
-
-STATIC RT_SHIM_PTRS mShimPtrArray[] = {
-  { &gGetVariable },
-  { &gSetVariable },
-  { &gGetNextVariableName },
-  { &gGetTime },
-  { &gSetTime },
-  { &gGetWakeupTime },
-  { &gSetWakeupTime },
-  { &gGetNextHighMonoCount },
-  { &gResetSystem }
-};
-
 STATIC RT_RELOC_PROTECT_DATA mRelocInfoData;
-
-VOID InstallRtShims (
-  EFI_GET_VARIABLE GetVariableOverride
-  )
-{
-  EFI_STATUS            Status;
-  UINTN                 PageCount;
-  EFI_PHYSICAL_ADDRESS  RtShims = BASE_4GB;
-
-  //
-  // Support read-only and write-only variables from runtime-services.
-  //
-  CopyGuid (&gReadOnlyVariableGuid, &gOcReadOnlyVariableGuid);
-  CopyGuid (&gWriteOnlyVariableGuid, &gOcWriteOnlyVariableGuid);
-  CopyGuid (&gBootVariableGuid, &gEfiGlobalVariableGuid);
-  CopyGuid (&gRedirectVariableGuid, &gOcVendorVariableGuid);
-
-  if (gHasBrokenS4Allocator) {
-    //
-    // Some firmwares appear to allocate rt shims at randomly incomprehensible area.
-    // This unfortunately results in crashes and using pool allocs is one of the workarounds.
-    //
-    Status = gBS->AllocatePool (
-      EfiRuntimeServicesCode,
-      ((UINTN)&gRtShimsDataEnd - (UINTN)&gRtShimsDataStart),
-      &gRtShims
-      );
-  } else {
-    //
-    // It is important to allocate properly from top on saner firmwares.
-    // If we do not and use hacks like above many other operating systems (like Linux)
-    // may stop loading.
-    //
-    PageCount = EFI_SIZE_TO_PAGES ((UINTN)&gRtShimsDataEnd - (UINTN)&gRtShimsDataStart);
-    Status = AllocatePagesFromTop (
-      EfiRuntimeServicesCode,
-      PageCount,
-      &RtShims,
-      FALSE
-      );
-    if (!EFI_ERROR (Status)) {
-      gRtShims = (VOID *)(UINTN)RtShims;
-    }
-  }
-
-  if (!EFI_ERROR (Status)) {
-    gGetVariable          = (UINTN)gRT->GetVariable;
-    gSetVariable          = (UINTN)gRT->SetVariable;
-    gGetNextVariableName  = (UINTN)gRT->GetNextVariableName;
-    gGetTime              = (UINTN)gRT->GetTime;
-    gSetTime              = (UINTN)gRT->SetTime;
-    gGetWakeupTime        = (UINTN)gRT->GetWakeupTime;
-    gSetWakeupTime        = (UINTN)gRT->SetWakeupTime;
-    gGetNextHighMonoCount = (UINTN)gRT->GetNextHighMonotonicCount;
-    gResetSystem          = (UINTN)gRT->ResetSystem;
-
-    gGetVariableOverride  = (UINTN)GetVariableOverride;
-
-    CopyMem (
-      gRtShims,
-      (VOID *)&gRtShimsDataStart,
-      ((UINTN)&gRtShimsDataEnd - (UINTN)&gRtShimsDataStart)
-      );
-
-    gRT->GetVariable               = (EFI_GET_VARIABLE)((UINTN)gRtShims              + ((UINTN)&RtShimGetVariable          - (UINTN)&gRtShimsDataStart));
-    gRT->SetVariable               = (EFI_SET_VARIABLE)((UINTN)gRtShims              + ((UINTN)&RtShimSetVariable          - (UINTN)&gRtShimsDataStart));
-    gRT->GetNextVariableName       = (EFI_GET_NEXT_VARIABLE_NAME)((UINTN)gRtShims    + ((UINTN)&RtShimGetNextVariableName  - (UINTN)&gRtShimsDataStart));
-    gRT->GetTime                   = (EFI_GET_TIME)((UINTN)gRtShims                  + ((UINTN)&RtShimGetTime              - (UINTN)&gRtShimsDataStart));
-    gRT->SetTime                   = (EFI_SET_TIME)((UINTN)gRtShims                  + ((UINTN)&RtShimSetTime              - (UINTN)&gRtShimsDataStart));
-    gRT->GetWakeupTime             = (EFI_GET_WAKEUP_TIME)((UINTN)gRtShims           + ((UINTN)&RtShimGetWakeupTime        - (UINTN)&gRtShimsDataStart));
-    gRT->SetWakeupTime             = (EFI_SET_WAKEUP_TIME)((UINTN)gRtShims           + ((UINTN)&RtShimSetWakeupTime        - (UINTN)&gRtShimsDataStart));
-    gRT->GetNextHighMonotonicCount = (EFI_GET_NEXT_HIGH_MONO_COUNT)((UINTN)gRtShims  + ((UINTN)&RtShimGetNextHighMonoCount - (UINTN)&gRtShimsDataStart));
-    gRT->ResetSystem               = (EFI_RESET_SYSTEM)((UINTN)gRtShims              + ((UINTN)&RtShimResetSystem          - (UINTN)&gRtShimsDataStart));
-
-    gRT->Hdr.CRC32 = 0;
-    gBS->CalculateCrc32(gRT, gRT->Hdr.HeaderSize, &gRT->Hdr.CRC32);
-  } else {
-    DEBUG ((DEBUG_VERBOSE, "Nulling RtShims\n"));
-    gRtShims = NULL;
-  }
-}
-
-VOID
-VirtualizeRtShims (
-  UINTN                  MemoryMapSize,
-  UINTN                  DescriptorSize,
-  EFI_MEMORY_DESCRIPTOR  *MemoryMap
-  )
-{
-  EFI_MEMORY_DESCRIPTOR  *Desc;
-  UINTN                  Index, Index2, FixedCount = 0;
-
-  //
-  // For some reason creating an event for catching SetVirtualAddress doesn't work on APTIO IV Z77,
-  // So we cannot use a dedicated ConvertPointer function and have to implement everything manually.
-  //
-
-  //
-  // Are we already done?
-  //
-  if (mRtShimsAddrUpdated)
-    return;
-
-  Desc = MemoryMap;
-
-  //
-  // Custom GetVariable wrapper is no longer allowed!
-  //
-  *(UINTN *)((UINTN)gRtShims + ((UINTN)&gGetVariableOverride - (UINTN)&gRtShimsDataStart)) = 0;
-
-  for (Index = 0; Index < ARRAY_SIZE (mShimPtrArray); ++Index) {
-    mShimPtrArray[Index].Func = (UINTN *)((UINTN)gRtShims + ((UINTN)(mShimPtrArray[Index].gFunc) - (UINTN)&gRtShimsDataStart));
-  }
-
-  for (Index = 0; Index < (MemoryMapSize / DescriptorSize); ++Index) {
-    for (Index2 = 0; Index2 < ARRAY_SIZE (mShimPtrArray); ++Index2) {
-      if (
-        !mShimPtrArray[Index2].Fixed &&
-        (*(mShimPtrArray[Index2].gFunc) >= Desc->PhysicalStart) &&
-        (*(mShimPtrArray[Index2].gFunc) < (Desc->PhysicalStart + EFI_PAGES_TO_SIZE (Desc->NumberOfPages)))
-      ) {
-        mShimPtrArray[Index2].Fixed = TRUE;
-        *(mShimPtrArray[Index2].Func) += (Desc->VirtualStart - Desc->PhysicalStart);
-        FixedCount++;
-      }
-    }
-
-    if (FixedCount == ARRAY_SIZE (mShimPtrArray)) {
-      break;
-    }
-
-    Desc = NEXT_MEMORY_DESCRIPTOR (Desc, DescriptorSize);
-  }
-
-  mRtShimsAddrUpdated = TRUE;
-}
+STATIC EFI_GET_VARIABLE      mCustomGetVariable;
+STATIC EFI_GET_VARIABLE      mOrgGetVariable;
+STATIC EFI_EVENT             mCustomGetVariableEvent;
 
 EFI_STATUS
 EFIAPI
@@ -218,7 +40,7 @@ OrgGetVariable (
   OUT    VOID      *Data
   )
 {
-  return (gGetVariable ? (EFI_GET_VARIABLE)gGetVariable : gRT->GetVariable) (
+  return (mOrgGetVariable != NULL ? mOrgGetVariable : gRT->GetVariable) (
     VariableName,
     VendorGuid,
     Attributes,
@@ -320,39 +142,61 @@ RestoreProtectedRtMemoryTypes (
 }
 
 VOID
-SetWriteUnprotectorMode (
-  IN     BOOLEAN                Enable
+EFIAPI
+SetGetVariableHookHandler (
+  IN EFI_EVENT  Event,
+  IN VOID       *Context
   )
 {
-  *(UINTN *)((UINTN)gRtShims + ((UINTN)&gRequiresWriteUnprotect - (UINTN)&gRtShimsDataStart)) = Enable;
+  EFI_STATUS                    Status;
+  OC_FIRMWARE_RUNTIME_PROTOCOL  *FwRuntime;
+
+  if (mOrgGetVariable == NULL) {
+    Status = gBS->LocateProtocol (
+      &gOcFirmwareRuntimeProtocolGuid,
+      NULL,
+      (VOID **) &FwRuntime
+      );
+
+    if (!EFI_ERROR (Status) && FwRuntime->Revision == OC_FIRMWARE_RUNTIME_REVISION) {
+      FwRuntime->OnGetVariable (mCustomGetVariable, &mOrgGetVariable);
+    }
+  }
 }
 
-BOOLEAN
-EFIAPI
-SetBootVariableRedirect (
-  IN     BOOLEAN                Enable
+VOID
+InstallRtShims (
+  EFI_GET_VARIABLE GetVariableOverride
   )
 {
-  UINTN       DataSize;
   EFI_STATUS  Status;
-  BOOLEAN     Previous;
+  VOID        *Registration;
 
-  if (Enable) {
-    DataSize = sizeof (Enable);
-    Status = gRT->GetVariable (
-      OC_BOOT_REDIRECT_VARIABLE_NAME,
-      &gOcVendorVariableGuid,
-      NULL,
-      &DataSize,
-      &Enable
+  mCustomGetVariable = GetVariableOverride;
+
+  SetGetVariableHookHandler (NULL, NULL);
+
+  if (mOrgGetVariable != NULL) {
+    return;
+  }
+
+  Status = gBS->CreateEvent (
+    EVT_NOTIFY_SIGNAL,
+    TPL_NOTIFY,
+    SetGetVariableHookHandler,
+    NULL,
+    &mCustomGetVariableEvent
+    );
+
+  if (!EFI_ERROR (Status)) {
+    Status = gBS->RegisterProtocolNotify (
+      &gOcFirmwareRuntimeProtocolGuid,
+      mCustomGetVariableEvent,
+      &Registration
       );
 
     if (EFI_ERROR (Status)) {
-      Enable = FALSE;
+      gBS->CloseEvent (&mCustomGetVariableEvent);
     }
   }
-
-  Previous = *(BOOLEAN *)((UINTN)gRtShims + ((UINTN)&gBootVariableRedirect - (UINTN)&gRtShimsDataStart));
-  *(BOOLEAN *)((UINTN)gRtShims + ((UINTN)&gBootVariableRedirect - (UINTN)&gRtShimsDataStart)) = Enable;
-  return Previous;
 }

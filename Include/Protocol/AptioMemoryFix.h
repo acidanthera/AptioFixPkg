@@ -22,20 +22,10 @@
   { 0xC7CBA84E, 0xCC77, 0x461D, { 0x9E, 0x3C, 0x6B, 0xE0, 0xCB, 0x79, 0xA7, 0xC1 } }
 
 //
-// Set NVRAM routing, returns previous value.
-//
-typedef
-BOOLEAN
-(EFIAPI *AMF_SET_NVRAM_REDIRECT) (
-  IN BOOLEAN  NewValue
-  );
-
-//
 // Includes a revision for debugging reasons
 //
 typedef struct {
   UINTN                   Revision;
-  AMF_SET_NVRAM_REDIRECT  SetNvram;
 } APTIOMEMORYFIX_PROTOCOL;
 
 extern EFI_GUID gAptioMemoryFixProtocolGuid;

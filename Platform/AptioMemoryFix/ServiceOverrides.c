@@ -9,8 +9,11 @@
 
 #include <IndustryStandard/AppleHibernate.h>
 
+#include <Guid/AppleVariable.h>
+
 #include <Library/BaseLib.h>
 #include <Library/BaseMemoryLib.h>
+#include <Library/OcBootManagementLib.h>
 #include <Library/OcDebugLogLib.h>
 #include <Library/OcMiscLib.h>
 #include <Library/UefiLib.h>
@@ -190,7 +193,7 @@ MOStartImage (
 
   DEBUG ((DEBUG_VERBOSE, "StartImage (%lx)\n", ImageHandle));
 
-  AppleLoadedImage = GetAppleBootLoadedImage (ImageHandle);
+  AppleLoadedImage = OcGetAppleBootLoadedImage (ImageHandle);
 
   //
   // Clear monitoring vars
@@ -198,24 +201,11 @@ MOStartImage (
   mMinAllocatedAddr = 0;
   mMaxAllocatedAddr = 0;
 
-  //
-  // Request boot variable redirection if enabled.
-  //
-  SetBootVariableRedirect (TRUE);
-
   if (AppleLoadedImage) {
     //
     // Report about macOS being loaded.
     //
     gMacOSBootNestedCount++;
-
-    //
-    // Latest Windows brings Virtualization-based security and monitors
-    // CR0 by launching itself under a hypevisor. Since we need WP disable
-    // on macOS to let NVRAM work, and for the time being no other OS
-    // requires it, here we decide to use it for macOS exclusively.
-    //
-    SetWriteUnprotectorMode (TRUE);
 
     //
     // Boot.efi requires EfiGraphicsOutputProtocol on ConOutHandle, but it is not present
@@ -286,13 +276,7 @@ MOStartImage (
     // We failed but other operating systems should be loadable.
     //
     gMacOSBootNestedCount--;
-    SetWriteUnprotectorMode (FALSE);
   }
-
-  //
-  // Disable redirect on failure, this is cleaner design-wise.
-  //
-  SetBootVariableRedirect (FALSE);
 
   return Status;
 }
@@ -417,7 +401,7 @@ MOGetMemoryMap (
 
   if (gMacOSBootNestedCount > 0 && Status == EFI_SUCCESS) {
     if (gDumpMemArgPresent) {
-      PrintMemMap (L"GetMemoryMap", *MemoryMapSize, *DescriptorSize, MemoryMap, gRtShims, gSysTableRtArea);
+      PrintMemMap (L"GetMemoryMap", *MemoryMapSize, *DescriptorSize, MemoryMap, gSysTableRtArea);
     }
 
 #if APTIOFIX_PROTECT_CSM_REGION == 1
@@ -601,7 +585,7 @@ MOSetVirtualAddressMap (
   //
   if (gMacOSBootNestedCount > 0) {
     if (gDumpMemArgPresent) {
-      PrintMemMap (L"SetVirtualAddressMap", MemoryMapSize, DescriptorSize, VirtualMap, gRtShims, gSysTableRtArea);
+      PrintMemMap (L"SetVirtualAddressMap", MemoryMapSize, DescriptorSize, VirtualMap, gSysTableRtArea);
       //
       // To print as much information as possible we delay ExitBootServices.
       // Most likely this will fail, but let's still try!
@@ -632,7 +616,7 @@ MOSetVirtualAddressMap (
   //
   // Correct shim pointers right away
   //
-  VirtualizeRtShims (MemoryMapSize, DescriptorSize, VirtualMap);
+  // VirtualizeRtShims (MemoryMapSize, DescriptorSize, VirtualMap);
 
   return Status;
 }

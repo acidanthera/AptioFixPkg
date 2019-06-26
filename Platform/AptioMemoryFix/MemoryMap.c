@@ -161,7 +161,6 @@ PrintMemMap (
   IN UINTN                  MemoryMapSize,
   IN UINTN                  DescriptorSize,
   IN EFI_MEMORY_DESCRIPTOR  *MemoryMap,
-  IN VOID                   *Shims,
   IN EFI_PHYSICAL_ADDRESS   SysTable
   )
 {
@@ -181,8 +180,8 @@ PrintMemMap (
   Desc = MemoryMap;
   NumEntries = MemoryMapSize / DescriptorSize;
   OcPrintScreen (L"--- Dump Memory Map (%s) start ---\n", Name);
-  OcPrintScreen (L"MEMMAP: Size=%d, Addr=%p, DescSize=%d, Shims=%08lX, ST=%08lX\n",
-    MemoryMapSize, MemoryMap, DescriptorSize, (UINTN)Shims, (UINTN)SysTable);
+  OcPrintScreen (L"MEMMAP: Size=%d, Addr=%p, DescSize=%d, ST=%08lX\n",
+    MemoryMapSize, MemoryMap, DescriptorSize, (UINTN)SysTable);
   OcPrintScreen (L"Type      Start      End        Virtual          # Pages    Attributes\n");
   for (Index = 0; Index < NumEntries; Index++) {
 

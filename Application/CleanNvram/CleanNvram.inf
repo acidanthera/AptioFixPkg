@@ -59,7 +59,7 @@
   gOcWriteOnlyVariableGuid                      ## CONSUMES
 
 [Protocols]
-  gAptioMemoryFixProtocolGuid
+  gOcFirmwareRuntimeProtocolGuid
 
 [LibraryClasses]
   UefiApplicationEntryPoint

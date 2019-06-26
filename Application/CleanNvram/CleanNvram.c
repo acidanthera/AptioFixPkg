@@ -24,6 +24,7 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 #include <Library/UefiRuntimeServicesTableLib.h>
 #include <Library/UefiApplicationEntryPoint.h>
 #include <Protocol/AptioMemoryFix.h>
+#include <Protocol/OcFirmwareRuntime.h>
 
 STATIC
 EFI_GUID
@@ -206,16 +207,20 @@ UefiMain (
   IN EFI_SYSTEM_TABLE  *SystemTable
   )
 {
-  EFI_STATUS               Status;
-  APTIOMEMORYFIX_PROTOCOL  *Amf;
-  BOOLEAN                  Redirect;
+  EFI_STATUS                   Status;
+  OC_FIRMWARE_RUNTIME_PROTOCOL *FwRuntime;
+  BOOLEAN                      Redirect;
 
   Print (L"NVRAM cleanup R%d\n", APTIOMEMORYFIX_PROTOCOL_REVISION);
 
-  Status = gBS->LocateProtocol (&gAptioMemoryFixProtocolGuid, NULL, (VOID **)&Amf);
+  Status = gBS->LocateProtocol (
+    &gOcFirmwareRuntimeProtocolGuid,
+    NULL,
+    (VOID **) &FwRuntime
+    );
 
-  if (!EFI_ERROR (Status) && Amf->Revision >= APTIOMEMORYFIX_PROTOCOL_REVISION) {
-    Redirect = Amf->SetNvram (FALSE);
+  if (!EFI_ERROR (Status) && FwRuntime->Revision >= OC_FIRMWARE_RUNTIME_REVISION) {
+    Redirect = FwRuntime->SetNvram (FALSE);
     Print (L"Found AMF NVRAM, full access %d\n", Redirect);
   } else {
     Redirect = FALSE;
@@ -226,7 +231,7 @@ UefiMain (
 
   if (Redirect) {
     Print (L"Restoring AMF NVRAM...\n");
-    Amf->SetNvram (TRUE);
+    FwRuntime->SetNvram (TRUE);
   }
 
   Print (L"NVRAM cleanup completed, please reboot!\n");

@@ -30,6 +30,7 @@
   CpuLib
   DevicePathLib
   MemoryAllocationLib
+  OcBootManagementLib
   OcDeviceTreeLib
   OcMachoLib
   OcStringLib
@@ -61,7 +62,6 @@
 
 [Sources.X64]
   X64/AsmFuncs.nasm
-  X64/AsmRtShims.nasm
 
 [Guids]
   gEfiFileInfoGuid                            ## CONSUMES
@@ -95,6 +95,7 @@
   gAppleNetBootProtocolGuid                   ## SOMETIMES_CONSUMES
   gAppleImageConversionProtocolGuid           ## SOMETIMES_CONSUMES
   gEfiDataHubProtocolGuid                     ## SOMETIMES_CONSUMES
+  gOcFirmwareRuntimeProtocolGuid              ## SOMETIMES_CONSUMES
 
 [BuildOptions]
 # To generate assembled listings

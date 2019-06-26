@@ -85,9 +85,4 @@ CopyEfiSysTableToRtArea (
   IN OUT UINT32  *EfiSystemTable
   );
 
-EFI_LOADED_IMAGE_PROTOCOL *
-GetAppleBootLoadedImage (
-  EFI_HANDLE  ImageHandle
-  );
-
 #endif // APTIOFIX_BOOT_FIXES_H
