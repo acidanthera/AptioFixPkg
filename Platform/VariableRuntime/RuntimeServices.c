@@ -81,7 +81,7 @@ WriteUnprotectorEpilogue (
 
   if (mWriteUnprotector) {
     if (Wp) {
-      AsmReadCr0 ();
+      Cr0.UintN   = AsmReadCr0 ();
       Cr0.Bits.WP = 1;
       AsmWriteCr0 (Cr0.UintN);
     }
