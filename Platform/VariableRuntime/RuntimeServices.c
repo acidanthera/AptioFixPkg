@@ -691,7 +691,7 @@ RedirectRuntimeServices (
   gBS->CalculateCrc32 (gRT, gRT->Hdr.HeaderSize, &gRT->Hdr.CRC32);
 
   Status = gBS->CreateEvent (
-    EVT_SIGNAL_EXIT_BOOT_SERVICES,
+    EVT_SIGNAL_VIRTUAL_ADDRESS_CHANGE,
     TPL_CALLBACK,
     TranslateAddressesHandler,
     NULL,
