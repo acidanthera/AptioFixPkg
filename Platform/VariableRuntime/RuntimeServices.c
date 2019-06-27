@@ -283,22 +283,13 @@ WrapGetVariable (
 
   WriteUnprotectorPrologue (&Ints, &Wp);
 
-  while (TRUE) {
-    Status = (mCustomGetVariable != NULL ? mCustomGetVariable : mStoredGetVariable) (
-      VariableName,
-      VendorGuid,
-      Attributes,
-      DataSize,
-      Data
-      );
-
-    if (Status == EFI_NOT_FOUND && Routed) {
-      VendorGuid = &gEfiGlobalVariableGuid;
-      Routed     = FALSE;
-    } else {
-      break;
-    }
-  }
+  Status = (mCustomGetVariable != NULL ? mCustomGetVariable : mStoredGetVariable) (
+    VariableName,
+    VendorGuid,
+    Attributes,
+    DataSize,
+    Data
+    );
 
   WriteUnprotectorEpilogue (Ints, Wp);
 
@@ -374,7 +365,7 @@ WrapGetNextVariableName (
   // then go through the whole variable list and return
   // variables except EfiBoot.
   //
-  if (/* !IsEfiBootVar (TempName, &TempGuid) */ TRUE) {
+  if (!IsEfiBootVar (TempName, &TempGuid)) {
     while (TRUE) {
       //
       // Request for variables.
@@ -383,7 +374,7 @@ WrapGetNextVariableName (
       Status = mStoredGetNextVariableName (&Size, TempName, &TempGuid);
 
       if (!EFI_ERROR (Status)) {
-        if (/* !IsEfiBootVar (TempName, &TempGuid) */ TRUE) {
+        if (!IsEfiBootVar (TempName, &TempGuid)) {
           Size = StrSize (TempName); ///< Not guaranteed to be updated with EFI_SUCCESS.
 
           if (*VariableNameSize >= Size) {
@@ -422,7 +413,7 @@ WrapGetNextVariableName (
         //
         WriteUnprotectorEpilogue (Ints, Wp);
         return EFI_DEVICE_ERROR;
-      } else if (/* Status == EFI_NOT_FOUND */ FALSE) {
+      } else if (Status == EFI_NOT_FOUND) {
         //
         // End of normal variable list.
         // This means it is the time for boot variables to be searched
@@ -440,8 +431,6 @@ WrapGetNextVariableName (
       }
     }    
   }
-
-  mStoredResetSystem (EfiResetCold, EFI_SUCCESS, 0, NULL);
 
   //
   // Handle EfiBoot variables now.
