@@ -315,6 +315,7 @@ WrapGetNextVariableName (
   )
 {
   EFI_STATUS  Status;
+  UINTN       Index;
   UINTN       Size;
   CHAR16      TempName[256];
   EFI_GUID    TempGuid;
@@ -327,17 +328,25 @@ WrapGetNextVariableName (
   // Null-terminator is not found in the first VariableNameSize
   // bytes of the input VariableName buffer.
   //
-  if (VariableNameSize == NULL
-    || VariableName == NULL
-    || VendorGuid == NULL
-    || *VariableNameSize == 0) {
+  if (VariableNameSize == NULL || VariableName == NULL || VendorGuid == NULL) {
     return EFI_INVALID_PARAMETER;
   }
 
   //
-  // Assume too large variables do not exist, as we cannot work with them anyway.
+  // Checking that VariableName never exceeds *VariableNameSize and is always null-terminated.
   //
-  if (StrSize (VariableName) > sizeof (TempName)) {
+  Size = 0;
+  for (Index = 0; Index < *VariableNameSize; ++Index) {
+    if (VariableName[Index] == L'\0') {
+      Size = (Index + 1) * sizeof (CHAR16);
+      break;
+    }
+  }
+
+  //
+  // Also assume that too large variables do not exist, as we cannot work with them anyway.
+  //
+  if (Size == 0 || Size > sizeof (TempName)) {
     return EFI_INVALID_PARAMETER;
   }
 
@@ -346,7 +355,7 @@ WrapGetNextVariableName (
   //
   // In case we do not redirect, simply do nothing.
   //
-  if (!mBootVariableRedirect || TRUE /* <- this is the real fix */) {
+  if (!mBootVariableRedirect) {
     Status = mStoredGetNextVariableName (VariableNameSize, VariableName, VendorGuid);
     WriteUnprotectorEpilogue (Ints, Wp);
     return Status;
@@ -356,7 +365,7 @@ WrapGetNextVariableName (
   // Copy vendor and variable name to internal buffer.
   //
   CopyGuid (&TempGuid, VendorGuid);
-  StrnCpyS (TempName, sizeof (TempName), VariableName, StrLen (VariableName));
+  StrnCpyS (TempName, ARRAY_SIZE (TempName), VariableName, StrLen (VariableName));
 
   StartBootVar = FALSE;
 
@@ -382,7 +391,12 @@ WrapGetNextVariableName (
             // Return this variable.
             //
             CopyGuid (VendorGuid, &TempGuid);
-            StrnCpyS (VariableName, *VariableNameSize, TempName, StrLen (TempName));
+            StrnCpyS (
+              VariableName,
+              *VariableNameSize / sizeof (CHAR16),
+              TempName,
+              StrLen (TempName)
+              );
             *VariableNameSize = Size; ///< This is NOT explicitly required by the spec.
             Status            = EFI_SUCCESS;
           } else {
@@ -427,7 +441,7 @@ WrapGetNextVariableName (
     }    
   }
 
-  ASSERT (FALSE);
+  mStoredResetSystem (EfiResetCold, EFI_SUCCESS, 0, NULL);
 
   //
   // Handle EfiBoot variables now.
@@ -464,7 +478,12 @@ WrapGetNextVariableName (
           // Return this variable.
           //
           CopyGuid (VendorGuid, &gEfiGlobalVariableGuid);
-          StrnCpyS (VariableName, *VariableNameSize, TempName, StrLen (TempName));
+          StrnCpyS (
+            VariableName,
+            *VariableNameSize / sizeof (CHAR16),
+            TempName,
+            StrLen (TempName)
+            );
           *VariableNameSize = Size; ///< This is NOT explicitly required by the spec.
           Status = EFI_SUCCESS;
         } else {
