@@ -53,7 +53,7 @@ package() {
   cp CleanNvram.efi tmp/Tools/ || exit 1
   cp VerifyMsrE2.efi tmp/Tools/ || exit 1
   pushd tmp || exit 1
-  zip -qry ../"AptioFix-R${ver}-${2}.zip" * || exit 1
+  zip -qry -FS ../"AptioFix-R${ver}-${2}.zip" * || exit 1
   popd || exit 1
   rm -rf tmp || exit 1
   popd || exit 1
