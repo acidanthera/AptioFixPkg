@@ -59,6 +59,7 @@
   OcFileLib|OcSupportPkg/Library/OcFileLib/OcFileLib.inf
   OcGuardLib|OcSupportPkg/Library/OcGuardLib/OcGuardLib.inf
   OcMachoLib|OcSupportPkg/Library/OcMachoLib/OcMachoLib.inf
+  OcMemoryLib|OcSupportPkg/Library/OcMemoryLib/OcMemoryLib.inf
   OcMiscLib|OcSupportPkg/Library/OcMiscLib/OcMiscLib.inf
   OcRtcLib|OcSupportPkg/Library/OcRtcLib/OcRtcLib.inf
   OcStringLib|OcSupportPkg/Library/OcStringLib/OcStringLib.inf

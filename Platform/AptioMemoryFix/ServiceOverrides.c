@@ -15,6 +15,7 @@
 #include <Library/BaseMemoryLib.h>
 #include <Library/OcBootManagementLib.h>
 #include <Library/OcDebugLogLib.h>
+#include <Library/OcMemoryLib.h>
 #include <Library/OcMiscLib.h>
 #include <Library/UefiLib.h>
 #include <Library/UefiBootServicesTableLib.h>
@@ -408,7 +409,7 @@ MOGetMemoryMap (
     ProtectCsmRegion (*MemoryMapSize, MemoryMap, *DescriptorSize);
 #endif
 
-    ShrinkMemMap (MemoryMapSize, MemoryMap, *DescriptorSize);
+    ShrinkMemoryMap (MemoryMapSize, MemoryMap, *DescriptorSize);
 
     //
     // Remember some descriptor size, since we will not have it later
@@ -538,7 +539,15 @@ ForceExitBootServices (
     // It is technically forbidden to allocate pool memory here, but we should not hit this code
     // in the first place, and for older firmwares, where it was necessary (?), it worked just fine.
     //
-    Status = GetMemoryMapAlloc (NULL, &MemoryMapSize, &MemoryMap, &MapKey, &DescriptorSize, &DescriptorVersion);
+    Status = GetCurrentMemoryMapAlloc (
+      &MemoryMapSize,
+      &MemoryMap,
+      &MapKey,
+      &DescriptorSize,
+      &DescriptorVersion,
+      OrgGetMemoryMap,
+      NULL
+      );
     if (Status == EFI_SUCCESS) {
       //
       // We have the latest memory map and its key, try again!

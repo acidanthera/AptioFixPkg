@@ -11,6 +11,7 @@
 #include <Library/BaseMemoryLib.h>
 #include <Library/OcDebugLogLib.h>
 #include <Library/OcDeviceTreeLib.h>
+#include <Library/OcMemoryLib.h>
 #include <Library/OcMiscLib.h>
 #include <Library/PrintLib.h>
 #include <Library/RngLib.h>
@@ -202,13 +203,14 @@ DecideOnCustomSlideImplementation (
   UINTN                  MaxAvailableSize = 0;
   UINT8                  FallbackSlide = 0;
 
-  Status = GetMemoryMapAlloc (
-    &AllocatedMapPages,
+  Status = GetCurrentMemoryMapAlloc (
     &MemoryMapSize,
     &MemoryMap,
     &MapKey,
     &DescriptorSize,
-    &DescriptorVersion
+    &DescriptorVersion,
+    OrgGetMemoryMap,
+    &AllocatedMapPages
     );
 
   if (Status != EFI_SUCCESS) {

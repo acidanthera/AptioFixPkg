@@ -13,6 +13,7 @@
 #include <Library/OcDebugLogLib.h>
 #include <Library/OcDevicePathLib.h>
 #include <Library/OcMachoLib.h>
+#include <Library/OcMemoryLib.h>
 #include <Library/OcMiscLib.h>
 #include <Library/OcStringLib.h>
 #include <Library/UefiBootServicesTableLib.h>
@@ -26,6 +27,7 @@
 #include "CustomSlide.h"
 #include "MemoryMap.h"
 #include "RtShims.h"
+#include "ServiceOverrides.h"
 #include "VMem.h"
 
 EFI_PHYSICAL_ADDRESS         gSysTableRtArea;
@@ -260,7 +262,7 @@ PrepareJumpFromKernel (
   // Must be 32-bit to access via a relative jump.
   //
   HigherMem = BASE_4GB;
-  Status = AllocatePagesFromTop (EfiBootServicesCode, 1, &HigherMem, FALSE);
+  Status = AllocatePagesFromTop (EfiBootServicesCode, 1, &HigherMem, OrgGetMemoryMap, NULL);
   if (Status != EFI_SUCCESS) {
     OcPrintScreen (L"AMF: Failed to allocate JumpToKernel memory - %r\n", Status);
     return Status;
@@ -293,7 +295,7 @@ PrepareJumpFromKernel (
   // This one also has to be 32-bit due to XNU BootArgs structure.
   //
   gSysTableRtArea = BASE_4GB;
-  Status = AllocatePagesFromTop (EfiRuntimeServicesData, 1, &gSysTableRtArea, FALSE);
+  Status = AllocatePagesFromTop (EfiRuntimeServicesData, 1, &gSysTableRtArea, OrgGetMemoryMap, NULL);
   if (Status != EFI_SUCCESS) {
     OcPrintScreen (L"AMF: Failed to allocate system table memory - %r\n", Status);
     return Status;
