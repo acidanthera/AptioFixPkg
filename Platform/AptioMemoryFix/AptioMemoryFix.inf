@@ -42,8 +42,6 @@
 [Sources]
   AptioMemoryFix.c
   AsmFuncs.h
-  BootArgs.c
-  BootArgs.h
   BootFixes.c
   BootFixes.h
   Config.h

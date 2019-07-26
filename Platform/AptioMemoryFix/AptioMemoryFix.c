@@ -19,7 +19,6 @@
 #include <Protocol/AptioMemoryFix.h>
 
 #include "Config.h"
-#include "BootArgs.h"
 #include "BootFixes.h"
 #include "CustomSlide.h"
 #include "RtShims.h"

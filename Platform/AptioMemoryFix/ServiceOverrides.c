@@ -25,7 +25,6 @@
 
 #include "Config.h"
 #include "ServiceOverrides.h"
-#include "BootArgs.h"
 #include "BootFixes.h"
 #include "CustomSlide.h"
 #include "MemoryMap.h"

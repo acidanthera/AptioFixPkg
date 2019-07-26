@@ -21,7 +21,6 @@
 
 #include "Config.h"
 #include "CustomSlide.h"
-#include "BootArgs.h"
 #include "BootFixes.h"
 #include "MemoryMap.h"
 #include "RtShims.h"
@@ -147,7 +146,7 @@ GenerateRandomSlideValue (
 STATIC
 VOID
 HideSlideFromOS (
-  AMF_BOOT_ARGUMENTS  *BootArgs
+  OC_BOOT_ARGUMENTS  *BootArgs
   )
 {
   EFI_STATUS  Status;
@@ -158,19 +157,19 @@ HideSlideFromOS (
   //
   // First, there is a BootArgs entry for XNU
   //
-  RemoveArgumentFromCommandLine (BootArgs->CommandLine, "slide=");
+  OcRemoveArgumentFromCmd (BootArgs->CommandLine, "slide=");
 
   //
   // Second, there is a DT entry
   //
-  DTInit ((VOID *)(UINTN)(*BootArgs->deviceTreeP), BootArgs->deviceTreeLength);
+  DTInit ((VOID *)(UINTN)(*BootArgs->DeviceTreeP), BootArgs->DeviceTreeLength);
   Status = DTLookupEntry (NULL, "/chosen", &Chosen);
   if (!EFI_ERROR (Status)) {
     DEBUG ((DEBUG_VERBOSE, "Found /chosen\n"));
     Status = DTGetProperty (Chosen, "boot-args", (VOID **)&ArgsStr, &ArgsSize);
     if (!EFI_ERROR (Status) && ArgsSize > 0) {
       DEBUG ((DEBUG_VERBOSE, "Found boot-args in /chosen\n"));
-      RemoveArgumentFromCommandLine (ArgsStr, "slide=");
+      OcRemoveArgumentFromCmd (ArgsStr, "slide=");
     }
   }
 
@@ -414,7 +413,7 @@ GetVariableBootArgs (
     //
     AsciiSPrint (SlideArgument, ARRAY_SIZE (SlideArgument), "slide=%-03d", Slide);
 
-    if (!AppendArgumentToCommandLine (mStoredBootArgsVar, SlideArgument, SlideArgumentLength)) {
+    if (!OcAppendArgumentToCmd (mStoredBootArgsVar, SlideArgument, SlideArgumentLength)) {
       //
       // Broken boot-args, try to overwrite.
       //
@@ -654,14 +653,14 @@ GetVariableCustomSlide (
 
 VOID
 RestoreCustomSlideOverrides (
-  AMF_BOOT_ARGUMENTS *BA
+  OC_BOOT_ARGUMENTS *BA
   )
 {
   //
   // Restore csr-active-config to a value it was before our slide=X alteration.
   //
-  if (BA->csrActiveConfig && mCsrActiveConfigSet) {
-    *BA->csrActiveConfig = mCsrActiveConfig;
+  if (BA->CsrActiveConfig && mCsrActiveConfigSet) {
+    *BA->CsrActiveConfig = mCsrActiveConfig;
   }
 
 #if APTIOFIX_CLEANUP_SLIDE_BOOT_ARGUMENT == 1

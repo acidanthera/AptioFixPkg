@@ -10,6 +10,7 @@
 
 #include <Library/UefiLib.h>
 #include <Library/BaseMemoryLib.h>
+#include <Library/OcBootManagementLib.h>
 #include <Library/OcDebugLogLib.h>
 #include <Library/OcDevicePathLib.h>
 #include <Library/OcMachoLib.h>
@@ -23,7 +24,6 @@
 #include "Config.h"
 #include "BootFixes.h"
 #include "AsmFuncs.h"
-#include "BootArgs.h"
 #include "CustomSlide.h"
 #include "MemoryMap.h"
 #include "RtShims.h"
@@ -59,21 +59,21 @@ UpdateEnvironmentForBooting (
   UINTN  BootArgs
   )
 {
-  AMF_BOOT_ARGUMENTS      *BA;
+  OC_BOOT_ARGUMENTS       BA;
   UINTN                   MemoryMapSize;
   EFI_MEMORY_DESCRIPTOR   *MemoryMap;
   UINTN                   DescriptorSize;
 
-  BA = GetBootArgs ((VOID *)BootArgs);
+  OcParseBootArgs (&BA, (VOID *) BootArgs);
 
   //
   // Restore the variables we tempered with to support custom slides.
   //
-  RestoreCustomSlideOverrides (BA);
+  RestoreCustomSlideOverrides (&BA);
 
-  MemoryMapSize  = *BA->MemoryMapSize;
-  MemoryMap      = (EFI_MEMORY_DESCRIPTOR *)(UINTN)(*BA->MemoryMap);
-  DescriptorSize = *BA->MemoryMapDescriptorSize;
+  MemoryMapSize  = *BA.MemoryMapSize;
+  MemoryMap      = (EFI_MEMORY_DESCRIPTOR *)(UINTN)(*BA.MemoryMap);
+  DescriptorSize = *BA.MemoryMapDescriptorSize;
 
   //
   // We must restore EfiRuntimeServicesCode memory areas, because otherwise
@@ -185,12 +185,12 @@ ReadBooterArguments (
 
     UnicodeStrToAsciiStrS (Options, BootArgsVar, BOOT_LINE_LENGTH);
 
-    if (GetArgumentFromCommandLine (BootArgsVar, "slide=", L_STR_LEN ("slide="))) {
+    if (OcGetArgumentFromCmd (BootArgsVar, "slide=", L_STR_LEN ("slide="))) {
       gSlideArgPresent = TRUE;
     }
 
 #if APTIOFIX_ALLOW_MEMORY_DUMP_ARG == 1
-    if (GetArgumentFromCommandLine (BootArgsVar, "-aptiodump", L_STR_LEN ("-aptiodump"))) {
+    if (OcGetArgumentFromCmd (BootArgsVar, "-aptiodump", L_STR_LEN ("-aptiodump"))) {
       gDumpMemArgPresent = TRUE;
     }
 #endif
@@ -217,12 +217,12 @@ ReadBooterArguments (
     //
     BootArgsVar[BootArgsVarLen-1] = '\0';
 
-    if (GetArgumentFromCommandLine (BootArgsVar, "slide=", L_STR_LEN ("slide="))) {
+    if (OcGetArgumentFromCmd (BootArgsVar, "slide=", L_STR_LEN ("slide="))) {
       gSlideArgPresent = TRUE;
     }
 
 #if APTIOFIX_ALLOW_MEMORY_DUMP_ARG == 1
-    if (GetArgumentFromCommandLine (BootArgsVar, "-aptiodump", L_STR_LEN ("-aptiodump"))) {
+    if (OcGetArgumentFromCmd (BootArgsVar, "-aptiodump", L_STR_LEN ("-aptiodump"))) {
       gDumpMemArgPresent = TRUE;
     }
 #endif

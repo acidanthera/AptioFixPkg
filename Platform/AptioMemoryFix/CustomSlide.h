@@ -10,7 +10,7 @@
 #ifndef APTIOFIX_CUSTOM_SLIDE_H
 #define APTIOFIX_CUSTOM_SLIDE_H
 
-#include "BootArgs.h"
+#include <Library/OcBootManagementLib.h>
 
 //
 // Base kernel address.
@@ -34,7 +34,7 @@
  */
 VOID
 RestoreCustomSlideOverrides (
-  AMF_BOOT_ARGUMENTS  *BA
+  OC_BOOT_ARGUMENTS  *BA
   );
 
 /**
