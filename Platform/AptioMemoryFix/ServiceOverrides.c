@@ -190,7 +190,6 @@ MOStartImage (
   EFI_STATUS                  Status;
   EFI_LOADED_IMAGE_PROTOCOL   *AppleLoadedImage = NULL;
   UINTN                       ValueSize = 0;
-  VOID                        *Gop;
 
   DEBUG ((DEBUG_VERBOSE, "StartImage (%lx)\n", ImageHandle));
 
@@ -207,26 +206,6 @@ MOStartImage (
     // Report about macOS being loaded.
     //
     gMacOSBootNestedCount++;
-
-    //
-    // Boot.efi requires EfiGraphicsOutputProtocol on ConOutHandle, but it is not present
-    // there on Aptio 2.0. EfiGraphicsOutputProtocol exists on some other handle.
-    // If this is the case, we'll intercept that call and return EfiGraphicsOutputProtocol
-    // from that other handle.
-    //
-    Gop = NULL;
-    Status = gBS->HandleProtocol (gST->ConsoleOutHandle, &gEfiGraphicsOutputProtocolGuid, &Gop);
-    if (EFI_ERROR (Status)) {
-      Status = gBS->LocateProtocol (&gEfiGraphicsOutputProtocolGuid, NULL, &Gop);
-      if (!EFI_ERROR (Status)) {
-        gBS->InstallMultipleProtocolInterfaces (
-          &gST->ConsoleOutHandle,
-          &gEfiGraphicsOutputProtocolGuid,
-          Gop,
-          NULL
-          );
-      }
-    }
 
     //
     // This is reverse engineered from boot.efi.
@@ -523,16 +502,6 @@ ForceExitBootServices (
   Status = ExitBs (ImageHandle, MapKey);
 
   if (EFI_ERROR (Status)) {
-    //
-    // Just report error as var in nvram to be visible from macOS with "nvram -p"
-    //
-    gRT->SetVariable (L"aptiomemfix-exitbs",
-      &gAppleBootVariableGuid,
-      EFI_VARIABLE_BOOTSERVICE_ACCESS | EFI_VARIABLE_RUNTIME_ACCESS,
-      4,
-      "fail"
-      );
-
     //
     // It is too late to free memory map here, but it does not matter, because boot.efi has an old one
     // and will freely use the memory.

@@ -41,11 +41,6 @@ extern BOOLEAN gSlideArgPresent;
 //
 extern BOOLEAN gHasBrokenS4MemoryMap;
 
-//
-// TRUE if booting on memory allocation unstable firmware, such as INSYDE
-//
-extern BOOLEAN gHasBrokenS4Allocator;
-
 VOID
 ApplyFirmwareQuirks (
   IN EFI_HANDLE        ImageHandle,

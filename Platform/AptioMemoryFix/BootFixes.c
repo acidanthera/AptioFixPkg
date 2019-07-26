@@ -36,7 +36,6 @@ BOOLEAN                      gHibernateWake;
 BOOLEAN                      gDumpMemArgPresent;
 BOOLEAN                      gSlideArgPresent;
 BOOLEAN                      gHasBrokenS4MemoryMap;
-BOOLEAN                      gHasBrokenS4Allocator;
 
 //
 // Buffer and size for original kernel entry code
@@ -159,7 +158,6 @@ ApplyFirmwareQuirks (
       // on INSYDE, some address lead to reboots after hibernate wake.
       //
       gHasBrokenS4MemoryMap = TRUE;
-      gHasBrokenS4Allocator = TRUE;
     }
   }
 }
