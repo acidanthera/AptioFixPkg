@@ -55,8 +55,6 @@
   RtShims.h
   ServiceOverrides.c
   ServiceOverrides.h
-  UmmMalloc/UmmMalloc.h
-  UmmMalloc/UmmMalloc.c
 
 [Sources.X64]
   X64/AsmFuncs.nasm

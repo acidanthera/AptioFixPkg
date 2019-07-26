@@ -30,7 +30,6 @@
 #include "CustomSlide.h"
 #include "MemoryMap.h"
 #include "RtShims.h"
-#include "UmmMalloc/UmmMalloc.h"
 
 //
 // Placeholders for storing original Boot and RT Services functions
@@ -99,10 +98,10 @@ InstallBsOverrides (
     //
     // Enforce memory pool creation when -aptiodump argument is used, but let it slip otherwise.
     //
-    Status = AllocatePagesFromTop (EfiBootServicesData, PageNum, &UmmHeap, !gDumpMemArgPresent);
+    Status = AllocatePagesFromTop (EfiBootServicesData, PageNum, &UmmHeap, OrgGetMemoryMap, !gDumpMemArgPresent ? OverlapsWithSlide : NULL);
     if (!EFI_ERROR (Status)) {
       gBS->SetMem ((VOID *)UmmHeap, APTIOFIX_CUSTOM_POOL_ALLOCATOR_SIZE, 0);
-      UmmSetHeap ((VOID *)UmmHeap);
+      UmmSetHeap ((VOID *)UmmHeap, APTIOFIX_CUSTOM_POOL_ALLOCATOR_SIZE);
 
       mStoredAllocatePool   = gBS->AllocatePool;
       mStoredFreePool       = gBS->FreePool;
