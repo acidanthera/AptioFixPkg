@@ -69,11 +69,8 @@
   PlatformHookLib|MdeModulePkg/Library/BasePlatformHookLibNull/BasePlatformHookLibNull.inf
 
 [Components]
-  AptioFixPkg/Platform/AptioInputFix/AptioInputFix.inf
   AptioFixPkg/Platform/AptioMemoryFix/AptioMemoryFix.inf
   AptioFixPkg/Platform/VariableRuntime/VariableRuntime.inf
-  AptioFixPkg/Application/VerifyMsrE2/VerifyMsrE2.inf
-  AptioFixPkg/Application/CleanNvram/CleanNvram.inf
 
 [PcdsFixedAtBuild]
   gEfiMdePkgTokenSpaceGuid.PcdMaximumAsciiStringLength|0

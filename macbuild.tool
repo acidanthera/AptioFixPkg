@@ -48,10 +48,7 @@ package() {
   rm -rf tmp || exit 1
   mkdir -p tmp/Drivers || exit 1
   mkdir -p tmp/Tools || exit 1
-  cp AptioInputFix.efi tmp/Drivers/ || exit 1
   cp AptioMemoryFix.efi tmp/Drivers/ || exit 1
-  cp CleanNvram.efi tmp/Tools/ || exit 1
-  cp VerifyMsrE2.efi tmp/Tools/ || exit 1
   pushd tmp || exit 1
   zip -qry -FS ../"AptioFix-R${ver}-${2}.zip" * || exit 1
   popd || exit 1
