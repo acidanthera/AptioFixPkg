@@ -10,6 +10,7 @@
 #define APTIOFIX_BOOT_FIXES_H
 
 #include <Protocol/LoadedImage.h>
+#include <Library/OcMemoryLib.h>
 
 //
 // Original and relocated new area for EFI System Table.
@@ -18,6 +19,7 @@
 //
 extern EFI_PHYSICAL_ADDRESS   gSysTableRtArea;
 extern EFI_PHYSICAL_ADDRESS   gRelocatedSysTableRtArea;
+extern OC_VMEM_CONTEXT        gVirtualMemoryContext;
 
 //
 // TRUE if we are doing hibernate wake

@@ -9,6 +9,7 @@
 #include <Library/BaseMemoryLib.h>
 #include <Library/MemoryAllocationLib.h>
 #include <Library/OcDebugLogLib.h>
+#include <Library/OcMemoryLib.h>
 #include <Library/UefiBootServicesTableLib.h>
 #include <Library/UefiLib.h>
 #include <Library/UefiRuntimeServicesTableLib.h>
@@ -23,7 +24,6 @@
 #include "CustomSlide.h"
 #include "RtShims.h"
 #include "ServiceOverrides.h"
-#include "VMem.h"
 
 //
 // One could discover AptioMemoryFix with this protocol
@@ -80,7 +80,10 @@ AptioMemoryFixEntrypoint (
   //
   // Init VMem memory pool - will be used after ExitBootServices
   //
-  Status = VmAllocateMemoryPool ();
+  Status = VmAllocateMemoryPool (
+    &gVirtualMemoryContext,
+    OC_DEFAULT_VMEM_PAGE_COUNT
+    );
   if (EFI_ERROR (Status)) {
     return Status;
   }

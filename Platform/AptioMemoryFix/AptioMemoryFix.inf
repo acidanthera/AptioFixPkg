@@ -55,8 +55,6 @@
   RtShims.h
   ServiceOverrides.c
   ServiceOverrides.h
-  VMem.c
-  VMem.h
   UmmMalloc/UmmMalloc.h
   UmmMalloc/UmmMalloc.c
 

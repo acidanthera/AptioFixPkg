@@ -28,11 +28,10 @@
 #include "MemoryMap.h"
 #include "RtShims.h"
 #include "ServiceOverrides.h"
-#include "VMem.h"
 
 EFI_PHYSICAL_ADDRESS         gSysTableRtArea;
 EFI_PHYSICAL_ADDRESS         gRelocatedSysTableRtArea;
-
+OC_VMEM_CONTEXT              gVirtualMemoryContext;
 BOOLEAN                      gHibernateWake;
 BOOLEAN                      gDumpMemArgPresent;
 BOOLEAN                      gSlideArgPresent;
@@ -472,7 +471,13 @@ ExecSetVirtualAddressesToMemMap (
       // Define virtual to phisical mapping.
       //
       DEBUG ((DEBUG_VERBOSE, "Map pages: %lx (%x) -> %lx\n", Desc->VirtualStart, Desc->NumberOfPages, Desc->PhysicalStart));
-      VmMapVirtualPages (PageTable, Desc->VirtualStart, Desc->NumberOfPages, Desc->PhysicalStart);
+      VmMapVirtualPages (
+        &gVirtualMemoryContext,
+        PageTable,
+        Desc->VirtualStart,
+        Desc->NumberOfPages,
+        Desc->PhysicalStart
+        );
 
       //
       // Next mVirtualMemoryMap slot.
