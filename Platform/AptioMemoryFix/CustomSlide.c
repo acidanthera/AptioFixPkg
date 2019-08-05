@@ -202,6 +202,7 @@ DecideOnCustomSlideImplementation (
   UINTN                  MaxAvailableSize = 0;
   UINT8                  FallbackSlide = 0;
 
+  AllocatedMapPages = BASE_4GB;
   Status = GetCurrentMemoryMapAlloc (
     &MemoryMapSize,
     &MemoryMap,
