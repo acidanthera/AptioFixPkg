@@ -471,6 +471,7 @@ UnlockSlideSupportForSafeMode (
   // }
   //
   CONST UINT8 SearchSeqNew[] = {0xF6, 0xC4, 0x40, 0x75};
+  CONST UINT8 SearchSeqNew2[] = {0x0F, 0xBA, 0xE0, 0x0E, 0x72};
   CONST UINT8 SearchSeq[] = {0x01, 0x40, 0x00, 0x00};
 
   //
@@ -486,9 +487,17 @@ UnlockSlideSupportForSafeMode (
 
   BOOLEAN     NewWay = FALSE;
 
+  UINTN       SearchSeqNewSize;
+
   do {
     while (StartOff + FirstOff <= EndOff) {
-      if (!CompareMem (StartOff + FirstOff, SearchSeqNew, sizeof (SearchSeqNew))) {
+      if (StartOff + FirstOff <= EndOff - 1
+       && !CompareMem (StartOff + FirstOff, SearchSeqNew2, sizeof (SearchSeqNew2))) {
+        SearchSeqNewSize = sizeof (SearchSeqNew2);
+        NewWay = TRUE;
+        break;
+      } else if (!CompareMem (StartOff + FirstOff, SearchSeqNew, sizeof (SearchSeqNew))) {
+        SearchSeqNewSize = sizeof (SearchSeqNew);
         NewWay = TRUE;
         break;
       } else if (!CompareMem (StartOff + FirstOff, SearchSeq, sizeof (SearchSeq))) {
@@ -509,7 +518,7 @@ UnlockSlideSupportForSafeMode (
       // Here we just patch the comparison code and the check by straight nopping.
       //
       DEBUG ((DEBUG_VERBOSE, "Patching new safe mode aslr check...\n"));
-      SetMem (StartOff + FirstOff, sizeof (SearchSeqNew) + 1, 0x90);
+      SetMem (StartOff + FirstOff, SearchSeqNewSize + 1, 0x90);
       return;
     }
 
