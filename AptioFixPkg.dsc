@@ -70,7 +70,6 @@
 
 [Components]
   AptioFixPkg/Platform/AptioMemoryFix/AptioMemoryFix.inf
-  AptioFixPkg/Platform/VariableRuntime/VariableRuntime.inf
 
 [PcdsFixedAtBuild]
   gEfiMdePkgTokenSpaceGuid.PcdMaximumAsciiStringLength|0
