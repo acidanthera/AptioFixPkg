@@ -26,7 +26,7 @@
 [LibraryClasses]
   BaseLib
   BaseMemoryLib
-  BaseRngLib
+  OcRngLib
   CpuLib
   DevicePathLib
   MemoryAllocationLib

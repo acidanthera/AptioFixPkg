@@ -17,6 +17,7 @@
 #include <Library/OcMemoryLib.h>
 #include <Library/OcMiscLib.h>
 #include <Library/OcStringLib.h>
+#include <Library/PrintLib.h>
 #include <Library/UefiBootServicesTableLib.h>
 #include <Library/UefiRuntimeServicesTableLib.h>
 #include <Library/DevicePathLib.h>
@@ -93,11 +94,6 @@ UpdateEnvironmentForHibernateWake (
   IOHibernateHandoff      *Handoff;
 
   ImageHeader = (IOHibernateImageHeader *)(ImageHeaderPage << EFI_PAGE_SHIFT);
-
-  //
-  // Pass our relocated copy of system table
-  //
-  ImageHeader->systemTableOffset = (UINT32)(UINTN)(gRelocatedSysTableRtArea - ImageHeader->runtimePages);
 
   //
   // When reusing the original memory mapping we do not have to restore memory protection types & attributes,
@@ -418,7 +414,6 @@ ExecSetVirtualAddressesToMemMap (
   EFI_MEMORY_DESCRIPTOR           *VirtualDesc;
   EFI_STATUS                      Status;
   PAGE_MAP_AND_DIRECTORY_POINTER  *PageTable;
-  UINTN                           Flags;
   UINTN                           BlockSize;
 
   Desc                      = MemoryMap;
@@ -431,7 +426,7 @@ ExecSetVirtualAddressesToMemMap (
   //
   // Get current VM page table
   //
-  GetCurrentPageTable (&PageTable, &Flags);
+  PageTable = GetCurrentPageTable (NULL);
 
   for (Index = 0; Index < NumEntries; Index++) {
     //
